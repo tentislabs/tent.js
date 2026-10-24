@@ -1,0 +1,71 @@
+name: runs
+
+# The automatic runs: every pull request and every push to main, on the three systems.
+# A commit whose message holds [skip ci] anywhere starts none: GitHub itself leaves such a commit out.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to a pull request ends the run of the older one. A run on main is in a group of its own, since
+# GitHub ends a run that waits when a newer one of its group arrives, also where cancel-in-progress is false:
+# https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/control-the-concurrency-of-workflows-and-jobs
+concurrency:
+  group: runs-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  run:
+    name: ${{ matrix.system }}
+    strategy:
+      # Each system runs to its end when another fails.
+      fail-fast: false
+      matrix:
+        include:
+          - system: linux
+            os: ubuntu-latest
+          - system: windows
+            os: windows-latest
+          - system: macos
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    # The whole run of one system takes most of an hour on a free runner; the limit leaves room for a slow one.
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      # A pull request is checked out as joined to its target, and the result file names the commit of the branch.
+      TENT_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: npm ci
+        run: npm ci
+      # A run on main fails where a joined list differs from the one it makes. A pull request goes on with its own.
+      - name: node scripts/lists.mjs
+        run: npm run lists -- ${{ github.event_name == 'push' && '--main' || '' }}
+      - name: The formatter, the linter and scripts/comments.mjs
+        run: npm run lint
+      - name: The type check
+        run: npm run types
+      - name: The search for what nothing uses
+        run: node scripts/search.mjs
+      - name: The tests
+        run: npm test
+      - name: Keep the result file and the new pictures
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: results-${{ matrix.system }}
+          path: |
+            results/${{ matrix.system }}.json
+            **/*.new.png
+            !node_modules/**
+          if-no-files-found: ignore

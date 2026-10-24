@@ -1,0 +1,95 @@
+{
+  "calendar": {
+    "tools": {
+      "createEvent": {
+        "about": "Puts a call into the calendar and sends its invitation to the people named",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "with": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "at": {
+              "type": "string"
+            },
+            "minutes": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "title",
+            "with",
+            "at",
+            "minutes"
+          ]
+        },
+        "fingerprint": "d24350f3630d118118bcaedd128525a65b8e9ed9953d9b20de41c995e3dbaade"
+      },
+      "findTimes": {
+        "about": "Finds free times for a call with the people named, on one day",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "with": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "day": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "with",
+            "day"
+          ]
+        },
+        "fingerprint": "230d50e276a4abe06fa5c42e0e58a7e9891b18a93898cc1a1f440ef8d5a5f1db"
+      }
+    }
+  },
+  "mailbox": {
+    "tools": {
+      "readMail": {
+        "about": "Reads one mail whole, by its id",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "fingerprint": "498bbe4497982b16dda891dbfbd263be7b8c896cdd675a89e5997040691674c3"
+      },
+      "searchMail": {
+        "about": "Finds the mails whose words hold the search, the newest first",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "words": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "words"
+          ]
+        },
+        "fingerprint": "6e4b2505867bc408588beb0df8b8fc77a8d88f4c9f0b11284e23c026eeec4f0f"
+      }
+    }
+  }
+}

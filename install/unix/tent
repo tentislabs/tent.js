@@ -1,0 +1,39 @@
+#!/bin/sh
+# The launcher of Tent.js on macOS and Linux: it starts the runtime of the version that `current` names with the
+# player and the words it was handed, and starts it again when it ends with 75, after an update it took by itself.
+home=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
+
+version_of() {
+  version=$(cat "$home/current" 2>/dev/null)
+  if [ -z "$version" ] || [ ! -d "$home/versions/$version" ]; then
+    was=$version
+    version=$(cat "$home/previous" 2>/dev/null)
+    if [ -z "$version" ] || [ ! -d "$home/versions/$version" ]; then
+      echo "Tent.js is not installed whole in $home: install it again." >&2
+      exit 2
+    fi
+    echo "Tent.js: the version $was that current names is not there, so $version is used." >&2
+  fi
+}
+
+# Nothing runs from a folder that is not the person's own, or that others can write into: by the bits of its group,
+# whatever the group, since on macOS the person's own group, staff, holds every person of the computer.
+held() {
+  for folder in "$home" "$home/versions" "$home/versions/$version" "$home/versions/$version/runtime" "$home/versions/$version/player"; do
+    if [ -L "$folder" ] || [ ! -O "$folder" ] || [ -n "$(find "$folder" -maxdepth 0 \( -perm -0002 -o -perm -0020 \) 2>/dev/null)" ]; then
+      echo "Tent.js runs nothing from $folder: it is not your own, or others can write into it." >&2
+      exit 2
+    fi
+  done
+}
+
+# An engine cannot raise its own bound of open files: it is raised here to the most the system lets a program have.
+ulimit -n "$(ulimit -Hn)" 2>/dev/null || true
+
+while :; do
+  version_of
+  held
+  "$home/versions/$version/runtime/bin/node" "$home/versions/$version/player/tent.mjs" "$@"
+  code=$?
+  if [ "$code" != 75 ]; then exit "$code"; fi
+done

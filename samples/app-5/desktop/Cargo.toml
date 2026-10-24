@@ -1,0 +1,22 @@
+[package]
+name = "bots-desktop"
+version = "0.1.0"
+edition = "2021"
+description = "The window of bots: it starts the app on this computer and shows it"
+license = "MIT"
+publish = false
+
+[[bin]]
+name = "bots"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "=2.7.0", features = [] }
+
+[dependencies]
+tauri = { version = "=2.12.0", features = [] }
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

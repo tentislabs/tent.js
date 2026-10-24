@@ -1,0 +1,808 @@
+# The reference of Tent.js
+
+Every word with its options, every hook, every tag with its properties, every command with its flags, and every code.
+Each line is made from the types and lists of this version, with the first sentence of its page, which `tent docs <name>` prints.
+
+## Words
+
+action(name: string, o: ActionOptions) // A function that reaches outside.
+  about?: string // One sentence on what the action is for.
+  access: Rule // Who may call the action.
+  background?: boolean | 'here' // Runs the action off the main thread.
+  batch?: { max: number; wait?: string; measure?: string; split?: boolean } // Gathers calls of the action into one.
+  callerGone?: 'goOn' | 'stop' // What becomes of the work when its caller is gone.
+  changes?: false // The builder's word on whether the action writes in the store.
+  countBy?: 'caller' | 'limits' // For whom the calls of the action are counted.
+  danger?: 'none' | 'ask' // Whether AIs and MCP callers ask a person before the action runs.
+  deprecated?: string // Marks the action as going away, in the API description and in its answers.
+  follow?: unknown // Who may follow the runs of the action from a page.
+  input?: unknown // The fields that a call gives.
+  limits?: ActionLimits // The limits of the action.
+  offer?: readonly Offer[] // The outside doors the action is offered to.
+  output?: unknown // The type of the answer.
+  plain?: true // Holds the action to the plain form.
+  remember?: true | { for?: string; kind?: boolean; version?: string; shared?: string } // Keeps the answers of the action for the same input.
+  rows?: Record<string, PlanBuilder<never, unknown, unknown>> // Plans whose rows the action is handed.
+  run: (o: ActionHanded) => Awaitable<Result> // The function that does the work.
+  sends?: boolean // Whether the action sends data out.
+  system?: string // Gives the action full access, with the reason.
+  uses?: readonly Marker[] // The functions, service calls and members of handles that the code asks the writer for.
+  was?: string | readonly string[] // The old name of the action, where it was renamed.
+  worker?: string // The kind of worker the action runs on.
+agent(name: string, o: AgentOptions) // An AI that works with tools.
+  about?: string // One sentence on what the agent is for.
+  access?: Rule // Who may start the agent through the door.
+  countBy?: 'caller' | 'limits' // For whom the runs of the agent are counted.
+  driver?: string // A driver of the builder's own that runs the agent.
+  guards?: { in?: readonly Guard[]; out?: readonly Guard[]; refused?: string } // Checks that the person's message.
+  handsOver?: readonly Marker[] // The agents that this one may hand a conversation over to.
+  instructions: string // What the agent is told to do.
+  key?: (o: Started) => unknown // What a run of the agent is about, such as the conversation it answers.
+  knows?: readonly ('caller' | 'time' | { facts: Marker })[] // What the engine tells the model of a run, beside the instructions.
+  limits?: { steps?: number; perRun?: Units; time?: string; ask?: string; result?: string; toolCalls?: number; toolsAtOnce?: number; pass?: string } // The limits of a run of the agent.
+  memory?: { in: Marker; thread?: string; of?: string; keep?: number; after?: number; shrink?: 'all' | 'drop' | 'summary' | Marker | { nearest: number }; model?: Marker; recall?: number } // The table that holds the conversations of the agent.
+  model: Marker // The model that does the thinking.
+  offer?: readonly Offer[] // The outside doors the agent is offered to.
+  on?: Trigger | readonly Trigger[] // What starts a run of the agent.
+  onStop?: (o: { input: AgentInput; event: unknown; user: User | undefined; step: Step; db: ActionDb; stopped: { step?: string; progress?: unknown } }) => unknown // The last work of a run of the agent that was stopped.
+  output?: Type | undefined // The type of the value that a run of the agent answers beside its text.
+  pace?: PaceOver<Started> // How the starts of the agent are paced, each part held for each key.
+  policy?: Policy // What an agent that builds may read, change and call in a workspace.
+  questions?: true // Lets the model ask the person a question, and wait for the answer.
+  reasoning?: { show?: true; save?: true } // What becomes of the reasoning that the model writes for itself.
+  score?: { share: number; with: Judge } // Has a judge score a share of the finished runs of the agent.
+  sequence?: true // Lets the model hand a sequence of tool calls.
+  tell?: 'tools' | 'list' // In which form the tools reach the model.
+  together?: Together // How many runs of the agent may work at once.
+  tools: readonly Tool[] // The tools of the agent.
+  trust?: readonly Marker[] // Tools that send data out and may run without asking a person.
+  voice?: { hear: Marker; speak: Marker; name?: string; language?: string; whole?: boolean } // The models the agent hears and speaks with.
+  was?: string | readonly string[] // The old name of the agent, where it was renamed.
+  words?: Record<string, string> // Other words for the sentences the engine itself gives the model.
+allow(test: (user: User | undefined, input: Record<string, unknown>, db: QueryDb) => boolean) // A rule that looks at the input or at rows.
+anyone(why: string) // The rule that lets anyone in, with the reason written down.
+asset(name: string) // Names a file under the assets of the project.
+avg(list: readonly unknown[], field?: string) // The mean of the numbers of a list, or of one field of each entry.
+backfill(name: string, o: BackfillOptions) // A change that the engine hands every row of one table once.
+  fills?: Extract<keyof unknown, string> // The column that the backfill fills.
+  page?: number // How many rows one write of the backfill takes.
+  run: (row: RowOf, o: BackfillHanded) => unknown // What the backfill does with one row.
+  system?: string // The reason the backfill has full access.
+  table: Named // The table whose rows the backfill is handed, one at a time.
+  was?: string | readonly string[] // The old name of the backfill, where it was renamed.
+between(a: Date | string, b: Date | string, unit: string) // How many whole units lie from one moment to another.
+boolean(o?: PlainOptions) // True or false.
+calc(op: '+' | '-' | '*' | '/' | '%', a: number, b: number) // Works out one sign of arithmetic or of comparing.
+caller(what: 'id') // Stands for the caller, in a form written with values.
+ceil(n: number) // Rounds a number up to a whole number.
+change(name: string, o: ChangeOptions & AtOnce) // The only thing that writes a caller's data.
+  about?: string // One sentence on what the change is for.
+  access: Rule // Who may call the change.
+  countBy?: 'caller' | 'limits' // For whom the calls of the change are counted.
+  danger?: 'none' | 'ask' // Whether AIs and MCP callers ask a person before the change runs.
+  deprecated?: string // Marks the change as going away, in the API description and in its answers.
+  everywhere?: boolean // Answers the change only once every machine of the app holds it.
+  input?: unknown
+  offer?: readonly Offer[] // The outside doors the change is offered to.
+  output?: unknown
+  plain?: true // Holds the change to the plain form.
+  run?: (o: ChangeHanded) => unknown // The function that makes the change.
+  set?: unknown // The writes of the change, as plain data.
+  system?: string // Gives the change full access, with the reason.
+  touches?: Names // The tables that a raw SQL write of the change writes.
+  was?: string | readonly string[] // The old name of the change, where it was renamed.
+choice(values: readonly string[], o?: ChoiceOptions) // One of a list of values, each a text.
+  messages?: string // The key of the language files under which each value of the choice has its message, so that a form shows the values in the language of its page.
+chunks(text: string, o?: ChunksOptions) // Cuts a text into chunks that overlap, for search by meaning.
+  cut?: 'paragraph' | 'sentence' | 'length' // Where a chunk may end.
+  language?: string // The language whose sentence rules are used.
+  overlap?: number // How much of the end of one chunk is repeated at the start of the next.
+  size?: number // The most a chunk may hold.
+col(name: string) // Names a column of the same row, in the `from` of a column.
+command(name: string, o: CommandOptions) // A command of the app's own command line that is written in code.
+  about?: string // One sentence on what the command is for, which the help prints.
+  access?: Rule // Who the command is for.
+  args?: unknown // The flags of the command.
+  run: (o: CommandRun<HandedFields>) => number | undefined | Promise<number | undefined> // The function of the command, which runs at the person's side.
+  was?: string | readonly string[] // The old name of the command, where it was renamed.
+component(name: string, o: ComponentOptions) // A part of a screen that is written once and used as a tag.
+  browser?: false // Whether the component lives in the browser.
+  data?: unknown | ((handed: DataHanded & { props: PropsHanded }) => unknown) // What the component reads when it is drawn.
+  layout?: string | { readonly definition: string; readonly kind: 'component' } // The component that this one is shown in.
+  personal?: true // Says that a component answers each visitor their own.
+  props?: unknown // The properties a use of the component gives it.
+  state?: unknown // The state that each use of the component keeps.
+  view: (handed: ComponentHanded) => Drawable // The React component that draws the component.
+  was?: string | readonly string[] // The old name of the component, where it was renamed.
+concat(...values: unknown[]) // Joins values as one text.
+contains(text: string, part: string) // Says whether a text holds a part.
+count() // What `group` takes for the number of rows of each group, and.
+  by: string // In the `from` of a column that the engine keeps.
+  column?: string // A column of the counted rows, which a kept `count` takes and does not read.
+  of: string | { readonly definition: string } // In the `from` of a column that the engine keeps.
+  where?: object // In the `from` of a column that the engine keeps.
+cron(schedule: string, o?: { zone?: string }) // A trigger that fires by the clock, in the five fields of cron.
+  zone?: string // The time zone in which the five fields of the cron are read.
+date(o?: PlainOptions) // A moment in time.
+day(o?: PlainOptions) // A calendar day, with no time and no zone.
+dayOf(moment: Date | string, zone?: string) // The calendar day of a moment in a time zone.
+del(path: string, o?: CallOptions) // A call of a service with the method DELETE.
+  about?: string // One sentence on what the call is for.
+  body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string } // How the fields that are left are sent as the body.
+  changes?: boolean // The builder's word on whether the call changes anything at the service.
+  files?: 'base64' // How a file of the answer is handed on.
+  headers?: Record<string, string> // The fields that are sent as headers, each under its name.
+  input?: unknown // The fields that the call is handed.
+  lists?: 'repeat' | 'brackets' | 'comma' // How a list is written after the question mark.
+  output?: unknown // The type of the answer of the call.
+  query?: readonly string[] // The fields that are written after the question mark of the address.
+  sends?: boolean // The builder's word on whether the call sends data out.
+each(list: readonly unknown[], arrow: (entry: unknown, i: number) => unknown) // Makes a new list of what an arrow gives for each entry of a list.
+earlier(when: Date | string | undefined, length: string) // Moves a moment or a day earlier by a length of time.
+emit(event: Declared<string, unknown>, data: NoInfer) // Sends an event, as part of the write of the change it is called in.
+evals(app: TestApp, target: unknown, list: Case[], o?: EvalsOptions) // Runs cases of an agent, a flow or a function of a test app.
+  as?: TestCaller // The caller the cases run as.
+  budget?: Record<string, number> // The most of each unit the cases may use.
+  name?: string // The name the results are kept under.
+  pass?: number // The share of its runs a case needs to pass.
+  runs?: number // How many times each case runs.
+event(name: string, o: { data: Type }) // A trigger that fires when a change emits an event of that name.
+  data: Type // The type of the data of the event, which declares it.
+  key?: (o: { data: unknown }) => unknown // In `stopOn` of a flow, the key of the runs that the event stops.
+  where?: Record<string, unknown> // In `on` of a flow, the values that the data of the event must hold for the flow to start, and in a wait, for the wait to be done.
+every(schedule: string) // A trigger that fires by the clock, in words.
+expect(page: Page) // Holds a page of a test to what the project keeps of it.
+fail(code: string, message: string, o?: { fields?: Record<string, string> }) // Ends a query, a change or an action with an error that the caller sees, under a code of the builder's own.
+  fields?: Record<string, string> // What the error tells beside its words, each by its name.
+file(o?: FileOptions) // A file that was uploaded or stored.
+  kinds?: readonly string[] // The kinds of file that are taken.
+  maxSize?: string | number // The largest file that is taken.
+fingerprint(text: string) // SHA-256 of a text's bytes as UTF-8, written as lowercase hex.
+floor(n: number) // Rounds a number down to a whole number.
+flow(name: string, o: FlowOptions) // Work that is saved step by step, so that it waits.
+  about?: string // One sentence on what the flow is for.
+  access?: Rule // Who may call the flow through the door.
+  as?: 'system' | 'starter' // Whose rights a run has.
+  countBy?: 'caller' | 'limits' // For whom the runs of the flow are counted.
+  danger?: 'ask' // Whether the flow, used as a tool, asks a person first.
+  follow?: unknown // Who may follow the runs of the flow from a page.
+  input?: unknown // The fields that a start gives.
+  key?: (o: { input: HandedFields; event: EventOf }) => unknown // What a run of the flow is about, such as the order it ships.
+  limits?: { steps?: number; time?: string; result?: string; wait?: string; pass?: string; stepTime?: string } // The limits of a run.
+  moveRuns?: 'never' | 'whenSafe' // Whether a waiting run is moved to a new version.
+  offer?: readonly Offer[] // The outside doors the flow is offered to.
+  on?: unknown // What starts the flow.
+  onFail?: (o: FlowHanded & { failure: { step: string; code: string; message: string } }) => unknown // What is carried out when a run fails for good.
+  onStop?: (o: FlowHanded & { stopped: { step?: string; progress?: unknown } }) => unknown // What is carried out when a run is stopped, as its last work.
+  output?: unknown // The type of the answer of the flow.
+  pace?: Pace // How the starts of the flow are paced.
+  plain?: true // Holds the flow to the plain form.
+  run: (o: FlowHanded) => unknown // The function of the flow, which is run from its top on every pass.
+  sealed?: true // Seals what every step of the flow saves with the key of the secrets.
+  sends?: boolean // Whether the flow sends data out.
+  stopOn?: Trigger | readonly Trigger[] // The events that stop the runs of the flow that are about the same thing.
+  system?: string // The reason why an offered flow has full access.
+  together?: Together // How many runs of the flow may work at once.
+  tries?: number | { max: number; wait?: string } // How often a step is tried in all.
+  was?: string | readonly string[] // The old name of the flow, where it was renamed.
+get(path: string, o?: CallOptions) // A call of a service with the method GET.
+  about?: string
+  body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string }
+  changes?: boolean
+  files?: 'base64'
+  headers?: Record<string, string>
+  input?: unknown
+  lists?: 'repeat' | 'brackets' | 'comma'
+  output?: unknown
+  query?: readonly string[]
+  sends?: boolean
+given(value: unknown) // Leaves an entry of a filter out while its value is nothing.
+incoming(name: string, o: IncomingOptions) // A web call from outside that starts a flow.
+  limits?: { size?: string } // The limits of a call.
+  open?: string // Takes calls that nobody signed, with the reason.
+  path: string // The address the call arrives at.
+  then: Marker // The flow that an incoming call starts.
+  verify?: Marker | { scheme: Scheme; secret: Secret } // How the signature of a call is checked.
+  was?: string | readonly string[] // The old name of the incoming call, where it was renamed.
+input(name: string) // Stands for a value of the input, in a form written with values.
+join(list: readonly unknown[], between: string) // Joins the entries of a list as one text, with a text between them.
+json(o?: PlainOptions) // Any JSON value.
+judge(model: unknown, rule: string, o?: JudgeOptions) // A model that scores an answer against a rule from 0 to 1.
+  pass?: number // The score at which an answer passes, from 0 to 1.
+  words?: string // Other words for the request a judge is asked with.
+later(when: Date | string | undefined, length: string) // Moves a moment or a day later by a length of time.
+least(a: unknown, b: unknown, ...more: unknown[]) // The smallest of two or more values.
+link(table: string, o?: LinkOptions) // A row of a table.
+  onRemove?: 'refuse' | 'remove' | 'clear' // What happens to this row when the row that is linked to is removed.
+list(of: Type, o?: ListOptions) // A list of values of one type.
+  max?: number // The most entries the list may have.
+  min?: number // The fewest entries the list may have.
+lower(text: string) // Writes a text in small letters, by no language's own rules.
+max(list: readonly unknown[]) // The largest of the numbers, the days or the moments of a list.
+  by: string
+  column?: string // In the `from` of a column that the engine keeps.
+  of: string | { readonly definition: string }
+  where?: object
+message(key: string | readonly unknown[], values?: Record<string, unknown>) // Names a message of the language files by its key.
+messages(language: string, messages: MessagesOfFile) // Gives the messages of one language.
+min(list: readonly unknown[]) // The smallest of the numbers, the days or the moments of a list.
+  by: string
+  column?: string
+  of: string | { readonly definition: string }
+  where?: object
+model(name: string, o: ModelOptions) // A model of any kind of AI, at its provider.
+  abilities?: readonly string[] // Which fixed calls the model has, for a model the list does not know.
+  call?: unknown // The call of a service that the model is made of.
+  countBy?: 'app' // Counts the calls of the model for the app and not for each caller.
+  fallback?: readonly Marker[] // The models that a call goes to when this one cannot answer.
+  hosted?: readonly string[] // The provider's own tools that the model is offered.
+  input?: unknown // What the model takes, for a model that is called as a function.
+  job?: { check: Marker; with?: Record<string, string>; done: object; failed?: object; every?: string } // Makes the model a long job that is asked about until it is done.
+  key?: Secret // The key the provider is called with.
+  limits?: { perDay?: Units; perCallerPerDay?: Units; time?: string } // How much the model may use in a day, for the app and for each caller.
+  name: string // The name of the model at its provider.
+  options?: Record<string, unknown> // What is passed straight to the provider.
+  output?: unknown // What the model gives, for a model that is called as a function.
+  provider: string // Who runs the model.
+  takes?: number // The most tokens one request may hold.
+  tries?: number | { max: number; wait?: string } // How often the same model is tried in all before the next one.
+  units?: Record<string, string | number> // Where the answer of the service says what was used.
+  url?: string // The address of the provider.
+  voices?: readonly string[] // The voices of a model that speaks.
+  was?: string | readonly string[] // The old name of the model, where it was renamed.
+most(a: unknown, b: unknown, ...more: unknown[]) // The largest of two or more values.
+noOtherPeople: OwnGuard // A guard of the engine's own that refuses an answer which names a row the starter of the run may not read.
+noPersonal: OwnGuard // A guard of the engine's own that refuses an answer which holds a personal value the starter may not read, or a private one.
+now() // The moment of the call that is under way.
+number(o?: NumberOptions) // A number.
+  max?: number // The largest number that is taken.
+  min?: number // The smallest number that is taken.
+  whole?: boolean // Holds the number to whole numbers.
+object(shape: { readonly [field: string]: Type }, o?: PlainOptions) // A record with named fields, each of a type.
+optimistic(row: object) // Tells a view whether a row is shown ahead of the answer of the change that made it, so that the view can draw it fainter.
+patch(path: string, o?: CallOptions) // A call of a service with the method PATCH.
+  about?: string
+  body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string }
+  changes?: boolean
+  files?: 'base64'
+  headers?: Record<string, string>
+  input?: unknown
+  lists?: 'repeat' | 'brackets' | 'comma'
+  output?: unknown
+  query?: readonly string[]
+  sends?: boolean
+post(path: string, o?: CallOptions) // A call of a service with the method POST.
+  about?: string
+  body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string }
+  changes?: boolean
+  files?: 'base64'
+  headers?: Record<string, string>
+  input?: unknown
+  lists?: 'repeat' | 'brackets' | 'comma'
+  output?: unknown
+  query?: readonly string[]
+  sends?: boolean
+project(name: string, o: ProjectOptions) // The project.
+  api?: { names?: Record<string, string>; headers?: readonly string[]; origins?: readonly string[] | AnyoneRule } // What the app states for the API.
+  backups?: { every?: string | false; keep?: number; beforeChanges?: boolean; test?: boolean; archive?: boolean; store?: FileStoreWord } // When backups of the data are taken, how many are kept.
+  build?: { vite?: (config: never) => unknown } // The escape for changing the builder.
+  cache?: { keysHeader?: string } // What the engine tells a cache that stands outside it.
+  cli?: { name?: string; names?: Record<string, string>; login?: 'key' } // The app's own command line.
+  cookies?: { sameSite?: 'lax' | 'none'; domain?: string } // The two marks of the engine's cookies that a project may change.
+  countBy?: 'app' | 'caller' | 'limits' // For whom the engine counts what the app does.
+  currency?: string // What `format="currency"` shows money in.
+  describeTo?: Rule // Who may read what the app offers to programs.
+  files?: { store?: FileStoreWord } // Where the bytes of the app's files lie.
+  head?: readonly HeadLine[] // Lines of the head of every page.
+  history?: { leave?: readonly string[] } // What the history of the project leaves out.
+  hold?: true | { net?: readonly string[]; programs?: readonly string[]; native?: readonly string[] } // Runs the app's actions, and every package they import.
+  hosts?: readonly string[] // The hosts that a page may load pictures, sound and video from.
+  html?: Record<string, string> // Attributes of the `<html>` element of every page.
+  icon?: Asset // The picture a browser shows for the site.
+  identify?: (o: never) => string | undefined | Promise<string | undefined> // The builder's own way of telling who is calling.
+  images?: { widths?: readonly number[]; formats?: readonly ('avif' | 'webp')[] } // What the image door answers.
+  languages?: readonly string[] // The languages of the app.
+  limits?: Record<string, number | string> // The limits of the app, each a default that the project changes.
+  mail?: { from: string | { name: string; address: string }; send?: Secret | string } // How the app sends mail.
+  mcp?: Mcp // What the app states for the MCP door, at `/mcp`.
+  onRequest?: (request: Request, next: (request: Request) => Promise<Response>, about: never) => Response | Promise<Response> // A function that every request of the app is handed first.
+  privateHosts?: readonly string[] // The hosts of this computer and of a private network that the app may reach.
+  publish?: { health?: string | Marker; within?: string } // What a new version must pass before it goes live.
+  python?: Python // The Python of the project, and what its lock is made with.
+  redirects?: readonly { from: string; to: string; permanent?: boolean }[] // Addresses that send a visitor on to another.
+  release?: { gradual?: boolean; steps?: readonly number[]; every?: string; watch?: { failures?: number; slower?: number; calls?: number } } // How a new version reaches the visitors.
+  removed?: readonly string[] // The tables that were removed on purpose.
+  roots?: readonly string[] // Folders outside the project that its files may be named from.
+  settings?: Record<string, { type: Type; public?: boolean }> // Typed values that are set apart for test and for live.
+  signInPath?: string // Where a visitor is sent when a screen needs a signed-in user.
+  state?: Record<string, State> // State that every screen and every component shares.
+  title?: string // The name of the app as people read it.
+  trace?: { share?: number; otlp?: { url: string | Setting; headers?: Record<string, string | Secret | Setting> } } // Which traces of the app are kept, and where they are sent out.
+  trailingSlash?: 'strip' | 'keep' // What becomes of a slash at the end of an address.
+  unlock?: Unlock // The ways out of the content policy of a page.
+  uploads?: Rule // Who may upload a file.
+  vitals?: { share?: number } // How much of the speed real visitors see is measured.
+  was?: string | readonly string[] // The old name of the project, where it was renamed.
+  workers?: Record<string, WorkerKind> // The kinds of worker that heavy work may name.
+  zone?: string // The time zone for schedules and for the day of a moment.
+put(path: string, o?: CallOptions) // A call of a service with the method PUT.
+  about?: string
+  body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string }
+  changes?: boolean
+  files?: 'base64'
+  headers?: Record<string, string>
+  input?: unknown
+  lists?: 'repeat' | 'brackets' | 'comma'
+  output?: unknown
+  query?: readonly string[]
+  sends?: boolean
+python(name: string, o: PythonOptions) // A function whose code is a Python file of the project.
+  about?: string // One sentence on what it is for.
+  access: Rule // Who may call it.
+  atOnce?: number // How many calls one loaded copy is handed at the same time.
+  background?: boolean | 'here' // Runs it off the main thread.
+  batch?: { max: number; wait?: string; measure?: string; split?: boolean } // Gathers calls into one.
+  callerGone?: 'goOn' | 'stop'
+  changes?: false // The builder's word on whether it changes anything.
+  countBy?: 'caller' | 'limits' // For whom its calls are counted.
+  danger?: 'none' | 'ask' // Whether AIs and MCP callers ask a person before it runs.
+  deprecated?: string // Marks it as going away, in the API description and in its answers.
+  file: string // The Python file that holds the code.
+  files?: readonly string[] // More files of the project that the code works with.
+  follow?: unknown // Who may follow its runs from a page.
+  gpu?: boolean // Lets the Python program see the graphics cards of the computer.
+  input: unknown // The fields that a call gives.
+  limits?: ActionLimits & { memory?: string; load?: string } // The limits of a call.
+  lock?: string // A lock of its own, for packages that cannot share the lock of the project.
+  offer?: readonly Offer[] // The outside doors it is offered to.
+  output: unknown // The type of the answer.
+  packages?: readonly string[] // The packages the code needs, which `tent python lock` locks and the engine installs into the environment of the lock.
+  remember?: true | { for?: string; kind?: boolean; version?: string; shared?: string } // Keeps the answers for the same input.
+  rows?: Record<string, PlanBuilder<never, unknown, unknown>> // Plans whose rows reach Python as tables.
+  sends?: boolean // Whether it sends data out.
+  system?: string // Gives it full access, with the reason.
+  uses?: readonly Marker[] // The functions and the service calls that the Python code may call back.
+  was?: string | readonly string[] // Its old name, where it was renamed.
+  worker?: string // The kind of worker it runs on.
+query(name: string, o: QueryOptions & AtOnce) // A read of the app's data.
+  about?: string // One sentence on what the query is for.
+  access: Rule // Who may call the query.
+  countBy?: 'caller' | 'limits' // For whom the calls of the query are counted.
+  deprecated?: string // Marks the query as going away, in the API description and in its answers.
+  heavy?: boolean // Runs the query on a query thread.
+  input?: unknown
+  live?: boolean // Whether a page that reads the query follows its rows.
+  offer?: readonly Offer[] // The outside doors the query is offered to.
+  output?: unknown
+  plain?: true // Holds the query to the plain form.
+  reads?: Names // The tables that a raw SQL read of the query reads.
+  refresh?: string // How often the query is asked again.
+  rows?: unknown // The plan that the query answers.
+  run?: (o: QueryHanded) => unknown // The function that answers the query.
+  system?: string // Gives the query full access, with the reason.
+  was?: string | readonly string[] // The old name of the query, where it was renamed.
+random() // A number from 0 up to, and not with, 1.
+range(from: number, to: number, by?: number) // A list of numbers that starts at one number and lies before another.
+read(what: Stub, input?: InputOf<Stub>, o?: ReadOptions) // Names a query or an action that a screen reads, with its input.
+  needed?: boolean // Makes the screen not found, with status 404.
+  refresh?: string // How often an action that a screen reads is asked again while the screen is shown.
+  wait?: boolean // Whether the page waits for the entry before it is sent.
+request(method: string, path: string, o?: CallOptions) // A call of a service with any method.
+  about?: string
+  body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string }
+  changes?: boolean
+  files?: 'base64'
+  headers?: Record<string, string>
+  input?: unknown
+  lists?: 'repeat' | 'brackets' | 'comma'
+  output?: unknown
+  query?: readonly string[]
+  sends?: boolean
+role(name: string) // The rule that lets a caller with a role in.
+round(n: number, digits?: number) // Rounds a number, to so many digits after the point where they are given.
+route(name: string, o: RouteOptions) // An address of the builder's own that is answered with the builder's own response.
+  access: Rule // Who may call the route.
+  limits?: { time?: string; size?: string } // The limits of the route.
+  method: string | readonly string[] // The methods the route answers.
+  origins?: readonly string[] | AnyoneRule // The other sites that may send the route a request that changes something.
+  path: string // The address of the route.
+  run: (o: RouteHanded) => Response | Promise<Response> // The function that answers a request.
+  system?: string // Gives the `db` of the route full access, with the reason.
+  was?: string | readonly string[] // The old name of the route, where it was renamed.
+s3(o: S3Options) // Names a store of files that speaks the S3 protocol.
+  bucket: string // The bucket the bytes lie in.
+  key: Secret // The secret that holds the key the requests are signed with.
+  region?: string // The region the requests are signed for.
+  url: Stated // Where the store answers, with its scheme.
+sameSecret(a: string | undefined, b: string | undefined) // Says whether two texts are the same, in constant time.
+screen(name: string, o: ScreenOptions) // One page of the app at an address.
+  about?: string // One sentence on what the screen is for.
+  access: unknown // Who may be shown the screen.
+  cache?: string | number | { for: string | number; public?: boolean } // How long the drawn screen is kept for the next visitor.
+  data?: unknown | ((handed: DataHanded) => unknown) // What the screen reads before it is drawn.
+  for?: 'notFound' | 'error' | 'grant' | 'ask' // Makes the screen one of the four special screens.
+  framedBy?: readonly string[] | 'anyone' // Which other sites may show the screen in a frame.
+  head?: readonly HeadLine[] // More lines of the head of the page.
+  layout?: Named // The component that the screen is shown in.
+  loading?: Named // The component that is shown while a move to another screen takes time.
+  offer?: readonly ('api' | 'mcp' | 'cli')[] // The outside doors the screen is offered to.
+  path?: string // The address of the screen.
+  seo?: { description?: Worked<ViewHanded, string | Message>; image?: | Worked<ViewHanded, string | ReturnType<typeof asset>> | { view: Named; size?: readonly [number, number] }; index?: boolean; data?: Worked<ViewHanded, unknown>; addresses?: Read } // What search engines and shared links are told of the screen.
+  server?: false // Whether the screen is drawn on the server for the first HTML.
+  state?: unknown // The state that the screen keeps.
+  title?: Worked<ViewHanded, string | Message> // The title of the page.
+  view: (handed: ViewHanded) => Drawable // The React component that draws the screen.
+  was?: string | readonly string[] // The old name of the screen, where it was renamed.
+secret(name: string) // Names a secret, where a definition needs one.
+seed(data: Seed['seed']) // The starter data of a project, which the file `seed.ts` exports as its default.
+service(name: string, o: ServiceOptions) // An outside service that the app calls.
+  auth?: Auth // How each request of the service says who it is from.
+  calls?: unknown // The calls of the service, each written with `get`, `post`, `put`.
+  connection?: string | Marker // Another service whose connection this one uses.
+  from?: string // A published description of the API of the service.
+  headers?: Record<string, Kept> // Lines that every request of the service carries.
+  limits?: { perSecond?: number; perMinute?: number; atOnce?: number; size?: string; error?: string; redirects?: number; time?: string } // The limits of the calls of the service.
+  mcp?: | boolean | { command: readonly string[]; env?: Record<string, Kept>; per?: string; keep?: string; model?: string | Marker } // Marks the service as an outside MCP server.
+  onceOnlyHeader?: string // The header in which the service takes a once-only key.
+  tries?: number | { max?: number; wait?: string; on?: readonly number[]; first?: string } // How often a call of the service is tried in all.
+  url?: string // Where the service is.
+  use?: readonly string[] | Record<string, string> // The operations of the published description of `from` that become calls of the service.
+  was?: string | readonly string[] // The old name of the service, where it was renamed.
+  webhook?: { scheme: Scheme; secret: Secret } // How the service signs what it sends.
+setting(name: string) // Names a setting of the project, where an option of the project needs a value that may differ between test data and live data.
+slice(text: string, from: number, to?: number) // A part of a text or of a list, from one place to another.
+start(flow: Marker, input?: unknown) // Starts a run of a flow or of an agent and does not wait for it.
+startsWith(text: string, part: string) // Says whether a text starts with a part.
+sum(list: readonly unknown[], field?: string) // Adds up the numbers of a list, or of one field of each entry.
+  by: string
+  column?: string
+  of: string | { readonly definition: string }
+  where?: object
+table(name: string, o: TableOptions) // A table of the app.
+  access?: { read?: TableRule; add?: TableRule; change?: TableRule; remove?: TableRule } // Who may read, add, change and remove rows.
+  columns?: unknown // The columns of the table, each a type by its name.
+  indexes?: readonly (readonly Extract<keyof unknown, string>[])[] // Indexes over several columns.
+  keepHistory?: boolean // Whether old versions of rows are kept.
+  kept?: 'memory' // Where the rows of the table live.
+  lasts?: string | { for: string; by?: Extract<keyof unknown, string> | 'createdAt' | 'updatedAt'; where?: WrittenFilter } // How long a row of the table lasts.
+  owner?: Extract<keyof unknown, string> // The column that says whose row it is.
+  plain?: true // Holds the table to the plain form.
+  removed?: readonly string[] // The columns that were removed on purpose.
+  search?: | readonly Extract<keyof unknown, string>[] | { columns: readonly Extract<keyof unknown, string>[]; by?: 'words' | 'pieces' } // The columns that text search covers.
+  shows?: 'counts' | 'scores' // Makes the table one of the engine's own tables.
+  tenant?: Extract<keyof unknown, string> // The link column that says whose data file a row lives in.
+  unique?: readonly (readonly Extract<keyof unknown, string>[])[] // Sets of columns whose values together may stand once.
+  was?: string | readonly string[] // The old name of the table, where it was renamed.
+testApp(options?: TestOptions) // A fresh copy of the app for a test, in the program of the test itself.
+  folder?: string // The folder of the project the test app is built from.
+  real?: string[] // The services that are let through to where they are.
+  room?: TestRoom // Where the code of the app runs in the test.
+  secrets?: Record<string, string> // The values of secrets, by their names.
+text(o?: TextOptions) // Text.
+  lines?: 'one' | 'many' // Whether a form shows the text as one line or as a box of many lines.
+  max?: number // The most characters the text may have.
+  min?: number // The fewest characters the text may have.
+  pattern?: string // A regular expression that the text must fit.
+  secret?: boolean // Marks a text that a form does not show while it is typed.
+token(o?: { digits?: number }) // A new secret text from the runtime's own random source.
+  digits?: number // How many digits the token is, in place of the 43 characters that are safe in an address.
+trim(text: string) // Takes the white space off the two ends of a text.
+upper(text: string) // Writes a text in capitals, by no language's own rules.
+vector(o: VectorOptions) // A list of numbers that stands for a meaning, for search by meaning.
+  copy?: 'small' // How the copy of a vector column that the store keeps in memory holds its numbers.
+  model?: { definition: string } // The model that makes the vectors.
+  old?: 'drop' | 'keep' // What becomes of the vectors a column holds when its model changes.
+  size: number // How many numbers a vector holds.
+verified: Check // Checks the signature of the request of a route over the exact bytes that arrived, also after the route read the body.
+where(rows: readonly unknown[], filter: object) // One word with two uses, which both mean the rows that fit a filter.
+
+## Hooks
+
+useAgent(agent: Stub, o?: { thread?: string; speak?: boolean }): AgentShown // Starts an agent from the code of a view.
+useCall(fn: Stub, o?: CallOptions): Called<InputOf<Stub>, AnswerOf<Stub>> // Calls a change, an action, a flow that is offered.
+useField(name: string): FieldOf // Makes a control of your own a field of the `Form` it stands in.
+useGoTo(): (target: ScreenDefinition | string, values?: Record<string, unknown>, o?: { replace?: boolean }) => void // Moves to another screen from the code of a view.
+useMicrophone(): Microphone // Records the voice of the person from the code of a view.
+useNonce(): string // Answers the nonce of the page.
+useParams(): Record<string, string> // Answers the values of the address of the screen that is shown.
+useQuery(query: Stub, input?: InputOf<Stub>, o?: { hold?: boolean }): Queried<AnswerOf<Stub>> // Asks a query or an action from the middle of the code of a view.
+useRun(run: string | undefined): RunShown // Follows a run from the code of a view.
+useSettings(): { [Name in keyof Settings]?: Settings[Name] } // Answers the settings of the project that are marked `public`.
+useTranslations(): Translations // Reads the messages of the language files in the code of a view.
+useUser(): User | undefined // Answers who looks at the page, in the code of a view.
+
+## Tags
+
+<Form> // A form over a function of the app.
+  call: Stub
+  with?: Partial<InputOf<Stub>>
+  values?: Partial<InputOf<Stub>>
+  then?: Then<AnswerOf<Stub>>
+  reset?: boolean | readonly string[]
+  sendOnEnter?: boolean
+  optimistic?: false
+  id?: string
+  children?: Drawable
+<Image> // A picture through the image door.
+  src: ReturnType<typeof asset> | string
+  alt: string
+  width?: number
+  height?: number
+  sizes?: string
+  priority?: boolean
+<Link> // A link that knows the screens of the app.
+  to?: Target
+  with?: Record<string, unknown>
+  set?: Record<string, unknown>
+  prefetch?: 'hover' | 'view' | 'none'
+  keep?: boolean
+  above?: true | { side: 'top' | 'bottom' | 'start' | 'end' }
+  exact?: boolean
+  language?: string
+  ref?: Ref<HTMLAnchorElement>
+
+## Commands
+
+A command that reaches the engine of an app also takes `[--data <folder>]`, and every command `[--json]`.
+`tent --version`, or `tent -v`, prints the version of the tentjs that runs.
+
+tent access // Prints one table of who can do what.
+tent access key --do <add|list|remove> [--name <text>] [--scopes <text>] [--roles <text>] [--user <text>] [--per-minute <number>] [--for <text>] [--asks <text>] [--right <text>] [--kinds <text>] [--at-once <number>] [--workers <number>]
+tent access role --do <add|remove> --user <text> --role <text>
+tent add --package <text> [--allow-scripts] // Installs an npm package into the project.
+tent api read --from <text> --out <text> // `tent api read` turns a published description of an API into the JSON that the build reads from a service's `from`.
+tent build [--out <text>] [--dev] // Writes a bundle of the project.
+tent check // Builds the description of the project.
+tent cli // Runs the app's own command line.
+tent data backup [--whole] // Reads and keeps the data of an app through its running engine.
+tent data clean
+tent data files [--behind] [--unswept] [--due] [--stray] [--sweep] [--retry <text>]
+tent data import --file <text> --with <text> [--map <text> ...] [--language <text>] [--as <text>] [--dry]
+tent data restore [--file <text>] [--of <text>] [--at <text>] [--dry]
+tent data rows --table <text> [--of <text>]
+tent data user --do <export|remove> --id <text> [--out <text>] [--yes]
+tent dev [--port <number>] [--fresh] [--mail] [--keep] [--inspect <text>] // Builds the project, runs it in the mode `development`.
+tent docs [--topic <text>] [--reference] // Prints a page of the docs.
+tent export --out <text> [--base <text>] [--origin <text>] [--names <plain|any>] // Writes a site, or the public part of an app.
+tent filled [--look] [--failed <text>] [--of <text>] [--all] // Lists every column that work fills.
+tent history back --point <text> // Lists the points of the history of the project, records a named one.
+tent history branch [--name <text>] [--switch]
+tent history compare --a <text> --b <text>
+tent history export --out <text> [--kinds <text> ...]
+tent history [--newest <number>]
+tent history merge [--from <text>] [--yes] [--settle] [--unchecked]
+tent history save --name <text>
+tent impact [--point <text>] // Says what a change will reach before it lands.
+tent login --address <text> [--name <text>] [--insecure <text>] // Keeps the key of a server for publishing, pushing and pulling.
+tent logs [--errors] [--mail] [--trace <text>] [--slow] [--vitals] [--since <text>] [--at <text>] [--insecure <text>] // Prints the newest calls, errors and slow queries of the log of the app, each in the order they were written, or one trace as its tree, or the slowest traces beside the slow queries, or the speed visitors saw of each screen.
+tent machines // Lists the writer and each reader of a running app, the writer first.
+tent map // Prints the whole app as a short outline.
+tent mcp approve --service <text> [--as <text>] // A server of MCP on this computer.
+tent mcp
+tent models // Lists every model of the project with what it can do.
+tent models test [--name <text>]
+tent new --name <text> // Makes a bare project folder with `AGENTS.md`.
+tent publish [--to <text>] [--point <text>] [--back] [--preview] [--stop-runs] [--install] [--move] [--yes] [--accept-impact] [--gradual] [--status] [--widen] [--insecure <text>] // Publishes the files of a point of the history to a server.
+tent pull [--to <text>] [--unchecked] [--insecure <text>] // Fetches the points of a server's branch of the name that `now` follows and merges them into the files of the project.
+tent push [--to <text>] [--unchecked] [--insecure <text>] // Sends the points of the history that a server lacks and moves the server's branch of the name that `now` follows, so that several people who work on one project share it (`topic.history.engine`).
+tent python clean [--older <text>] // Locks the packages of the project's `python` definitions.
+tent python install [--target <text>] [--live]
+tent python lock
+tent run --name <text> [--to <text>] [--with <text>] [--as <text>] [--times <text>] [--dry] [--yes] // Calls a function of the app and prints what it answered.
+tent runs approve --id <text> --step <text> [--at <text>] [--insecure <text>] // Lists the runs of the flows of the app, and with a second word shows.
+tent runs move --id <text> [--at <text>] [--insecure <text>]
+tent runs pause --flow <text>
+tent runs refuse --id <text> --step <text> [--at <text>] [--insecure <text>]
+tent runs replay [--id <text>] --from <text> [--flow <text>] [--key <text>] [--state <text>] [--since <text>] [--before <text>] [--yes] [--at <text>] [--insecure <text>]
+tent runs resume --flow <text>
+tent runs [--of <text>] [--all] [--at <text>] [--insecure <text>]
+tent runs show --id <text> [--at <text>] [--insecure <text>]
+tent runs stop [--id <text>] [--flow <text>] [--key <text>] [--state <text>] [--since <text>] [--before <text>] [--yes] [--at <text>] [--insecure <text>]
+tent runs undo --id <text> [--started] [--dry]
+tent secrets list [--live] [--to <text>] [--insecure <text>] // Sets, removes and lists the secrets of an app.
+tent secrets remove --name <text> [--live] [--to <text>] [--insecure <text>]
+tent secrets --do <key> [--replace]
+tent secrets set --name <text> [--live] [--to <text>] [--insecure <text>]
+tent service [--line] [--install] [--machine] [--user <text>] [--yes] // Prints, for the system it runs on.
+tent settings list [--live] [--to <text>] [--insecure <text>] // Sets, removes and lists the values of the settings that the project states.
+tent settings remove --name <text> [--live] [--to <text>] [--insecure <text>]
+tent settings set --name <text> --value <text> [--live] [--to <text>] [--insecure <text>]
+tent shot --address <text> [--size <text>] [--full] [--dark] [--out <text>] [--wait <number>] // Makes a picture of a screen of the app that runs, as nobody sees it.
+tent start [--bundle <text>] [--port <number>] [--host <text>] [--mode <development|test|live>] [--seed] [--proxy <text> ...] [--web <text> ...] [--reads <text>] [--far] [--own <text>] [--key-from <text>] [--works <text>] [--kinds <text>] [--at-once <number>] [--load <text>] [--fetched <text>] [--insecure] [--parts <text>] [--sleep-after <text>] [--versions-from <text>] [--every <text>] [--stop-runs] [--move] [--mail] [--count-by <limits|app|caller>] [--count-every <text>] [--level-every <text>] [--caller-counts-kept <text>] [--counts-kept <text>] [--domain <text>] [--secure <text> ...] [--secret-key-from <text>] [--as-root] [--update <fixes|all|none>] // Runs a bundle as a server, until the program is told to end.
+tent take-over [--yes] // Makes a reader the writer of what it holds.
+tent test [--only <text>] [--ai] [--budget <text> ...] [--compare] [--from-runs <text>] [--below <number>] [--plan <text>] [--watch] [--shard <text>] [--join <text> ...] [--looks <update>] [--room <program|apart>] // Runs the tests of the app.
+tent uninstall // Removes Tent.js from this computer.
+tent update [--version <text>] [--back] [--build-tools] [--keep] [--time <text>] // Updates Tent.js on this computer to the newest release.
+tent upgrade // Rewrites a project for the breaking changes of a newer major version.
+tent workers [--release <text>] // Lists the workers that are joined to a running writer.
+
+## Codes
+
+T0001 not-found // No definition of that name can be reached.
+T0002 bad-input // The input does not fit the declared types.
+T0003 too-large // A call or an upload over its size limit.
+T0004 wrong-origin // A request that changes something came from a page of another site.
+T0005 rate-limited // A rate limit was reached.
+T0006 not-signed-in // The rule needs a signed-in caller and there is none.
+T0007 version-gone // The version that a page names can no longer be loaded.
+T0008 took-too-long // A time limit of the engine was passed.
+T0009 internal // Something went wrong that is not the caller's to see.
+T0010 no-engine // A definition or a handle was used with nothing in the runtime slot.
+T0011 bad-description // A description does not have the shape of the format.
+T0012 read-only // A write was tried where only a read is allowed.
+T0013 not-allowed-here // Something was used where it cannot work.
+T0014 no-users-table // A user is needed, and the app has no `users` table.
+T0015 cannot-read // `files.text` was asked for the words of a file of a kind that no reader knows, or of a file that its reader cannot read.
+T0016 part-not-fetched // A part that is fetched at its first use could not be fetched.
+T0017 wrong-name // A request named a host that is none of the app's own names.
+T0018 cannot-open // The data cannot be opened.
+T0019 secret-missing // A secret that is needed has no value.
+T0020 no-mailer // `mail.send` was used where a message would be sent.
+T0021 mail-not-sent // The mail server did not take a message.
+T0022 address-refused // The guarded fetch refused an address.
+T0023 fetch-cut-off // An answer to the guarded fetch passed its size or its time.
+T0026 update-refused // An update, or a list that an install reads from where releases are served, was refused because it does not fit what was signed.
+T0027 cannot-work-out // A value word was handed a value of another kind than it works with.
+T0028 nested-too-deep // Functions that call each other from code stand deeper in each other than `limits.functionDepth` lets them.
+T0029 not-current // A machine cannot answer for now.
+T0030 not-the-writer // A machine that is not the writer was asked for what only the writer does.
+T0031 record-behind // A write was refused because the place of record of the app has been behind for too long.
+T0032 writer-runs // `app.takeOver`, or `tent take-over`.
+T0033 copy-clash // A change of the writer does not fit the data of the reader it is applied to.
+T0034 engines-differ // A reader and its writer run stores of two shape numbers.
+T0035 not-allowed-out // With `hold` on, an action of the app, or a package it imports.
+T0036 not-sent // A call that a page held while it had no connection was not sent within `limits.callHold`.
+T0037 room-ended // The room where the app's code runs ended the call.
+T0038 usage // A command was typed with a word, a flag or a value it does not take.
+T1001 not-top-level // A word that makes a definition is called where no top-level `export const` takes what it makes.
+T1002 name-mismatch // The exported name and the stated name of a definition differ.
+T1003 unknown-option // A definition, a type or a part of one states an option that it does not have.
+T1004 name-used-twice // Two definitions of one project have the same name.
+T1005 both-imports // A file imports two of `tentjs`, `tentjs/ui` and `tentjs/cli`.
+T1006 helper-exported // A backend file exports something that is no definition.
+T1007 two-forms // A definition is written in two forms at once.
+T1008 missing-option // A required option is left out.
+T1009 reserved-name // A name is used that the framework keeps for itself.
+T1010 not-plain // Something stands where only what can be read as text may stand.
+T1011 bad-word // A length of time, a size or a schedule does not read.
+T1012 project-count // A project has no `project` definition, or more than one.
+T1013 bad-name // The name of a definition or of a column is not camelCase letters and digits.
+T1014 bad-value // An option holds a value that is not allowed where it stands.
+T2001 rows-do-not-fit // A table change that the rows which are there do not fit.
+T2002 column-gone // A column that the data holds is gone from its table.
+T2003 table-gone // A table that the data holds is gone from the project.
+T2004 rename-not-stated // One name is gone and another is new, with no `was`.
+T2005 link-to-missing-table // A `link` names a table that the project does not hold.
+T2006 search-not-text // A table names a column in `search` that is no text.
+T2007 owner-not-users // The `owner` of a table names a column that is no `link('users')`.
+T2008 vector-size // A `near` is handed a value whose size is not the size of the column.
+T2009 near-without-limit // A plan with `near` states neither `limit` nor `first()`.
+T2010 vector-misused // A vector column is used as an ordinary column.
+T2013 tenant-misused // A table that keeps a data file for each tenant is used in a way that does not keep to one file.
+T2014 tenant-rule-open // A note.
+T2015 filled-misused // A column that work fills, as its `by` states it, cannot be filled so.
+T2016 shown-table-misused // A table that shows the counts or the scores of the engine is used in a way that is not for it.
+T2025 count-across-files // A kept `count`, `sum`, `min` or `max` counts the rows of a table that lie in another data file than the row that holds it.
+T2026 findable-sealed-misused // A sort or a range filter is asked of a column that is sealed and findable.
+T2027 link-to-memory // A table links to a table kept in memory, whose rows go by themselves.
+T2028 no-archive // What the app wrote cannot be read back.
+T2029 index-advised // A query passed its slow bar, and its plan reads a whole table.
+T2030 heavy-on-memory // A query that states `heavy` reads a table kept in memory.
+T2011 sealed-misused // A `sealed` column is used where the store would have to read it.
+T2012 vector-of-another-model // A value is searched with or written to a vector column that states a model, and the value states another model.
+T2101 not-unique // A write breaks a `unique` rule.
+T2102 link-in-use // A row cannot be removed because other rows link to it.
+T2103 row-not-found // A `change` or a `remove` names a row that does not exist.
+T2104 link-missing // A `link` value names a row that does not exist.
+T2105 vector-not-valid // A vector that a change writes, or that a `near` is given in code.
+T2106 near-not-valid // A plan that code made with `near` is none that can be answered.
+T2107 value-not-valid // A value that code writes does not fit its column.
+T2108 too-many-rows // One read of a live query answered more rows than `liveRows`.
+T5107 no-worker // No worker of its kind carried the work out.
+T5108 old-try // What a worker sent names a task that is not out to it.
+T5109 worker-refused // The writer does not take a worker that asked to join.
+T5110 out-of-memory // The system of a worker ended the work for want of memory.
+T5111 event-two-shapes // A warning.
+T2109 not-one-file // Code read or wrote a table that keeps a data file for each tenant in a way that does not keep to the file of one tenant.
+T3001 no-access-rule // A flow or an agent names a door in `offer` and states no `access`.
+T3002 anyone-on-write // Bare `'anyone'` stands on a write.
+T3003 anyone-on-personal // Bare `'anyone'` stands on a read of personal data.
+T3004 system-without-why // A function uses full access and states no `system`.
+T3005 unreachable-table // No rule lets anyone read a table.
+T3006 private-in-output // A query written with `rows` names a `private` column in `pick`.
+T3007 secret-in-browser // A secret value of this computer was found in the code that a browser loads.
+T3008 incoming-not-verified // A call coming in states neither `verify` nor `open`.
+T3009 system-skips-owner // A function that callers other than the system may call states `system` and changes a row named by its input, of a table whose rules would not let that caller change it, and holds the caller against no row before the write.
+T3011 secrets-not-searched // A build found a secrets file that this computer cannot open.
+T3101 access-denied // A rule does not let this caller do it.
+T4001 clock-in-query // The code of a query reads a clock.
+T4002 random-in-query // A query draws a random value.
+T4003 network-in-query // A query reaches the network.
+T4004 live-without-limit // A query that is live is written with `rows`.
+T4005 async-run // The `run` of a query or of a change is written `async`.
+T4101 query-not-pure // A query read a clock, drew a random number or reached the network while it ran.
+T5001 work-outside-step // The code of a flow did work outside a step.
+T5002 step-not-awaited // A flow uses a step tool and does not wait for its promise.
+T5003 step-name-gone // A warning.
+T5007 worker-misused // What a definition or the project states of heavy work does not hold together.
+T5008 heavy-work-note // A note.
+T5101 too-many-steps // A run came to more steps than its flow allows.
+T5102 result-too-large // The result of a step, or the answer of a flow.
+T5103 wait-too-long // A wait of a flow is longer than its flow allows.
+T5104 run-too-long // A run worked for longer than its flow allows.
+T5105 called-too-deep // A flow was called from a run that stands as deep among the runs that called each other as the project allows.
+T5106 run-stopped // A run that was waited for was stopped before it ended.
+T6007 path-used-twice // Two definitions have one address.
+T6008 direct-call // A screen file calls a function of the backend directly.
+T6009 field-not-usable // A field of a `Form` that its function cannot take, a name in `with`.
+T6011 state-not-declared // `set` of a `Link` or of `then`, or the `consent` of a script of the head, names a state that is not declared or is of the wrong type, or `set` gives a literal that does not fit.
+T6012 bad-screen-part // A part of a screen that does not fit.
+T6013 address-not-allowed // A literal address of a `Link`, of `useGoTo`, of `then` of a `Form`.
+T6015 cannot-cache // `cache` on a screen that is not open to anyone.
+T6016 needs-an-engine // A screen that calls a function was exported.
+T6018 lives-in-the-browser // A component that is drawn on the server alone holds what lives in the browser, or its file gives something else beside such components.
+T6021 no-currency // `'currency'` is handed to `format` in place.
+T6022 name-twice-in-view // A use of a component that keeps state in the address.
+T6023 bad-data-entry // An entry of `data` reads what cannot be read.
+T6025 size-not-known // An `Image` whose size is neither written nor known from its file.
+T6031 consent-in-address // The state that the `consent` of a script of the head names is kept in the address.
+T6030 public-reads-visitor // A screen whose `cache` states `public` reads `user`.
+T6032 seo-image-not-public // A screen whose `seo.image` names a component is not open to anyone.
+T7001 ability-missing // A model was asked for something it cannot do.
+T7002 three-marks // An agent that can do all three of what makes it open to being led.
+T7003 limits-incomplete // A limit that is stated can never bound.
+T7004 too-many-tools // More functions are offered to MCP than `toolsListed` lets a chat app be listed.
+T7005 fallback-lacks-ability // A model in `fallback` lacks an ability of the model it stands in for.
+T7006 model-not-known // A model that the list of models does not know.
+T7007 memory-table // The table in `memory.in` of an agent does not have what a memory table must have.
+T7008 tools-too-deep // The flows and agents that are tools of an agent stand deeper than `callDepth`, or lead back to the agent.
+T7009 tool-not-described // A flow, a function or a screen that others are told of does not say what it is.
+T7010 no-access // An agent that a screen file imports states no `access`.
+T7011 vector-in-fill // The shape handed to `fill` holds a `vector`.
+T7012 tool-not-as-starter // A flow that is a tool of an agent does not state `as: 'starter'`.
+T7013 api-file-broken // The published description of an API that a service names in `from` could not be read for the calls that `use` names.
+T7014 plain-fetch // Backend code calls `fetch` itself.
+T7015 secret-revealed // Code calls `reveal()`, and so opens a secret.
+T7016 held-way-out // `hold` of `project` names a host.
+T7017 trusted-reaches-ask // A tool that `trust` names reaches, where the check can see it.
+T7018 asks-in-the-middle // A tool would ask the person in the middle of its work.
+T7019 tool-answer-open // The `output` of a tool is or holds `json`.
+T7020 python-lock-stale // The lock of the packages of the project's `python` definitions does not fit the project.
+T7021 not-for-a-chat // A screen that is offered to MCP reads or calls a function that is not offered to MCP.
+T7101 thread-too-long // A conversation has grown too long for the model of its agent.
+T7102 limit-reached // A limit was reached.
+T7103 thread-busy // A start was refused because as many runs work already as may work at once, or because its conversation has a run that works or waits on it.
+T7104 provider-failed // Every model that could answer a call failed.
+T7105 no-voice // A start of an agent was handed `audio` or `speak`.
+T7106 model-refused // The model refused for what was asked.
+T7107 answer-cut-off // The answer of the model was cut off.
+T7108 answer-did-not-fit // The answer of a model did not fit its type.
+T7109 request-too-large // A request holds more than its model takes.
+T7110 request-not-accepted // The provider did not accept the request.
+T7111 not-agreed // A call was refused because no person agreed to it.
+T7112 tool-changed // A tool of an outside MCP server is not as it was approved.
+T7113 provider-missing // A definition names something of the builder's own that nobody made in `engine.ts`, so the app does not open.
+T7114 driver-missing // An agent names in `driver` a driver that nobody made in `engine.ts`.
+T7115 service-failed // A call of a service failed.
+T7116 service-answer-did-not-fit // What a service answered does not fit the `output` that its call states.
+T7117 not-connected // A service whose auth is `oauth` was called for a user who has no connection to it, or for no user at all.
+T7118 not-verified // A call coming in, or the request of a route handed to `verified`.
+T7119 python-failed // A call of a `python` failed in its Python code or in its Python program.
+T7120 nobody-to-ask // A function that states `danger: 'ask'` was called by a program.
+T7121 sequence-refused // A sequence that a model handed was refused before anything of it ran.
+T7130 no-typed-answer // An agent that states `output` ended its run with no call of `answer`.
+T7131 guard-refused // A guard of an agent did not pass a text.
+T8000 type-error // The type checker found something in the project.
+T8001 date-by-javascript // In a plain definition, `==`, `!=`, `===`.
+T8002 list-by-javascript // In a plain definition, `==`, `!=`.
+T9001 missing-message // A language file lacks a key that another language has.
+T9002 missing-asset // A definition names an asset by a written name.
+T9003 unknown-message // A message whose key no language of the project has.
+T9101 point-not-usable // A point was to be merged from, merged into, pushed or published.
+T9102 clash-left // `tent history merge --settle` was typed while the clashes of the merge are still there.
+T9103 publish-refused // A server refused a push or a publish, and said why.
+T9104 no-right // A request to an address of publishing came with no key.
+T9105 policy-refused // What a project tool was asked for, or what a workspace holds.
+T9106 edit-not-found // The text that the project tool `edit` was to replace does not stand in the file exactly once.
+T9107 history-missing // A point or the bytes of a file that the history was asked for is not there, or what was sent does not fit the id it was sent under.
+T9108 not-gradual // A publish asked to go gradually, and its version cannot.

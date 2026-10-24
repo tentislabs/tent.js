@@ -1,0 +1,95 @@
+.contact {
+  display: grid;
+  gap: var(--s-4);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.contact form {
+  display: grid;
+  gap: var(--s-5);
+  margin-top: var(--s-3);
+  padding: var(--s-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.contact label {
+  display: grid;
+  gap: var(--s-2);
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+
+.contact input,
+.contact textarea {
+  font: inherit;
+  font-size: var(--text-base);
+  padding: var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.contact input:hover,
+.contact textarea:hover {
+  border-color: color-mix(in srgb, var(--line) 50%, var(--ink));
+}
+
+.contact input:focus-visible,
+.contact textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.contact [aria-invalid="true"] {
+  border-color: #c2412d;
+}
+
+.contact [role="alert"],
+.contact .error {
+  color: #c2412d;
+  font-size: var(--text-sm);
+}
+
+.contact .button {
+  justify-self: start;
+}
+
+.thanks {
+  display: grid;
+  justify-items: start;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  padding: var(--s-6);
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+}
+
+.thanks h2::before {
+  content: "✓";
+  display: inline-grid;
+  place-content: center;
+  width: 36px;
+  height: 36px;
+  margin-inline-end: var(--s-3);
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: var(--text-lg);
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact input,
+  .contact textarea {
+    transition: none;
+  }
+}

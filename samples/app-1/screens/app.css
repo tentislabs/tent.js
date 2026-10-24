@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: false;
+  logs: false;
+}
+
+/* One palette for light and one for dark, named by what each color is for, so a screen never names a color of its own. */
+@plugin "daisyui/theme" {
+  name: "shop";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(97.4% 0.003 265);
+  --color-base-300: oklch(91.8% 0.006 265);
+  --color-base-content: oklch(21% 0.01 265);
+  --color-primary: oklch(51% 0.23 277);
+  --color-primary-content: oklch(100% 0 0);
+  --color-secondary: oklch(45% 0.03 265);
+  --color-secondary-content: oklch(100% 0 0);
+  --color-accent: oklch(51% 0.23 277);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(27% 0.012 265);
+  --color-neutral-content: oklch(97% 0 0);
+  --color-info: oklch(68% 0.15 237);
+  --color-info-content: oklch(29% 0.07 243);
+  --color-success: oklch(70% 0.15 162);
+  --color-success-content: oklch(30% 0.06 165);
+  --color-warning: oklch(77% 0.16 70);
+  --color-warning-content: oklch(36% 0.09 50);
+  --color-error: oklch(55% 0.2 25);
+  --color-error-content: oklch(100% 0 0);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "shop-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: oklch(20.5% 0.008 265);
+  --color-base-200: oklch(16.5% 0.007 265);
+  --color-base-300: oklch(29% 0.01 265);
+  --color-base-content: oklch(94% 0.005 265);
+  --color-primary: oklch(70% 0.15 277);
+  --color-primary-content: oklch(17% 0.03 277);
+  --color-secondary: oklch(75% 0.02 265);
+  --color-secondary-content: oklch(17% 0.01 265);
+  --color-accent: oklch(70% 0.15 277);
+  --color-accent-content: oklch(17% 0.03 277);
+  --color-neutral: oklch(32% 0.01 265);
+  --color-neutral-content: oklch(94% 0.005 265);
+  --color-info: oklch(74% 0.13 237);
+  --color-info-content: oklch(20% 0.04 243);
+  --color-success: oklch(76% 0.14 162);
+  --color-success-content: oklch(20% 0.04 165);
+  --color-warning: oklch(82% 0.14 75);
+  --color-warning-content: oklch(24% 0.05 50);
+  --color-error: oklch(70% 0.17 22);
+  --color-error-content: oklch(18% 0.04 22);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.75rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* A field that has the focus is ringed in the color of the app, and one that failed keeps its own. */
+@layer utilities {
+  :is(.input, .select, .textarea, .file-input):is(:focus, :focus-within):not(
+    [aria-invalid="true"],
+    :has([aria-invalid="true"])
+  ) {
+    --input-color: var(--color-primary);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv11";
+  }
+
+  /* The page puts the focus on the heading after a move: a place to start reading, not a control. */
+  h1:focus {
+    outline: none;
+  }
+
+  /* What a form tells after its last field, where a failure names no field. */
+  form [role="alert"] {
+    border-radius: var(--radius-field);
+    background: color-mix(in oklab, var(--color-error) 10%, transparent);
+    color: var(--color-error);
+    padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
+    font-size: var(--text-sm);
+  }
+}

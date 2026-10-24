@@ -1,0 +1,17 @@
+{
+  "name": "libraries",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@emotion/cache": "11.14.0",
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mantine/core": "9.7.2",
+    "@mantine/hooks": "9.7.2",
+    "@mui/material": "9.5.0",
+    "@tailwindcss/vite": "4.3.3",
+    "daisyui": "5.7.50",
+    "recharts": "3.10.1",
+    "tailwindcss": "4.3.3"
+  }
+}

@@ -1,0 +1,67 @@
+<!-- The per-user installer of Tent.js @VERSION@ for @SYSTEM@, made with the WiX tools by install/release.mjs.
+     It needs no administrator. It lays the release into TENT_HOME, or %LOCALAPPDATA%\Tent, puts bin\ on the path
+     of the current user, and writes its own entry among the programs that the person can remove, which runs
+     `tent uninstall`. The feature Tools is the box that picks the build tools: ADDLOCAL=Tools picks it. -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Tent.js" Manufacturer="Tent.js" Version="@VERSION@" UpgradeCode="5d7c2f2e-6a3b-4f0e-9a2c-7b1e8d4f3a60" Scope="perUser" Compressed="yes">
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+    <MajorUpgrade DowngradeErrorMessage="A newer Tent.js is installed." AllowSameVersionUpgrades="yes" />
+    <!-- The folder of the install is what TENT_HOME names, where it is set. -->
+    <SetProperty Id="TENTHOME" Value="[%TENT_HOME]\" Before="CostInitialize" Sequence="both" Condition="%TENT_HOME AND NOT TENTHOME" />
+    <!-- The installer's own entry is hidden: the entry the person removes Tent.js by runs tent uninstall. -->
+    <Property Id="ARPSYSTEMCOMPONENT" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="TENTHOME" Name="Tent">
+        <Directory Id="BIN" Name="bin" />
+        <Directory Id="VERSIONS" Name="versions">
+          <Directory Id="VERSION" Name="@VERSION@">
+            <Directory Id="RUNTIME" Name="runtime" />
+            <Directory Id="PLAYER" Name="player" />
+            <Directory Id="TOOLS" Name="tools" />
+          </Directory>
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="Player" Title="Tent.js" Level="1" AllowAbsent="no">
+      <ComponentGroupRef Id="Launchers" />
+      <ComponentGroupRef Id="Layers" />
+    </Feature>
+    <Feature Id="Tools" Title="The build tools" Level="1000">
+      <Files Directory="TOOLS" Include="@TOOLS@\**" />
+    </Feature>
+
+    <ComponentGroup Id="Layers">
+      <Files Directory="RUNTIME" Include="@RUNTIME@\**" />
+      <Files Directory="PLAYER" Include="@PLAYER@\**" />
+    </ComponentGroup>
+
+    <ComponentGroup Id="Launchers" Directory="BIN">
+      <Component Id="Launcher">
+        <File Source="@BIN@\tent.exe" />
+        <File Source="@BIN@\tentw.exe" />
+        <!-- bin\ goes onto the path of the current user, and the system tells open programs that it changed. -->
+        <Environment Id="Path" Name="Path" Value="[BIN]" Part="last" Action="set" System="no" Permanent="no" />
+        <RegistryValue Root="HKCU" Key="Software\Tent.js" Name="current" Value="@VERSION@" Type="string" KeyPath="yes" />
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\Tent.js">
+          <RegistryValue Name="DisplayName" Value="Tent.js" Type="string" />
+          <RegistryValue Name="DisplayVersion" Value="@VERSION@" Type="string" />
+          <RegistryValue Name="Publisher" Value="Tent.js" Type="string" />
+          <RegistryValue Name="UninstallString" Value="&quot;[BIN]tent.exe&quot; uninstall" Type="string" />
+          <RegistryValue Name="NoModify" Value="1" Type="integer" />
+        </RegistryKey>
+      </Component>
+      <Component Id="Current" Directory="TENTHOME">
+        <File Source="@CURRENT@" Name="current" />
+      </Component>
+      <!-- The keys of a fresh install are those its release brings. Over an install the keys it holds stay, and no
+           removal of a version takes them: a newer list comes by tent update, which takes it only where a key the
+           install holds signed it. -->
+      <Component Id="Trust" Directory="TENTHOME" NeverOverwrite="yes" Permanent="yes">
+        <File Source="@TRUST@" Name="trust.json" />
+      </Component>
+    </ComponentGroup>
+
+  </Package>
+</Wix>

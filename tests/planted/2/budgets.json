@@ -1,0 +1,18 @@
+{
+  "big.file": {
+    "bar": 100,
+    "unit": "bytes"
+  },
+  "quick.work": {
+    "bar": 5000,
+    "unit": "ms"
+  },
+  "slow.work": {
+    "bar": 5,
+    "unit": "ms"
+  },
+  "small.file": {
+    "bar": 100,
+    "unit": "bytes"
+  }
+}

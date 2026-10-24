@@ -1,0 +1,17 @@
+{
+  "browser/orders.<fp>.css": "74dc0a3a30c5",
+  "browser/screens.labels.<fp>.js": "a206d49d4c69",
+  "browser/screens.order.<fp>.js": "a9ce755228d4",
+  "browser/screens.orders.PriceTag.<fp>.js": "72283d4e3c56",
+  "browser/screens.orders.ordersScreen.<fp>.js": "9b546baca0f5",
+  "browser/shared.orders.<fp>.js": "33774984a35e",
+  "browser/shared2.orders.<fp>.js": "209550c44715",
+  "description.json": "e7d9e3de328e",
+  "description.schema.json": "0e9be312ab00",
+  "server/screens.labels.<fp>.js": "55c1c7a2ad92",
+  "server/screens.order.<fp>.js": "6f6f50dea5c2",
+  "server/screens.orders.PriceTag.<fp>.js": "72283d4e3c56",
+  "server/screens.orders.ordersScreen.<fp>.js": "9b546baca0f5",
+  "server/shared.orders.<fp>.js": "ead1a6cd798e",
+  "server/shared2.orders.<fp>.js": "209550c44715"
+}

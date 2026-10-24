@@ -1,0 +1,5 @@
+.tent/
+node_modules/
+tent.d.ts
+walk/pictures/
+results/

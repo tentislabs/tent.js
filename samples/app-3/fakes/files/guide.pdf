@@ -1,0 +1,96 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Length 253 >>
+stream
+BT
+/F1 22 Tf
+72 740 Td
+(Help desk guide) Tj
+/F1 12 Tf
+0 -30 Td
+() Tj
+0 -18 Td
+(Page 1: Your account) Tj
+0 -18 Td
+(Open Account from the menu at the top of every page.) Tj
+0 -18 Td
+(There you change your name, your email and your company.) Tj
+0 -18 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 278 >>
+stream
+BT
+/F1 22 Tf
+72 740 Td
+(Resetting a password) Tj
+/F1 12 Tf
+0 -30 Td
+() Tj
+0 -18 Td
+(To reset a password, open Account and press Reset password.) Tj
+0 -18 Td
+(We mail you a link that works for one hour.) Tj
+0 -18 Td
+(Open the link and type the new password twice.) Tj
+0 -18 Td
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 262 >>
+stream
+BT
+/F1 22 Tf
+72 740 Td
+(Orders and refunds) Tj
+/F1 12 Tf
+0 -30 Td
+() Tj
+0 -18 Td
+(An order can be refunded within 30 days.) Tj
+0 -18 Td
+(Staff refund an order once the customer agrees.) Tj
+0 -18 Td
+(The money is back on the card within five days.) Tj
+0 -18 Td
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000127 00000 n 
+0000000197 00000 n 
+0000000501 00000 n 
+0000000627 00000 n 
+0000000956 00000 n 
+0000001082 00000 n 
+0000001395 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1521
+%%EOF

@@ -1,0 +1,10 @@
+{
+  "name": "planted",
+  "private": true,
+  "devDependencies": {
+    "loose": "^6.0.0",
+    "no-row": "2.0.0",
+    "other-row": "5.0.0",
+    "with-row": "1.0.0"
+  }
+}

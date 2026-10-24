@@ -1,0 +1,65 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes:
+    light --default,
+    dark --prefersdark;
+  logs: false;
+}
+
+/* One accent, a violet, on cool greys; the radii and the depth of every card, field and press. */
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(97.6% 0.003 286);
+  --color-base-300: oklch(91.8% 0.006 286);
+  --color-base-content: oklch(23% 0.012 286);
+  --color-primary: oklch(52% 0.21 279);
+  --color-primary-content: oklch(98.5% 0.01 279);
+  --color-neutral: oklch(27% 0.012 286);
+  --color-neutral-content: oklch(97% 0.003 286);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.875rem;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "dark";
+  prefersdark: true;
+  --color-base-100: oklch(21.5% 0.008 286);
+  --color-base-200: oklch(17.5% 0.007 286);
+  --color-base-300: oklch(29% 0.01 286);
+  --color-base-content: oklch(94.5% 0.004 286);
+  --color-primary: oklch(70% 0.15 279);
+  --color-primary-content: oklch(18% 0.03 279);
+  --color-neutral: oklch(32% 0.012 286);
+  --color-neutral-content: oklch(95% 0.004 286);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.5rem;
+  --radius-box: 0.875rem;
+  --depth: 0;
+  --noise: 0;
+}
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01";
+  }
+  /* The page puts the focus on the heading after a move: a place to start reading, not a control. */
+  h1:focus,
+  h2:focus {
+    outline: none;
+  }
+  /* What a form tells after its last field, where a failure names no field. */
+  form [role="alert"] {
+    color: var(--color-error);
+    font-size: var(--text-sm);
+  }
+}

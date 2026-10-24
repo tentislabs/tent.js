@@ -1,0 +1,8 @@
+@font-face {
+  font-family: "Own";
+  src: url(../assets/own.woff2) format("woff2");
+}
+
+h1 {
+  font-family: "Own", "Tiny", sans-serif;
+}

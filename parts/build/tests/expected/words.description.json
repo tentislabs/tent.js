@@ -1,0 +1,721 @@
+{
+  "app": {
+    "name": "shop",
+    "needsEngine": "1.0"
+  },
+  "flows": {
+    "bigOrder": {
+      "body": [
+        {
+          "const": "customer",
+          "value": {
+            "await": {
+              "args": [
+                "find customer",
+                {
+                  "arrow": [],
+                  "do": [
+                    {
+                      "return": {
+                        "plan": {
+                          "db": "customers"
+                        },
+                        "then": [
+                          {
+                            "get": [
+                              {
+                                "name": [
+                                  "event",
+                                  "row",
+                                  "customer"
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ],
+              "fn": "step"
+            }
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "name": [
+                "customer"
+              ]
+            }
+          },
+          "then": [
+            {
+              "return": {
+                "nothing": true
+              }
+            }
+          ]
+        },
+        {
+          "do": {
+            "await": {
+              "args": [
+                "tell sales",
+                {
+                  "arrow": [],
+                  "do": [
+                    {
+                      "return": {
+                        "args": [
+                          {
+                            "object": [
+                              [
+                                "channel",
+                                "#sales"
+                              ],
+                              [
+                                "text",
+                                {
+                                  "text": [
+                                    "Big order from ",
+                                    {
+                                      "name": [
+                                        "customer",
+                                        "name"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            ]
+                          }
+                        ],
+                        "call": {
+                          "call": "postMessage",
+                          "service": "slack"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "fn": "step"
+            }
+          }
+        },
+        {
+          "do": {
+            "await": {
+              "args": [
+                "3 days"
+              ],
+              "fn": "step.wait"
+            }
+          }
+        },
+        {
+          "do": {
+            "await": {
+              "args": [
+                "follow up",
+                {
+                  "arrow": [],
+                  "do": [
+                    {
+                      "return": {
+                        "args": [
+                          {
+                            "object": [
+                              [
+                                "to",
+                                {
+                                  "name": [
+                                    "customer",
+                                    "email"
+                                  ]
+                                }
+                              ],
+                              [
+                                "subject",
+                                "How was your order?"
+                              ],
+                              [
+                                "text",
+                                "Tell us how it went."
+                              ]
+                            ]
+                          }
+                        ],
+                        "call": {
+                          "builtin": "mail.send"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "fn": "step"
+            }
+          }
+        }
+      ],
+      "form": "plain",
+      "on": [
+        {
+          "table": "orders",
+          "when": "added",
+          "where": {
+            "above": 1000,
+            "col": "total"
+          }
+        }
+      ],
+      "stepNames": [
+        {
+          "name": "find customer"
+        },
+        {
+          "name": "tell sales"
+        },
+        {
+          "name": "wait"
+        },
+        {
+          "name": "follow up"
+        }
+      ],
+      "together": {
+        "max": 5
+      }
+    }
+  },
+  "format": "tent.description/1",
+  "functions": {
+    "markPaid": {
+      "access": {
+        "rule": "signedIn"
+      },
+      "form": "plain",
+      "input": {
+        "order": {
+          "kind": "link",
+          "table": "orders"
+        }
+      },
+      "kind": "change",
+      "touches": [
+        "orders"
+      ],
+      "writes": [
+        {
+          "change": "orders",
+          "id": {
+            "input": "order"
+          },
+          "values": {
+            "status": "paid"
+          }
+        }
+      ]
+    },
+    "openOrders": {
+      "about": "Open orders, newest first",
+      "access": {
+        "rule": "signedIn"
+      },
+      "form": "plain",
+      "input": {
+        "limit": {
+          "default": 50,
+          "kind": "number",
+          "max": 200
+        }
+      },
+      "kind": "query",
+      "plan": {
+        "from": "orders",
+        "limit": {
+          "input": "limit"
+        },
+        "sort": [
+          {
+            "by": "placedAt",
+            "down": true
+          }
+        ],
+        "where": {
+          "col": "status",
+          "is": "open"
+        },
+        "with": [
+          "customer"
+        ]
+      },
+      "reads": [
+        "orders",
+        "customers"
+      ]
+    },
+    "refund": {
+      "access": {
+        "role": "staff",
+        "rule": "role"
+      },
+      "body": [
+        {
+          "const": "order",
+          "value": {
+            "await": {
+              "plan": {
+                "db": "orders",
+                "system": true
+              },
+              "then": [
+                {
+                  "get": [
+                    {
+                      "name": [
+                        "input",
+                        "order"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "name": [
+                "order",
+                "?chargeId"
+              ]
+            }
+          },
+          "then": [
+            {
+              "do": {
+                "args": [
+                  "not-charged",
+                  "This order was never charged."
+                ],
+                "fn": "fail"
+              }
+            }
+          ]
+        },
+        {
+          "do": {
+            "await": {
+              "args": [
+                {
+                  "object": [
+                    [
+                      "charge",
+                      {
+                        "name": [
+                          "order",
+                          "chargeId"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "call": {
+                "call": "createRefund",
+                "service": "stripe"
+              }
+            }
+          }
+        },
+        {
+          "do": {
+            "await": {
+              "args": [
+                {
+                  "object": [
+                    [
+                      "order",
+                      {
+                        "name": [
+                          "order",
+                          "id"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "call": {
+                "function": "reopen"
+              }
+            }
+          }
+        },
+        {
+          "return": {
+            "object": [
+              [
+                "ok",
+                true
+              ]
+            ]
+          }
+        }
+      ],
+      "danger": "ask",
+      "form": "plain",
+      "input": {
+        "order": {
+          "kind": "link",
+          "table": "orders"
+        },
+        "reason": {
+          "kind": "text",
+          "max": 500
+        }
+      },
+      "kind": "action",
+      "output": {
+        "kind": "object",
+        "shape": {
+          "ok": {
+            "kind": "boolean"
+          }
+        }
+      },
+      "reads": [
+        "orders"
+      ],
+      "system": "staff refund any order, not only their own",
+      "touches": [
+        "orders"
+      ]
+    },
+    "reopen": {
+      "access": {
+        "role": "staff",
+        "rule": "role"
+      },
+      "form": "plain",
+      "input": {
+        "order": {
+          "kind": "link",
+          "table": "orders"
+        }
+      },
+      "kind": "change",
+      "system": "staff reopen any order, not only their own",
+      "touches": [
+        "orders"
+      ],
+      "writes": [
+        {
+          "change": "orders",
+          "id": {
+            "input": "order"
+          },
+          "values": {
+            "chargeId": null,
+            "status": "open"
+          }
+        }
+      ]
+    }
+  },
+  "models": {
+    "writer": {
+      "key": {
+        "secret": "ANTHROPIC_KEY"
+      },
+      "limits": {
+        "perDay": {
+          "tokensOut": 1000000
+        }
+      },
+      "name": "claude-sonnet-5-5",
+      "provider": "anthropic"
+    }
+  },
+  "places": {
+    "bigOrder": {
+      "file": "flows/bigOrder.ts",
+      "from": 119,
+      "to": 761
+    },
+    "customers": {
+      "file": "tables/shop.ts",
+      "from": 1173,
+      "to": 1400
+    },
+    "markPaid": {
+      "file": "functions/markPaid.ts",
+      "from": 86,
+      "to": 396
+    },
+    "openOrders": {
+      "file": "functions/openOrders.ts",
+      "from": 87,
+      "to": 710
+    },
+    "orders": {
+      "file": "tables/shop.ts",
+      "from": 84,
+      "to": 961
+    },
+    "refund": {
+      "file": "functions/refund.ts",
+      "from": 459,
+      "to": 1128
+    },
+    "reopen": {
+      "file": "functions/refund.ts",
+      "from": 173,
+      "to": 456
+    },
+    "shop": {
+      "file": "tent.ts",
+      "from": 48,
+      "to": 900
+    },
+    "slack": {
+      "file": "services/slack.ts",
+      "from": 54,
+      "to": 269
+    },
+    "stripe": {
+      "file": "services/stripe.ts",
+      "from": 62,
+      "to": 502
+    },
+    "users": {
+      "file": "tables/shop.ts",
+      "from": 964,
+      "to": 1170
+    },
+    "writer": {
+      "file": "models/writer.ts",
+      "from": 40,
+      "to": 764
+    }
+  },
+  "project": {
+    "currency": "USD",
+    "languages": [
+      "en",
+      "tr"
+    ],
+    "mail": {
+      "from": "shop@example.com",
+      "send": {
+        "secret": "SMTP_URL"
+      }
+    },
+    "removed": [
+      "oldOrders"
+    ],
+    "settings": {
+      "supportEmail": {
+        "public": true,
+        "type": {
+          "default": "help@example.com",
+          "kind": "text"
+        }
+      }
+    },
+    "title": "Shop"
+  },
+  "services": {
+    "slack": {
+      "auth": {
+        "bearer": {
+          "secret": "SLACK_TOKEN"
+        }
+      },
+      "calls": {
+        "postMessage": {
+          "input": {
+            "channel": {
+              "kind": "text"
+            },
+            "text": {
+              "kind": "text"
+            }
+          },
+          "method": "POST",
+          "path": "/chat.postMessage"
+        }
+      },
+      "url": "https://slack.com/api"
+    },
+    "stripe": {
+      "auth": {
+        "bearer": {
+          "secret": "STRIPE_KEY"
+        }
+      },
+      "calls": {
+        "createRefund": {
+          "input": {
+            "charge": {
+              "kind": "text"
+            }
+          },
+          "method": "POST",
+          "output": {
+            "kind": "object",
+            "shape": {
+              "id": {
+                "kind": "text"
+              }
+            }
+          },
+          "path": "/v1/refunds"
+        }
+      },
+      "limits": {
+        "perSecond": 20,
+        "time": 20000
+      },
+      "onceOnlyHeader": "Idempotency-Key",
+      "url": "https://api.stripe.com"
+    }
+  },
+  "sources": {
+    "flows/bigOrder.ts": "dc2cf15103b45acd8945cd652b678cb489d4a207b1f8eee4693d5f805ee52eee",
+    "functions/markPaid.ts": "3f4c68bb111fadac2b71c0ba8a3fc32a60e830aa4bf879f9355d91b11a0ce033",
+    "functions/openOrders.ts": "e2cb95aea7ad921406a25f58546d008a00e8123bbed90ac3f6c18c2596994ea9",
+    "functions/refund.ts": "b5fad44a0c0047edb2a175a060940a237f22e4dbd53a7fb3e41cf5f10c674906",
+    "models/writer.ts": "45d917465ce17f8949e58c5323f4e80922d2d3c1d8d79a9f0b003fff78b13986",
+    "services/slack.ts": "58e4c4824ebd5af83ef5b6fe70257f251e634321d1ceac559d1084f1a69bdc4b",
+    "services/stripe.ts": "b988e0cef2109bfc7f14647ec1a8c2535f61213ea975bcc9b7cf7e4927e35848",
+    "tables/shop.ts": "cf951258873cd1ea3af4117efed03e5c0c6c0d6e8c597eea3b732c9d4e4721bf",
+    "tent.ts": "50075c7a41133662cd825177735acdd77af4c938bab97b0bab2170efafcf4ba8"
+  },
+  "tables": {
+    "customers": {
+      "access": {
+        "add": {
+          "role": "staff",
+          "rule": "role"
+        },
+        "change": {
+          "role": "staff",
+          "rule": "role"
+        },
+        "read": {
+          "rule": "signedIn"
+        }
+      },
+      "columns": {
+        "email": {
+          "kind": "text"
+        },
+        "name": {
+          "kind": "text"
+        },
+        "tier": {
+          "default": "standard",
+          "kind": "choice",
+          "values": [
+            "standard",
+            "gold"
+          ]
+        }
+      }
+    },
+    "orders": {
+      "access": {
+        "add": {
+          "rule": "signedIn"
+        },
+        "change": {
+          "rule": "owner"
+        },
+        "read": {
+          "rule": "owner"
+        }
+      },
+      "columns": {
+        "chargeId": {
+          "kind": "text",
+          "optional": true
+        },
+        "customer": {
+          "kind": "link",
+          "table": "customers"
+        },
+        "note": {
+          "kind": "text",
+          "lines": "many",
+          "optional": true
+        },
+        "placedAt": {
+          "default": {
+            "now": true
+          },
+          "kind": "date"
+        },
+        "placedBy": {
+          "kind": "link",
+          "table": "users"
+        },
+        "receipt": {
+          "kind": "file",
+          "kinds": [
+            "application/pdf"
+          ],
+          "optional": true
+        },
+        "status": {
+          "default": "open",
+          "kind": "choice",
+          "values": [
+            "open",
+            "paid",
+            "shipped"
+          ]
+        },
+        "total": {
+          "kind": "number",
+          "min": 0
+        }
+      },
+      "indexes": [
+        [
+          "status",
+          "placedAt"
+        ]
+      ],
+      "owner": "placedBy",
+      "search": [
+        "note"
+      ]
+    },
+    "users": {
+      "access": {
+        "read": {
+          "rule": "owner"
+        }
+      },
+      "columns": {
+        "email": {
+          "kind": "text",
+          "personal": true,
+          "unique": true
+        },
+        "roles": {
+          "kind": "list",
+          "of": {
+            "kind": "text"
+          }
+        }
+      }
+    }
+  }
+}

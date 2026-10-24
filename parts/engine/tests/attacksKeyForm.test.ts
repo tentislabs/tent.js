@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { fits, newApiKey } from '../keys/form.ts'
+
+const randomOf = (key: string): string => key.slice(-43)
+
+/** The time of many checks of one random part against one kept fingerprint, in milliseconds. */
+function timed(random: string, kept: string | undefined): number {
+  const began = performance.now()
+  for (let n = 0; n < 50_000; n++) fits(random, kept)
+  return performance.now() - began
+}
+
+test('[05-11.15] the check of a key takes the same time for an id of no key, for a wrong key, and for one that differs in its first or its last character', () => {
+  const { key, fingerprint } = newApiKey('01m4vne21rehxa0vhe4ztfk1qx')
+  const random = randomOf(key)
+  const wrong = randomOf(newApiKey('01m4vne21rehxa0vhe4ztfk1qx').key)
+  const first = `${random[0] === 'A' ? 'B' : 'A'}${random.slice(1)}`
+  timed(wrong, fingerprint)
+  const times = [timed(wrong, fingerprint), timed(wrong, undefined), timed(first, fingerprint)]
+  assert.ok(Math.max(...times) / Math.min(...times) < 1.5, `the times differ: ${times.map(Math.round).join(', ')} ms`)
+  assert.equal(fits(random, fingerprint), true)
+  for (const other of [wrong, first]) assert.equal(fits(other, fingerprint), false)
+  assert.equal(fits(random, undefined), false)
+})

@@ -1,0 +1,41 @@
+#!/bin/sh
+# After the package of Tent.js laid the release in the person's own folder, this moves it into TENT_HOME or
+# ~/.tent as an update would: keys and data stay. It needs no administrator.
+set -eu
+staged="$HOME/.tent-package/@VERSION@"
+home="${TENT_HOME:-$HOME/.tent}"
+# The folder of the install is the person's own, as the launcher holds it: never a link, never one that another
+# user owns, and none that others can write into, by the bits of its group whatever the group.
+open_to_others() { [ -n "$(find "$1" -maxdepth 0 \( -perm -0002 -o -perm -0020 \) 2>/dev/null)" ]; }
+if [ -L "$home" ] || { [ -e "$home" ] && [ ! -O "$home" ]; }; then echo "$home is not your own folder." >&2; exit 1; fi
+mkdir -p "$home"
+chmod 700 "$home"
+for inside in bin versions; do
+  if [ -L "$home/$inside" ] || { [ -e "$home/$inside" ] && { [ ! -O "$home/$inside" ] || open_to_others "$home/$inside"; }; }; then
+    echo "$home/$inside is not your own folder, or others can write into it: remove it, and install again." >&2; exit 1
+  fi
+done
+mkdir -p "$home/versions" "$home/bin"
+was=""
+if [ -f "$home/current" ]; then was=$(cat "$home/current"); fi
+rm -rf "$home/versions/@VERSION@"
+mv "$staged" "$home/versions/@VERSION@"
+rmdir "$HOME/.tent-package" 2>/dev/null || true
+cp "$home/versions/@VERSION@/player/launcher/tent" "$home/bin/tent.$$"
+chmod 755 "$home/bin/tent.$$"
+mv "$home/bin/tent.$$" "$home/bin/tent"
+# The keys of a fresh install are those its release brings. Over an install the keys it holds stay: a newer list
+# comes by tent update, which takes it only where a key the install holds signed it.
+if [ ! -e "$home/trust.json" ]; then cp "$home/versions/@VERSION@/player/trust.json" "$home/trust.json"; fi
+if [ -n "$was" ] && [ "$was" != "@VERSION@" ]; then echo "$was" > "$home/previous"; fi
+echo "@VERSION@" > "$home/current.$$"
+mv "$home/current.$$" "$home/current"
+line="export PATH=\"$home/bin:\$PATH\""
+for file in .zprofile .bash_profile; do
+  if ! grep -q '^# tent\.js$' "$HOME/$file" 2>/dev/null; then printf '# tent.js\n%s\n' "$line" >> "$HOME/$file"; fi
+done
+if [ -d "$HOME/.config/fish" ]; then
+  mkdir -p "$HOME/.config/fish/conf.d"
+  printf '# tent.js\nset -gx PATH "%s/bin" $PATH\n' "$home" > "$HOME/.config/fish/conf.d/tent.fish"
+fi
+exit 0

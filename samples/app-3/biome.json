@@ -1,0 +1,19 @@
+{
+  "root": false,
+  "extends": "//",
+  "files": {
+    "includes": [
+      "**",
+      "!tent.d.ts",
+      "!walk/pictures",
+      "!!.tent",
+      "!!results",
+      "!!node_modules"
+    ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  }
+}

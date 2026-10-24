@@ -1,0 +1,386 @@
+.home {
+  display: grid;
+  gap: var(--s-9);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+}
+
+/* The hero */
+
+.hero {
+  display: grid;
+  gap: var(--s-6);
+  align-items: center;
+  padding-top: var(--s-4);
+}
+
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr 1.08fr;
+    gap: var(--s-7);
+    padding-top: var(--s-6);
+    min-height: min(640px, calc(100dvh - var(--bar-height) - var(--s-8)));
+  }
+}
+
+.hero-words {
+  display: grid;
+  gap: var(--s-5);
+  justify-items: start;
+}
+
+.eyebrow {
+  padding: var(--s-1) var(--s-3);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+
+.headline {
+  font-size: var(--text-4xl);
+  font-weight: 780;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.headline .word {
+  white-space: nowrap;
+}
+
+.headline .letter {
+  display: inline-block;
+}
+
+.hero .lead {
+  font-size: var(--text-xl);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+
+.hero-frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  isolation: isolate;
+}
+
+/* A soft ground under the devices, so the picture sits on the page in both looks. */
+.hero-frame::before {
+  content: "";
+  position: absolute;
+  inset: 8% 4% 4% 10%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 26%, transparent), transparent);
+  filter: blur(8px);
+}
+
+.hero-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* The cards */
+
+.section-head {
+  display: grid;
+  gap: var(--s-2);
+  margin-bottom: var(--s-6);
+}
+
+.cards ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--s-5);
+}
+
+@media (min-width: 720px) {
+  .cards ul {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition:
+    transform 200ms,
+    box-shadow 200ms;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+}
+
+.card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top left;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+}
+
+.card-words {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--s-2);
+  padding: var(--s-5);
+}
+
+.card h3 {
+  font-size: var(--text-xl);
+}
+
+.card p {
+  color: var(--muted);
+}
+
+.card a {
+  margin-top: var(--s-2);
+  font-weight: 650;
+}
+
+/* The pinned section: the panel holds its place while the three steps pass beside it, or under it on a phone. */
+
+.pinned {
+  display: grid;
+  gap: var(--s-5);
+}
+
+@media (min-width: 900px) {
+  .pinned {
+    grid-template-columns: 5fr 6fr;
+    gap: var(--s-7);
+  }
+}
+
+.pinned-hold {
+  position: sticky;
+  top: calc(var(--bar-height) + var(--s-6));
+  z-index: 1;
+  align-self: start;
+}
+
+.pinned-panel {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-6);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(circle at 100% 0%, rgb(255 255 255 / 16%), transparent 55%),
+    linear-gradient(150deg, var(--band), var(--band-deep));
+  color: #fff;
+  box-shadow: var(--shadow);
+}
+
+.pinned-eyebrow {
+  color: var(--band-ink);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pinned-panel p:last-child {
+  color: var(--band-ink);
+  font-size: var(--text-lg);
+}
+
+.pinned-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 8vh;
+  display: grid;
+  gap: 16vh;
+  counter-reset: step;
+}
+
+.pinned-steps li {
+  counter-increment: step;
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-6);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  font-size: var(--text-xl);
+  font-weight: 550;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.pinned-steps li::before {
+  content: "0" counter(step);
+  justify-self: start;
+  padding: var(--s-1) var(--s-3);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-sm);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 899px) {
+  /* On a phone the steps pass under the panel: the page's own ground above it and a fade below keep the edge clean. */
+  .pinned-hold {
+    top: var(--bar-total);
+    margin-inline: calc(-1 * var(--s-4));
+    padding: var(--s-3) var(--s-4) 0;
+    background: var(--paper);
+  }
+
+  .pinned-hold::after {
+    content: "";
+    position: absolute;
+    inset: 100% 0 auto;
+    height: var(--s-6);
+    background: linear-gradient(var(--paper), transparent);
+    pointer-events: none;
+  }
+
+  .pinned-panel {
+    padding: var(--s-5);
+  }
+
+  .pinned-panel h2 {
+    font-size: var(--text-xl);
+  }
+
+  .pinned-steps {
+    padding: var(--s-7) 0 14vh;
+    gap: 34vh;
+  }
+
+  .pinned-steps li {
+    padding: var(--s-5);
+    font-size: var(--text-lg);
+  }
+}
+
+/* The number */
+
+.count {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-3);
+  padding: var(--s-8) var(--s-5);
+  border-radius: var(--r-lg);
+  background:
+    radial-gradient(circle at 50% 0%, rgb(255 255 255 / 12%), transparent 60%),
+    linear-gradient(160deg, var(--band), var(--band-deep));
+  color: #fff;
+  text-align: center;
+}
+
+.count-eyebrow {
+  color: var(--band-ink);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.count-number {
+  font-size: clamp(3.5rem, 15vw, 7rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.count-label {
+  color: var(--band-ink);
+  font-size: var(--text-lg);
+}
+
+/* The closing call */
+
+.closing {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-4);
+  padding: var(--s-4) 0 var(--s-6);
+  text-align: center;
+}
+
+.closing h2 {
+  font-size: var(--text-3xl);
+  text-wrap: balance;
+}
+
+.closing .lead {
+  max-width: 46ch;
+}
+
+.closing .actions {
+  justify-content: center;
+  margin-top: var(--s-2);
+}
+
+/* Motion is asked for, never assumed: a visitor who wants less sees every part in its place, as it ends. */
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(-3%, 3%, 0) scale(1.06);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .headline .letter {
+    animation: arrive 560ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .hero-picture {
+    animation: drift 9s cubic-bezier(0.25, 0.6, 0.3, 1) both;
+  }
+
+  .card[data-rise] {
+    transition:
+      opacity 700ms ease,
+      transform 800ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  .card[data-rise="waiting"] {
+    opacity: 0;
+    transform: translateY(56px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

@@ -1,0 +1,8 @@
+export { changesOf } from './compare/between.ts'
+export type { Change } from './compare/change.ts'
+export { lineOf } from './compare/change.ts'
+export type { History } from './history.ts'
+export { idOf } from './idOf.ts'
+export { openHistory } from './openHistory.ts'
+export type { Clash, Kind, Point, Writer } from './point.ts'
+export type { TurnRow } from './turns.ts'

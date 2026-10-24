@@ -1,0 +1,38 @@
+{
+  "check.rules": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "check.types": {
+    "bar": 2000,
+    "unit": "ms"
+  },
+  "dev.page": {
+    "bar": 2000,
+    "unit": "ms"
+  },
+  "download.player": {
+    "bar": 57671680,
+    "unit": "bytes"
+  },
+  "download.tools": {
+    "bar": 99614720,
+    "unit": "bytes"
+  },
+  "memory.idle": {
+    "bar": 125829120,
+    "unit": "bytes"
+  },
+  "page.weight": {
+    "bar": 92160,
+    "unit": "bytes"
+  },
+  "save.seen": {
+    "bar": 300,
+    "unit": "ms"
+  },
+  "start.first": {
+    "bar": 300,
+    "unit": "ms"
+  }
+}

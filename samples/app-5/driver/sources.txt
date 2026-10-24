@@ -1,0 +1,8 @@
+What the driver read of Claude Code, kept for a reviewer to check against.
+
+- https://code.claude.com/docs/en/headless, read on 2026-10-21: `claude -p`, `--output-format stream-json`,
+  `--include-partial-messages`, `--resume`, `--session-id`, `--permission-prompts`, `permission_denials` of the result,
+  `--json-schema` and `structured_output`, and that `total_cost_usd` of a resumed session is its whole total.
+- `claude --help` of Claude Code 2.1.305, read on 2026-10-21: the flags the driver passes.
+- One run of Claude Code 2.1.305 on 2026-10-21: `AskUserQuestion` is not offered in `claude -p` with no permission
+  host, a refused tool ends the turn with it in `permission_denials`, and `usage` of a resumed turn is of that turn alone.

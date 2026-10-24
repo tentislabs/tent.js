@@ -1,0 +1,32 @@
+import { basename } from 'node:path'
+import { action, each, query, secrets } from 'tentjs'
+
+const double = (n: number) => n * 2
+
+export const byLet = query('byLet', { access: 'signedIn', run: ({ input }) => { let n = input.n; return n } })
+export const bySecond = query('bySecond', { access: 'signedIn', run: ({ input }) => { input.n = 2; return input.n } })
+export const byWhile = query('byWhile', { access: 'signedIn', run: ({ input }) => { while (input.n > 0) { return 1 } return 0 } })
+export const bySwitch = query('bySwitch', { access: 'signedIn', run: ({ input }) => { switch (input.n) { default: return 1 } } })
+export const byTry = query('byTry', { access: 'signedIn', run: ({ input }) => { try { return input.n } catch { return 0 } } })
+export const byThrow = query('byThrow', { access: 'signedIn', run: () => { throw new Error('no') } })
+export const byNew = query('byNew', { access: 'signedIn', run: ({ input }) => new Date(input.n) })
+export const byFunction = query('byFunction', { access: 'signedIn', run: ({ input }) => each(input.list, function (l) { return l }) })
+export const bySpread = query('bySpread', { access: 'signedIn', run: ({ input }) => ({ ...input }) })
+export const byKey = query('byKey', { access: 'signedIn', run: ({ input }) => ({ [input.key]: 1 }) })
+export const byMap = query('byMap', { access: 'signedIn', run: ({ input }) => input.list.map((l) => l) })
+export const byTrim = query('byTrim', { access: 'signedIn', run: ({ input }) => input.text.trim() })
+export const byFixed = query('byFixed', { access: 'signedIn', run: ({ input }) => input.n.toFixed(2) })
+export const byRegex = query('byRegex', { access: 'signedIn', run: ({ input }) => input.text == /a/ })
+export const byTypeof = query('byTypeof', { access: 'signedIn', run: ({ input }) => typeof input.n })
+export const byOwn = query('byOwn', { access: 'signedIn', run: ({ input }) => double(input.n) })
+export const byPackage = query('byPackage', { access: 'signedIn', run: ({ input }) => basename(input.text) })
+export const byMath = query('byMath', { access: 'signedIn', run: ({ input }) => Math.round(input.n) })
+export const byDate = query('byDate', { access: 'signedIn', run: () => Date.now() })
+export const byJson = query('byJson', { access: 'signedIn', run: ({ input }) => JSON.stringify(input) })
+export const byFetch = action('byFetch', { access: 'signedIn', run: async ({ input }) => fetch(input.url) })
+export const bySql = query('bySql', { access: 'signedIn', run: ({ db }) => db.sql`select 1` })
+export const byN = query('byN', { access: 'signedIn', run: ({ db, input }) => db.n(input.name) })
+export const bySecret = action('bySecret', { access: 'signedIn', run: async () => secrets.STRIPE_KEY.reveal() })
+export const byEnded = query('byEnded', { access: 'signedIn', run: ({ db, input }) => { const found = db.orders.where({ status: 1 }).all(); return found.with(0, input.row) } })
+export const byMember = query('byMember', { access: 'signedIn', run: ({ input }) => { const found = input.list; return found.with(0, 1) } })
+export const byProcess = query('byProcess', { access: 'signedIn', run: () => process.env.HOME })

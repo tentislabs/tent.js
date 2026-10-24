@@ -1,0 +1,14 @@
+node_modules/
+.runtime/
+.tent/
+*.db
+*.db-wal
+*.db-shm
+trials/**/tmp/
+trials/**/dist/
+.claude/worktrees/
+/results/
+*.new.png
+tests/planted/**/results/
+install/out/
+install/settings.json

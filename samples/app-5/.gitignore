@@ -1,0 +1,4 @@
+.tent/
+node_modules/
+tent.d.ts
+results/

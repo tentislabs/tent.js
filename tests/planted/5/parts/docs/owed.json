@@ -1,0 +1,14 @@
+[
+  "adapter.Mailer",
+  "option.table.rows",
+  "word.table",
+  "option.table.tenant",
+  "word.action",
+  "word.change",
+  "word.flow",
+  "word.model",
+  "word.project",
+  "word.query",
+  "word.service",
+  "word.start"
+]

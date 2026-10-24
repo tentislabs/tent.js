@@ -1,0 +1,7 @@
+import { number, query, table, text } from 'tentjs'
+
+export const notes = table('notes', { columns: { body: text(), n: number() }, access: { read: 'signedIn' } })
+
+const hidden = query('hidden', { access: 'signedIn', rows: notes.limit(5) })
+
+export const openNotes = query('openNotes', { access: 'signedIn', rows: notes.where({ body: 'open' }).limit(20) })

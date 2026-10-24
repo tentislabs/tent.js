@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "declaration": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "types": ["node"],
+    "jsx": "react-jsx"
+  },
+  "include": ["parts", "rig", "scripts", "tests"],
+  "exclude": [
+    "tests/planted",
+    "parts/*/tests/*/*"
+  ]
+}

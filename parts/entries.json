@@ -1,0 +1,20 @@
+{
+  "tentjs": "parts/core/index.ts",
+  "tentjs/ai": "parts/ai/index.ts",
+  "tentjs/build": "parts/build/index.ts",
+  "tentjs/check": "parts/check/index.ts",
+  "tentjs/cli": "parts/connect/cliEntry.ts",
+  "tentjs/connect": "parts/connect/index.ts",
+  "tentjs/core": "parts/core/internal.ts",
+  "tentjs/data": "parts/data/index.ts",
+  "tentjs/docs": "parts/docs/index.ts",
+  "tentjs/engine": "parts/engine/index.ts",
+  "tentjs/engine/inside": "parts/engine/rooms/inside/inside.ts",
+  "tentjs/flows": "parts/flows/index.ts",
+  "tentjs/history": "parts/history/index.ts",
+  "tentjs/publish": "parts/publish/index.ts",
+  "tentjs/test": "parts/test/index.ts",
+  "tentjs/ui": "parts/screens/index.ts",
+  "tentjs/ui/draw": "parts/screens/draw.ts",
+  "tentjs/workspaces": "parts/workspaces/index.ts"
+}

@@ -1,0 +1,3545 @@
+{
+  "project.title: plain": {
+    "title": "Shop"
+  },
+  "project.languages: a list": {
+    "languages": [
+      "en",
+      "tr"
+    ]
+  },
+  "project.zone: plain": {},
+  "project.currency: plain": {
+    "currency": "USD"
+  },
+  "project.icon: a record of a word": {
+    "icon": {
+      "asset": "icon.svg"
+    }
+  },
+  "project.head: a list": {
+    "head": [
+      {
+        "meta": {
+          "name": "theme-color",
+          "content": "#0f1115"
+        }
+      }
+    ]
+  },
+  "project.state: a record": {
+    "state": {
+      "mode": {
+        "type": {
+          "kind": "choice",
+          "values": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "default": "auto"
+        },
+        "in": "device"
+      }
+    }
+  },
+  "project.state: a record (2)": {
+    "state": {
+      "open": {
+        "kind": "boolean"
+      }
+    }
+  },
+  "project.signInPath: plain": {},
+  "project.identify: code": {
+    "identify": {
+      "export": "project_identify"
+    }
+  },
+  "project.onRequest: code": {
+    "onRequest": {
+      "export": "project_onRequest"
+    }
+  },
+  "project.uploads: a word": {},
+  "project.uploads: a record of a role": {
+    "uploads": {
+      "rule": "role",
+      "role": "staff"
+    }
+  },
+  "project.images: a record": {
+    "images": {
+      "widths": [
+        320,
+        640
+      ]
+    }
+  },
+  "project.cookies: a record": {
+    "cookies": {
+      "sameSite": "none",
+      "domain": "example.com"
+    }
+  },
+  "project.cli: a record": {
+    "cli": {
+      "name": "shop",
+      "names": {
+        "file": "fetch-file"
+      },
+      "login": "key"
+    }
+  },
+  "project.mcp: a record": {
+    "mcp": {
+      "only": "queries",
+      "clients": [
+        {
+          "rule": "anyone",
+          "why": "programs register themselves"
+        }
+      ],
+      "inline": 1048576
+    }
+  },
+  "project.python: a record": {
+    "python": {
+      "version": "3.13",
+      "index": [
+        "https://packages.example.com"
+      ],
+      "build": [
+        "numpy"
+      ]
+    }
+  },
+  "project.describeTo: a record of a role": {
+    "describeTo": {
+      "rule": "role",
+      "role": "staff"
+    }
+  },
+  "project.describeTo: a word": {},
+  "project.api: a record": {
+    "api": {
+      "names": {
+        "countNotes": "notes"
+      },
+      "headers": [
+        "X-Shop"
+      ],
+      "origins": [
+        "https://www.example.com"
+      ]
+    }
+  },
+  "project.roots: a list": {
+    "roots": [
+      "../shared"
+    ]
+  },
+  "project.trailingSlash: plain": {
+    "trailingSlash": "keep"
+  },
+  "project.settings: a record": {
+    "settings": {
+      "supportEmail": {
+        "type": {
+          "kind": "text",
+          "default": "help@example.com"
+        },
+        "public": true
+      }
+    }
+  },
+  "project.mail: a record": {
+    "mail": {
+      "from": "shop@example.com",
+      "send": {
+        "secret": "SMTP_URL"
+      }
+    }
+  },
+  "project.mail: a record (2)": {
+    "mail": {
+      "from": {
+        "name": "Shop",
+        "address": "shop@example.com"
+      },
+      "send": "smtp://localhost"
+    }
+  },
+  "project.limits: a record": {
+    "limits": {
+      "callSize": 2097152,
+      "queryThreads": 4
+    }
+  },
+  "project.redirects: a list": {
+    "redirects": [
+      {
+        "from": "/old/:id",
+        "to": "/orders/:id",
+        "permanent": false
+      }
+    ]
+  },
+  "project.hosts: a list": {
+    "hosts": [
+      "images.example.com"
+    ]
+  },
+  "project.unlock: a record": {
+    "unlock": {
+      "scripts": [
+        "https://js.stripe.com"
+      ],
+      "styleTags": true,
+      "more": {
+        "img-src": [
+          "https://*.example.com"
+        ]
+      }
+    }
+  },
+  "project.privateHosts: a list": {
+    "privateHosts": [
+      "10.0.0.5"
+    ]
+  },
+  "project.countBy: plain": {
+    "countBy": "caller"
+  },
+  "project.workers: a record": {
+    "workers": {
+      "gpu": {
+        "about": "A machine with a graphics card",
+        "atOnce": 4,
+        "next": {
+          "kind": "any",
+          "after": [
+            "lost"
+          ]
+        }
+      }
+    }
+  },
+  "project.backups: a record": {
+    "backups": {
+      "keep": 14,
+      "test": false
+    }
+  },
+  "project.backups: a record (2)": {
+    "backups": {
+      "every": false
+    }
+  },
+  "project.history: a record": {
+    "history": {
+      "leave": [
+        "*.log"
+      ]
+    }
+  },
+  "project.publish: a record": {
+    "publish": {
+      "health": "countNotes",
+      "within": 10000
+    }
+  },
+  "project.removed: a list": {
+    "removed": [
+      "oldOrders"
+    ]
+  },
+  "project.build: a record of code": {
+    "build": {
+      "export": "project_build"
+    }
+  },
+  "project.build: a record": {
+    "build": {
+      "export": "project_build"
+    }
+  },
+  "project.was: plain": {
+    "was": [
+      "store"
+    ]
+  },
+  "project.was: a list": {
+    "was": [
+      "store",
+      "market"
+    ]
+  },
+  "table.columns: a record": {
+    "columns": {
+      "name": {
+        "kind": "text",
+        "max": 80,
+        "label": "Name"
+      },
+      "at": {
+        "kind": "date",
+        "default": {
+          "now": true
+        }
+      }
+    }
+  },
+  "table.owner: plain": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "owner": "placedBy"
+  },
+  "table.access: a record": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "owner": "placedBy",
+    "access": {
+      "read": {
+        "rule": "where",
+        "filter": {
+          "col": "placedBy",
+          "is": "u1"
+        }
+      },
+      "add": {
+        "rule": "signedIn"
+      },
+      "change": {
+        "rule": "owner"
+      },
+      "remove": {
+        "rule": "role",
+        "role": "staff"
+      }
+    }
+  },
+  "table.access: a record of code": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "access": {
+      "read": {
+        "rule": "where",
+        "export": "orders_access_read"
+      },
+      "add": {
+        "rule": "allow",
+        "export": "orders_access_add"
+      }
+    }
+  },
+  "table.search: a record": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "search": {
+      "columns": [
+        "note"
+      ],
+      "by": "pieces"
+    }
+  },
+  "table.search: a list": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "search": [
+      "note"
+    ]
+  },
+  "table.indexes: a list": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "indexes": [
+      [
+        "total",
+        "note"
+      ]
+    ]
+  },
+  "table.unique: a list": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "unique": [
+      [
+        "note"
+      ]
+    ]
+  },
+  "table.keepHistory: plain": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "keepHistory": true
+  },
+  "table.removed: a list": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "removed": [
+      "oldColumn"
+    ]
+  },
+  "table.tenant: plain": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "tenant": "team"
+  },
+  "table.shows: plain": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "shows": "counts"
+  },
+  "table.plain: plain": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "plain": true
+  },
+  "table.was: a list": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "was": [
+      "sales"
+    ]
+  },
+  "table.was: plain": {
+    "columns": {
+      "team": {
+        "kind": "link",
+        "table": "teams",
+        "onRemove": "remove"
+      },
+      "placedBy": {
+        "kind": "link",
+        "table": "users"
+      },
+      "note": {
+        "kind": "text",
+        "optional": true
+      },
+      "total": {
+        "kind": "number"
+      }
+    },
+    "was": [
+      "sales"
+    ]
+  },
+  "query.access: a word": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "query.access: a record of a role": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one"
+  },
+  "query.access: a record of anyone": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "anyone",
+      "why": "it is public"
+    },
+    "export": "one"
+  },
+  "query.access: code": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "allow",
+      "export": "one_access"
+    },
+    "export": "one"
+  },
+  "query.rows: a plan": {
+    "kind": "query",
+    "form": "plain",
+    "input": {
+      "limit": {
+        "kind": "number",
+        "default": 50
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "plan": {
+      "from": "notes",
+      "where": {
+        "col": "body",
+        "contains": "open"
+      },
+      "limit": {
+        "input": "limit"
+      }
+    },
+    "reads": [
+      "notes"
+    ]
+  },
+  "query.rows: a plan of a count": {
+    "kind": "query",
+    "form": "plain",
+    "access": {
+      "rule": "signedIn"
+    },
+    "plan": {
+      "from": "notes",
+      "count": true
+    },
+    "reads": [
+      "notes"
+    ]
+  },
+  "query.run: code": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "query.run: a body that was read": {
+    "kind": "query",
+    "form": "plain",
+    "input": {
+      "body": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "body": [
+      {
+        "return": {
+          "name": [
+            "input",
+            "body"
+          ]
+        }
+      }
+    ]
+  },
+  "query.about: plain": {
+    "kind": "query",
+    "form": "code",
+    "about": "What it is for",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "query.was: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "older"
+    ]
+  },
+  "query.was: a list": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "older",
+      "oldest"
+    ]
+  },
+  "query.input: a record": {
+    "kind": "query",
+    "form": "code",
+    "input": {
+      "body": {
+        "kind": "text"
+      },
+      "count": {
+        "kind": "number",
+        "default": 5
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "query.output: a record": {
+    "kind": "query",
+    "form": "code",
+    "output": {
+      "kind": "object",
+      "shape": {
+        "ok": {
+          "kind": "boolean"
+        }
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "query.output: plain": {
+    "kind": "query",
+    "form": "code",
+    "output": {
+      "kind": "text"
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "query.live: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "live": false
+  },
+  "query.refresh: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "refresh": 60000
+  },
+  "query.refresh: a number": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "refresh": 60000
+  },
+  "query.heavy: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "heavy": true
+  },
+  "query.offer: a list": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "offer": [
+      "api",
+      "mcp",
+      "cli"
+    ]
+  },
+  "query.deprecated: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "deprecated": "2027-01-01"
+  },
+  "query.system: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "system": "works for every team"
+  },
+  "query.countBy: plain": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "countBy": "caller"
+  },
+  "query.countBy: plain (2)": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "countBy": "limits"
+  },
+  "query.reads: a list": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "reads": [
+      "notes"
+    ]
+  },
+  "query.reads: a list of names": {
+    "kind": "query",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "reads": [
+      "notes"
+    ]
+  },
+  "query.plain: plain": {
+    "kind": "query",
+    "form": "plain",
+    "access": {
+      "rule": "signedIn"
+    },
+    "plan": {
+      "from": "notes",
+      "count": true
+    },
+    "reads": [
+      "notes"
+    ],
+    "plain": true
+  },
+  "change.access: a word": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "change.access: a record of a role": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one"
+  },
+  "change.access: a record of anyone": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "anyone",
+      "why": "it is public"
+    },
+    "export": "one"
+  },
+  "change.access: code": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "allow",
+      "export": "one_access"
+    },
+    "export": "one"
+  },
+  "change.set: a write": {
+    "kind": "change",
+    "form": "plain",
+    "input": {
+      "body": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "writes": [
+      {
+        "add": "notes",
+        "values": {
+          "body": {
+            "input": "body"
+          }
+        }
+      }
+    ],
+    "touches": [
+      "notes"
+    ]
+  },
+  "change.set: a list of writes": {
+    "kind": "change",
+    "form": "plain",
+    "input": {
+      "id": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "writes": [
+      {
+        "add": "notes",
+        "values": {
+          "body": "a"
+        }
+      },
+      {
+        "change": "notes",
+        "id": {
+          "input": "id"
+        },
+        "values": {
+          "body": "b"
+        }
+      },
+      {
+        "remove": "notes",
+        "id": {
+          "input": "id"
+        }
+      }
+    ],
+    "touches": [
+      "notes"
+    ]
+  },
+  "change.run: code": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "change.run: a body that was read": {
+    "kind": "change",
+    "form": "plain",
+    "input": {
+      "body": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "body": [
+      {
+        "return": {
+          "name": [
+            "input",
+            "body"
+          ]
+        }
+      }
+    ]
+  },
+  "change.about: plain": {
+    "kind": "change",
+    "form": "code",
+    "about": "What it is for",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "change.was: plain": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "older"
+    ]
+  },
+  "change.was: a list": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "older",
+      "oldest"
+    ]
+  },
+  "change.input: a record": {
+    "kind": "change",
+    "form": "code",
+    "input": {
+      "body": {
+        "kind": "text"
+      },
+      "count": {
+        "kind": "number",
+        "default": 5
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "change.output: a record": {
+    "kind": "change",
+    "form": "code",
+    "output": {
+      "kind": "object",
+      "shape": {
+        "ok": {
+          "kind": "boolean"
+        }
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "change.output: plain": {
+    "kind": "change",
+    "form": "code",
+    "output": {
+      "kind": "text"
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "change.danger: plain": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "danger": "ask"
+  },
+  "change.offer: a list": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "offer": [
+      "api",
+      "mcp",
+      "cli"
+    ]
+  },
+  "change.deprecated: plain": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "deprecated": "2027-01-01"
+  },
+  "change.system: plain": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "system": "works for every team"
+  },
+  "change.countBy: plain": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "countBy": "caller"
+  },
+  "change.countBy: plain (2)": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "countBy": "limits"
+  },
+  "change.touches: a list": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "touches": [
+      "notes"
+    ]
+  },
+  "change.everywhere: plain": {
+    "kind": "change",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "everywhere": true
+  },
+  "change.plain: plain": {
+    "kind": "change",
+    "form": "plain",
+    "access": {
+      "rule": "signedIn"
+    },
+    "writes": [
+      {
+        "add": "notes",
+        "values": {
+          "body": "a"
+        }
+      }
+    ],
+    "touches": [
+      "notes"
+    ],
+    "plain": true
+  },
+  "action.access: a word": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.access: a record of a role": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one"
+  },
+  "action.access: a record of anyone": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "anyone",
+      "why": "it is public"
+    },
+    "export": "one"
+  },
+  "action.access: code": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "allow",
+      "export": "one_access"
+    },
+    "export": "one"
+  },
+  "action.run: code": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.run: a body that was read": {
+    "kind": "action",
+    "form": "plain",
+    "input": {
+      "body": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "body": [
+      {
+        "return": {
+          "name": [
+            "input",
+            "body"
+          ]
+        }
+      }
+    ]
+  },
+  "action.about: plain": {
+    "kind": "action",
+    "form": "code",
+    "about": "What it is for",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.was: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "older"
+    ]
+  },
+  "action.was: a list": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "older",
+      "oldest"
+    ]
+  },
+  "action.input: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "body": {
+        "kind": "text"
+      },
+      "count": {
+        "kind": "number",
+        "default": 5
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.output: a record": {
+    "kind": "action",
+    "form": "code",
+    "output": {
+      "kind": "object",
+      "shape": {
+        "ok": {
+          "kind": "boolean"
+        }
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.output: plain": {
+    "kind": "action",
+    "form": "code",
+    "output": {
+      "kind": "text"
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.offer: a list": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "offer": [
+      "api",
+      "mcp",
+      "cli"
+    ]
+  },
+  "action.deprecated: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "deprecated": "2027-01-01"
+  },
+  "action.system: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "system": "works for every team"
+  },
+  "action.countBy: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "countBy": "caller"
+  },
+  "action.countBy: plain (2)": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "countBy": "limits"
+  },
+  "action.background: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "background": true
+  },
+  "action.background: plain (2)": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "background": "here"
+  },
+  "action.worker: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "worker": "gpu"
+  },
+  "action.batch: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "note": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "batch": {
+      "max": 600,
+      "wait": 1000,
+      "measure": "note",
+      "split": false
+    }
+  },
+  "action.batch: a record (2)": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "batch": {
+      "max": 32
+    }
+  },
+  "action.remember: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "remember": true
+  },
+  "action.remember: a record": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "remember": {
+      "for": 2592000000,
+      "kind": false,
+      "version": "v2",
+      "shared": "the same for everyone"
+    }
+  },
+  "action.rows: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "note": {
+        "kind": "text"
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "rows": {
+      "notes": {
+        "from": "notes",
+        "where": {
+          "col": "body",
+          "is": {
+            "input": "note"
+          }
+        }
+      }
+    }
+  },
+  "action.uses: a list": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "uses": [
+      "countNotes",
+      "hooks.status"
+    ]
+  },
+  "action.changes: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "changes": false
+  },
+  "action.callerGone: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "callerGone": "stop"
+  },
+  "action.callerGone: plain (2)": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "action.follow: a word": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "follow": {
+      "rule": "signedIn"
+    }
+  },
+  "action.follow: a record of a role": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "follow": {
+      "rule": "role",
+      "role": "staff"
+    }
+  },
+  "action.sends: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "sends": false
+  },
+  "action.danger: plain": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "danger": "ask"
+  },
+  "action.limits: a record": {
+    "kind": "action",
+    "form": "code",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "limits": {
+      "time": 30000,
+      "try": 10000,
+      "reserve": 5000,
+      "perDay": {
+        "workSeconds": 3600
+      },
+      "atLimit": "wait"
+    }
+  },
+  "action.plain: plain": {
+    "kind": "action",
+    "form": "plain",
+    "access": {
+      "rule": "signedIn"
+    },
+    "body": [
+      {
+        "return": {
+          "name": [
+            "input",
+            "body"
+          ]
+        }
+      }
+    ],
+    "plain": true
+  },
+  "flow.run: code": {
+    "form": "code",
+    "export": "one"
+  },
+  "flow.run: a body that was read": {
+    "form": "plain",
+    "body": [
+      {
+        "const": "at",
+        "value": {
+          "await": {
+            "fn": "step.now",
+            "args": []
+          }
+        }
+      },
+      {
+        "return": {
+          "name": [
+            "at"
+          ]
+        }
+      }
+    ],
+    "stepNames": [
+      {
+        "name": "now"
+      }
+    ]
+  },
+  "flow.on: a list": {
+    "form": "code",
+    "on": [
+      {
+        "every": "day at 09:00"
+      },
+      {
+        "table": "notes",
+        "when": "added",
+        "where": {
+          "col": "body",
+          "is": "tidy"
+        }
+      }
+    ],
+    "export": "one"
+  },
+  "flow.on: a record of a word": {
+    "form": "code",
+    "on": [
+      {
+        "every": "day at 09:00"
+      }
+    ],
+    "export": "one"
+  },
+  "flow.about: plain": {
+    "form": "code",
+    "about": "What it is for",
+    "export": "one"
+  },
+  "flow.was: plain": {
+    "form": "code",
+    "export": "one",
+    "was": [
+      "older"
+    ]
+  },
+  "flow.was: a list": {
+    "form": "code",
+    "export": "one",
+    "was": [
+      "older",
+      "oldest"
+    ]
+  },
+  "flow.input: a record": {
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "export": "one"
+  },
+  "flow.output: a record": {
+    "form": "code",
+    "output": {
+      "kind": "object",
+      "shape": {
+        "team": {
+          "kind": "text"
+        }
+      }
+    },
+    "export": "one"
+  },
+  "flow.limits: a record": {
+    "form": "code",
+    "export": "one"
+  },
+  "flow.tries: a record": {
+    "form": "code",
+    "export": "one",
+    "tries": {
+      "max": 4,
+      "wait": 60000
+    }
+  },
+  "flow.tries: a number": {
+    "form": "code",
+    "export": "one"
+  },
+  "flow.together: a record": {
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "export": "one",
+    "together": {
+      "max": 5
+    }
+  },
+  "flow.moveRuns: plain": {
+    "form": "code",
+    "export": "one",
+    "moveRuns": "whenSafe"
+  },
+  "flow.onFail: code": {
+    "form": "code",
+    "export": "one",
+    "onFail": {
+      "export": "one_onFail"
+    }
+  },
+  "flow.onFail: a body that was read": {
+    "form": "plain",
+    "body": [
+      {
+        "const": "at",
+        "value": {
+          "await": {
+            "fn": "step.now",
+            "args": []
+          }
+        }
+      },
+      {
+        "return": {
+          "name": [
+            "at"
+          ]
+        }
+      }
+    ],
+    "stepNames": [
+      {
+        "name": "now"
+      }
+    ],
+    "onFail": [
+      {
+        "return": {
+          "name": [
+            "input",
+            "body"
+          ]
+        }
+      }
+    ]
+  },
+  "flow.onFail: a body that was read, beside a run that is code": {
+    "form": "code",
+    "export": "one",
+    "onFail": [
+      {
+        "return": {
+          "name": [
+            "input",
+            "body"
+          ]
+        }
+      }
+    ]
+  },
+  "flow.as: plain": {
+    "form": "code",
+    "export": "one",
+    "as": "starter"
+  },
+  "flow.danger: plain": {
+    "form": "code",
+    "export": "one",
+    "danger": "ask"
+  },
+  "flow.offer: a list": {
+    "form": "code",
+    "offer": [
+      "api"
+    ],
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "flow.access: a word": {
+    "form": "code",
+    "offer": [
+      "api"
+    ],
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "flow.access: a record of a role": {
+    "form": "code",
+    "offer": [
+      "api"
+    ],
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one"
+  },
+  "flow.system: plain": {
+    "form": "code",
+    "offer": [
+      "api"
+    ],
+    "access": {
+      "rule": "signedIn"
+    },
+    "system": "tidies for every team",
+    "export": "one"
+  },
+  "flow.sends: plain": {
+    "form": "code",
+    "sends": false,
+    "export": "one"
+  },
+  "flow.follow: a word": {
+    "form": "code",
+    "export": "one",
+    "follow": {
+      "rule": "signedIn"
+    }
+  },
+  "flow.countBy: plain": {
+    "form": "code",
+    "export": "one",
+    "countBy": "limits"
+  },
+  "flow.plain: plain": {
+    "form": "plain",
+    "body": [
+      {
+        "const": "at",
+        "value": {
+          "await": {
+            "fn": "step.now",
+            "args": []
+          }
+        }
+      },
+      {
+        "return": {
+          "name": [
+            "at"
+          ]
+        }
+      }
+    ],
+    "stepNames": [
+      {
+        "name": "now"
+      }
+    ],
+    "plain": true
+  },
+  "service.url: plain": {
+    "url": "https://api.stripe.com"
+  },
+  "service.auth: a record": {
+    "url": "https://api.example.com",
+    "auth": {
+      "bearer": {
+        "secret": "STRIPE_KEY"
+      }
+    }
+  },
+  "service.headers: a record": {
+    "url": "https://api.example.com",
+    "headers": {
+      "Stripe-Version": "2026-06-30",
+      "Key": {
+        "secret": "KEY"
+      }
+    }
+  },
+  "service.calls: a record": {
+    "url": "https://api.example.com",
+    "calls": {
+      "createRefund": {
+        "method": "POST",
+        "path": "/v1/refunds",
+        "body": "form",
+        "about": "Refunds a charge",
+        "input": {
+          "charge": {
+            "kind": "text"
+          }
+        },
+        "output": {
+          "kind": "object",
+          "shape": {
+            "id": {
+              "kind": "text"
+            }
+          }
+        }
+      }
+    }
+  },
+  "service.from: plain": {
+    "url": "https://api.example.com",
+    "from": {
+      "file": "./stripe.openapi.json"
+    },
+    "use": [
+      "PostRefunds"
+    ]
+  },
+  "service.use: a list": {
+    "url": "https://api.example.com",
+    "from": {
+      "file": "./stripe.openapi.json"
+    },
+    "use": [
+      "PostRefunds"
+    ]
+  },
+  "service.limits: a record": {
+    "url": "https://api.example.com",
+    "limits": {
+      "perSecond": 20,
+      "perMinute": 600,
+      "atOnce": 4,
+      "size": 10485760,
+      "error": 16384,
+      "redirects": 3,
+      "time": 20000
+    }
+  },
+  "service.tries: a record": {
+    "url": "https://api.example.com",
+    "tries": {
+      "max": 3,
+      "wait": 30000,
+      "on": [
+        409
+      ],
+      "first": 1000
+    }
+  },
+  "service.tries: a number": {
+    "url": "https://api.example.com"
+  },
+  "service.onceOnlyHeader: plain": {
+    "url": "https://api.example.com",
+    "onceOnlyHeader": "Idempotency-Key"
+  },
+  "service.webhook: a record": {
+    "url": "https://api.example.com",
+    "webhook": {
+      "scheme": "stripe",
+      "secret": {
+        "secret": "STRIPE_HOOK"
+      }
+    }
+  },
+  "service.connection: plain": {
+    "url": "https://api.example.com",
+    "connection": "hooks"
+  },
+  "service.mcp: plain": {
+    "url": "https://api.example.com"
+  },
+  "service.mcp: plain (2)": {
+    "url": "https://api.example.com",
+    "mcp": true
+  },
+  "service.was: plain": {
+    "url": "https://api.example.com",
+    "was": [
+      "payments"
+    ]
+  },
+  "model.provider: plain": {
+    "provider": "openai",
+    "name": "claude"
+  },
+  "model.name: plain": {
+    "provider": "anthropic",
+    "name": "claude-sonnet-5-5"
+  },
+  "model.key: a record of a word": {
+    "provider": "anthropic",
+    "name": "claude",
+    "key": {
+      "secret": "ANTHROPIC_KEY"
+    }
+  },
+  "model.url: plain": {
+    "provider": "anthropic",
+    "name": "claude",
+    "url": "https://models.example.com"
+  },
+  "model.abilities: a list": {
+    "provider": "anthropic",
+    "name": "claude",
+    "abilities": [
+      "reply",
+      "tools"
+    ]
+  },
+  "model.takes: plain": {
+    "provider": "anthropic",
+    "name": "claude",
+    "takes": 200000
+  },
+  "model.voices: a list": {
+    "provider": "anthropic",
+    "name": "claude",
+    "voices": [
+      "calm"
+    ]
+  },
+  "model.input: a record": {
+    "provider": "anthropic",
+    "name": "claude",
+    "input": {
+      "prompt": {
+        "kind": "text"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "picture": {
+          "kind": "file"
+        }
+      }
+    }
+  },
+  "model.output: a record": {
+    "provider": "anthropic",
+    "name": "claude",
+    "input": {
+      "prompt": {
+        "kind": "text"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "picture": {
+          "kind": "file"
+        }
+      }
+    }
+  },
+  "model.limits: a record": {
+    "provider": "anthropic",
+    "name": "claude",
+    "limits": {
+      "perDay": {
+        "tokensOut": 1000000
+      },
+      "perCallerPerDay": {
+        "tokensOut": 100000
+      }
+    }
+  },
+  "model.tries: a record": {
+    "provider": "anthropic",
+    "name": "claude",
+    "tries": {
+      "max": 2,
+      "wait": 5000
+    }
+  },
+  "model.fallback: a list": {
+    "provider": "anthropic",
+    "name": "claude",
+    "fallback": [
+      "embedder"
+    ]
+  },
+  "model.options: a record": {
+    "provider": "anthropic",
+    "name": "claude",
+    "options": {
+      "temperature": 0,
+      "stop": [
+        "a",
+        "b"
+      ],
+      "more": {
+        "deep": [
+          1,
+          {
+            "on": true
+          }
+        ]
+      }
+    }
+  },
+  "model.countBy: plain": {
+    "provider": "anthropic",
+    "name": "claude",
+    "countBy": "app"
+  },
+  "model.call: a call of a service": {
+    "provider": "service",
+    "name": "claude",
+    "call": {
+      "service": "hooks",
+      "call": "decide"
+    }
+  },
+  "model.units: a record": {
+    "provider": "service",
+    "name": "claude",
+    "units": {
+      "tokensIn": "usage.input_tokens"
+    },
+    "call": {
+      "service": "hooks",
+      "call": "decide"
+    }
+  },
+  "model.job: a record": {
+    "provider": "service",
+    "name": "claude",
+    "call": {
+      "service": "hooks",
+      "call": "decide"
+    },
+    "job": {
+      "check": {
+        "service": "hooks",
+        "call": "status"
+      },
+      "done": {
+        "col": "status",
+        "is": "succeeded"
+      },
+      "with": {
+        "id": "id"
+      },
+      "failed": {
+        "col": "status",
+        "is": "failed"
+      },
+      "every": 5000
+    }
+  },
+  "model.was: plain": {
+    "provider": "anthropic",
+    "name": "claude",
+    "was": [
+      "author"
+    ]
+  },
+  "agent.model: a definition": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.instructions: plain": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "You help with notes.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.tools: a list": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "tools": [
+        "countNotes",
+        {
+          "tool": "nightly",
+          "tries": 2,
+          "about": "Tidies up at once",
+          "line": false,
+          "name": "tidyNow"
+        }
+      ],
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.limits: a record": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 12,
+        "perRun": {
+          "tokensOut": 50000
+        }
+      }
+    }
+  },
+  "agent.about: plain": {
+    "form": "plain",
+    "about": "Answers questions about notes",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.access: a word": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "access": {
+        "rule": "signedIn"
+      },
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.access: a record of a role": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "access": {
+        "rule": "role",
+        "role": "staff"
+      },
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.offer: a list": {
+    "form": "plain",
+    "offer": [
+      "mcp"
+    ],
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.on: a record of a word": {
+    "form": "plain",
+    "on": [
+      {
+        "every": "monday at 08:00"
+      }
+    ],
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.on: a list": {
+    "form": "plain",
+    "on": [
+      {
+        "every": "monday at 08:00"
+      }
+    ],
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.memory: a record": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "memory": {
+        "in": "notes",
+        "thread": "team",
+        "shrink": "summary",
+        "model": "embedder"
+      }
+    }
+  },
+  "agent.voice: a record": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "voice": {
+        "hear": "embedder",
+        "speak": "embedder",
+        "name": "calm",
+        "language": "en",
+        "whole": true
+      }
+    }
+  },
+  "agent.trust: a list": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "tools": [
+        "nightly"
+      ],
+      "trust": [
+        "nightly"
+      ],
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.knows: a list": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "knows": [
+        "caller",
+        "time"
+      ],
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.together: a record": {
+    "form": "plain",
+    "together": {
+      "max": 2,
+      "then": "refuse"
+    },
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.words: a record": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "words": {
+        "refused": "The person said no."
+      }
+    }
+  },
+  "agent.driver: plain": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "driver": "planner"
+    }
+  },
+  "agent.policy: a record": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "policy": {
+        "read": [
+          "tables/*"
+        ],
+        "mode": "propose"
+      }
+    }
+  },
+  "agent.reasoning: a record": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "reasoning": {
+        "show": true,
+        "save": true
+      }
+    }
+  },
+  "agent.tell: plain": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "tell": "list"
+    }
+  },
+  "agent.sequence: plain": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      },
+      "sequence": true
+    }
+  },
+  "agent.countBy: plain": {
+    "form": "plain",
+    "countBy": "caller",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    }
+  },
+  "agent.was: plain": {
+    "form": "plain",
+    "agent": {
+      "model": "embedder",
+      "instructions": "Help.",
+      "limits": {
+        "steps": 4,
+        "perRun": {
+          "tokensOut": 1000
+        }
+      }
+    },
+    "was": [
+      "aide"
+    ]
+  },
+  "python.file: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/other.py"
+    }
+  },
+  "python.input: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      },
+      "note": {
+        "kind": "text"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.output: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        },
+        "why": {
+          "kind": "text"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.access: a word": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.packages: a list": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py",
+      "packages": [
+        "pandas>=3"
+      ]
+    }
+  },
+  "python.files: a list": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py",
+      "files": [
+        "ml/*.joblib"
+      ]
+    }
+  },
+  "python.lock: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py",
+      "lock": "old"
+    }
+  },
+  "python.rows: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "rows": {
+      "notes": {
+        "from": "notes",
+        "where": {
+          "col": "team",
+          "is": {
+            "input": "team"
+          }
+        }
+      }
+    },
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.uses: a list": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "uses": [
+      "hooks.status"
+    ],
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.limits: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "limits": {
+      "time": 30000,
+      "load": 120000,
+      "memory": 1073741824
+    },
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.gpu: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py",
+      "gpu": true
+    }
+  },
+  "python.atOnce: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py",
+      "atOnce": 2
+    }
+  },
+  "python.worker: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "worker": "gpu",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.background: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "background": "here",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.batch: a record": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "batch": {
+      "max": 32
+    },
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.remember: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "remember": true,
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.sends: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "sends": false,
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.changes: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "changes": false,
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.callerGone: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.follow: a record of a role": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "follow": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.countBy: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "countBy": "limits",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.about: plain": {
+    "kind": "action",
+    "form": "code",
+    "about": "How likely a team is to leave",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.danger: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "danger": "ask",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.offer: a list": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "offer": [
+      "api"
+    ],
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.deprecated: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "deprecated": "2027-01-01",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.system: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "system": "reads every team",
+    "python": {
+      "file": "ml/churn.py"
+    }
+  },
+  "python.was: plain": {
+    "kind": "action",
+    "form": "code",
+    "input": {
+      "team": {
+        "kind": "link",
+        "table": "teams"
+      }
+    },
+    "output": {
+      "kind": "object",
+      "shape": {
+        "risk": {
+          "kind": "number"
+        }
+      }
+    },
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one",
+    "python": {
+      "file": "ml/churn.py"
+    },
+    "was": [
+      "churnScore"
+    ]
+  },
+  "route.method: plain": {
+    "method": "POST",
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "route.method: a list": {
+    "method": [
+      "GET",
+      "HEAD"
+    ],
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "route.path: plain": {
+    "method": "GET",
+    "path": "/feed.xml",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "route.access: a record of anyone": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "anyone",
+      "why": "the feed is public"
+    },
+    "export": "one"
+  },
+  "route.access: a record of a role": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one"
+  },
+  "route.run: code": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "route.system: plain": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "system": "reads every note",
+    "export": "one"
+  },
+  "route.origins: a list": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "origins": [
+      "https://www.example.com"
+    ],
+    "export": "one"
+  },
+  "route.limits: a record": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "limits": {
+      "time": 30000,
+      "size": 1048576
+    },
+    "export": "one"
+  },
+  "route.was: plain": {
+    "method": "GET",
+    "path": "/things",
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one",
+    "was": [
+      "rss"
+    ]
+  },
+  "incoming.path: plain": {
+    "path": "/hooks/in",
+    "open": "A test.",
+    "then": "nightly"
+  },
+  "incoming.then: a definition": {
+    "path": "/in",
+    "open": "A test.",
+    "then": "nightly"
+  },
+  "incoming.verify: the signature of a service": {
+    "path": "/in",
+    "verify": {
+      "scheme": "standard",
+      "service": "hooks"
+    },
+    "then": "nightly"
+  },
+  "incoming.open: plain": {
+    "path": "/in",
+    "open": "the sender signs nothing",
+    "then": "nightly"
+  },
+  "incoming.limits: a record": {
+    "path": "/in",
+    "open": "A test.",
+    "limits": {
+      "size": 4194304
+    },
+    "then": "nightly"
+  },
+  "incoming.was: plain": {
+    "path": "/in",
+    "open": "A test.",
+    "then": "nightly",
+    "was": [
+      "events"
+    ]
+  },
+  "command.about: plain": {
+    "about": "Walks through the notes",
+    "export": "one"
+  },
+  "command.run: code": {
+    "export": "one"
+  },
+  "command.access: a record of a role": {
+    "access": {
+      "rule": "role",
+      "role": "staff"
+    },
+    "export": "one"
+  },
+  "command.access: a word": {
+    "access": {
+      "rule": "signedIn"
+    },
+    "export": "one"
+  },
+  "command.args: a record": {
+    "args": {
+      "limit": {
+        "kind": "number",
+        "default": 20
+      },
+      "since": {
+        "kind": "date",
+        "optional": true
+      },
+      "tags": {
+        "kind": "list",
+        "optional": true,
+        "of": {
+          "kind": "text"
+        }
+      }
+    },
+    "export": "one"
+  },
+  "command.was: plain": {
+    "export": "one",
+    "was": [
+      "payNotes"
+    ]
+  }
+}

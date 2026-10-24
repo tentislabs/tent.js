@@ -1,0 +1,408 @@
+{
+  "app": {
+    "name": "shop",
+    "needsEngine": "1.0"
+  },
+  "browser": {
+    "components": {
+      "PriceTag": [
+        "browser/screens.orders.PriceTag.3b6d96e79f90.js",
+        "browser/orders.74dc0a3a30c5.css"
+      ]
+    },
+    "page": {
+      "main": "browser/page.<fp>.js",
+      "names": {
+        "react": "browser/page.react.<fp>.js",
+        "react-dom": "browser/page.react-dom.<fp>.js",
+        "react-dom/client": "browser/page.react-dom-client.<fp>.js",
+        "react/jsx-dev-runtime": "browser/page.react-jsx-dev-runtime.<fp>.js",
+        "react/jsx-runtime": "browser/page.react-jsx-runtime.<fp>.js",
+        "tentjs/ui": "browser/page.tentjs-ui.<fp>.js"
+      },
+      "parts": {
+        "above": "browser/page.above.<fp>.js",
+        "agent": "browser/page.agent.<fp>.js",
+        "exported": "browser/page.exported.<fp>.js",
+        "form": "browser/page.form.<fp>.js",
+        "image": "browser/page.image.<fp>.js",
+        "inspect": "browser/page.inspect.<fp>.js",
+        "mic": "browser/page.mic.<fp>.js",
+        "overlay": "browser/page.overlay.<fp>.js",
+        "posted": "browser/page.posted.<fp>.js",
+        "scripts": "browser/page.scripts.<fp>.js",
+        "served": "browser/page.served.<fp>.js",
+        "tested": "browser/page.tested.<fp>.js",
+        "values": "browser/page.values.<fp>.js",
+        "vitals": "browser/page.vitals.<fp>.js"
+      }
+    },
+    "screens": {
+      "labelsScreen": [
+        "browser/screens.labels.b14b9ee08912.js",
+        "browser/orders.74dc0a3a30c5.css"
+      ],
+      "orderScreen": [
+        "browser/screens.order.b099a3a5355a.js",
+        "browser/orders.74dc0a3a30c5.css"
+      ],
+      "ordersScreen": [
+        "browser/screens.orders.ordersScreen.0d47ef81a689.js",
+        "browser/orders.74dc0a3a30c5.css"
+      ]
+    },
+    "shared": [
+      "browser/shared.orders.b72d1ed4d97a.js",
+      "browser/shared2.orders.b583ed0aff3d.js"
+    ],
+    "styles": [
+      "browser/orders.74dc0a3a30c5.css"
+    ]
+  },
+  "components": {
+    "PriceTag": {
+      "needs": [
+        "form",
+        "image"
+      ],
+      "props": {
+        "amount": {
+          "kind": "number"
+        },
+        "currency": {
+          "default": "USD",
+          "kind": "text"
+        }
+      }
+    }
+  },
+  "format": "tent.description/1",
+  "functions": {
+    "addNote": {
+      "access": {
+        "rule": "signedIn"
+      },
+      "form": "plain",
+      "input": {
+        "note": {
+          "kind": "text"
+        },
+        "source": {
+          "kind": "text"
+        }
+      },
+      "kind": "change",
+      "touches": [
+        "notes"
+      ],
+      "writes": [
+        {
+          "add": "notes",
+          "values": {
+            "note": {
+              "input": "note"
+            },
+            "source": {
+              "input": "source"
+            }
+          }
+        }
+      ]
+    },
+    "ordersByStatus": {
+      "access": {
+        "rule": "signedIn"
+      },
+      "form": "plain",
+      "input": {
+        "status": {
+          "default": "open",
+          "kind": "choice",
+          "values": [
+            "open",
+            "paid"
+          ]
+        }
+      },
+      "kind": "query",
+      "plan": {
+        "from": "orders",
+        "limit": 50,
+        "where": {
+          "col": "status",
+          "is": {
+            "input": "status"
+          }
+        },
+        "with": [
+          "customer"
+        ]
+      },
+      "reads": [
+        "orders",
+        "customers"
+      ]
+    }
+  },
+  "packages": {
+    "@acme/ui": {
+      "browser": true,
+      "by": [
+        "screen:ordersScreen"
+      ],
+      "bytes": 50
+    }
+  },
+  "places": {
+    "PriceTag": {
+      "file": "screens/orders.tsx",
+      "from": 1650,
+      "to": 1903
+    },
+    "addNote": {
+      "file": "functions/orders.ts",
+      "from": 338,
+      "to": 515
+    },
+    "customers": {
+      "file": "tables/orders.ts",
+      "from": 60,
+      "to": 168
+    },
+    "labelsScreen": {
+      "file": "screens/labels.tsx",
+      "from": 253,
+      "to": 627
+    },
+    "notes": {
+      "file": "tables/orders.ts",
+      "from": 445,
+      "to": 578
+    },
+    "orderScreen": {
+      "file": "screens/order.tsx",
+      "from": 82,
+      "to": 314
+    },
+    "orders": {
+      "file": "tables/orders.ts",
+      "from": 171,
+      "to": 442
+    },
+    "ordersByStatus": {
+      "file": "functions/orders.ts",
+      "from": 110,
+      "to": 335
+    },
+    "ordersScreen": {
+      "file": "screens/orders.tsx",
+      "from": 329,
+      "to": 1647
+    },
+    "shop": {
+      "file": "tent.ts",
+      "from": 42,
+      "to": 216
+    }
+  },
+  "project": {
+    "currency": "USD",
+    "state": {
+      "mode": {
+        "in": "device",
+        "type": {
+          "default": "auto",
+          "kind": "choice",
+          "values": [
+            "auto",
+            "light",
+            "dark"
+          ]
+        }
+      }
+    },
+    "title": "Shop"
+  },
+  "screens": {
+    "labelsScreen": {
+      "access": {
+        "rule": "anyone",
+        "why": ""
+      },
+      "path": "/labels",
+      "state": {
+        "tab": {
+          "in": "address",
+          "type": {
+            "default": "open",
+            "kind": "choice",
+            "values": [
+              "open",
+              "paid"
+            ]
+          }
+        }
+      },
+      "title": {
+        "text": [
+          {
+            "path": [
+              {
+                "name": [
+                  "state",
+                  "tab"
+                ]
+              }
+            ],
+            "read": {
+              "named": {
+                "top": "LABELS"
+              },
+              "value": {
+                "object": [
+                  [
+                    "open",
+                    "Open"
+                  ],
+                  [
+                    "paid",
+                    "Paid"
+                  ]
+                ]
+              }
+            }
+          },
+          " orders"
+        ]
+      }
+    },
+    "orderScreen": {
+      "access": {
+        "rule": "signedIn"
+      },
+      "path": "/orders/:id"
+    },
+    "ordersScreen": {
+      "access": {
+        "rule": "signedIn"
+      },
+      "calls": [
+        "addNote"
+      ],
+      "data": {
+        "orders": {
+          "input": {
+            "status": {
+              "name": [
+                "state",
+                "tab"
+              ]
+            }
+          },
+          "query": "ordersByStatus"
+        }
+      },
+      "needs": [
+        "form",
+        "image"
+      ],
+      "path": "/orders",
+      "state": {
+        "tab": {
+          "back": true,
+          "in": "address",
+          "type": {
+            "default": "open",
+            "kind": "choice",
+            "values": [
+              "open",
+              "paid"
+            ]
+          }
+        }
+      },
+      "title": "Open orders"
+    }
+  },
+  "server": {
+    "screens": "server/page.<fp>.js",
+    "views": {
+      "PriceTag": "server/screens.orders.PriceTag.a26d49460b7f.js",
+      "labelsScreen": "server/screens.labels.7a39558068e4.js",
+      "orderScreen": "server/screens.order.0dba04c84c4b.js",
+      "ordersScreen": "server/screens.orders.ordersScreen.f79bb5ab3b68.js"
+    }
+  },
+  "sources": {
+    "functions/orders.ts": "d94cc4861f6c40da86b833e358e28dae28d2e236471287a933ab37a6da67facd",
+    "screens/labels.tsx": "a2e84a7629e29a605bebf0b7fce787ef88cfdb028b98c742f133546d9b9dec50",
+    "screens/order.tsx": "aa39938faf738662944bf37d0c9348f98e74859d71fb6d53f68e89eac60111ff",
+    "screens/orders.tsx": "18ea0bbbb2c60fd438cab07c751a0b9d91837eb11f5ada2836d03974027f9d03",
+    "tables/orders.ts": "d0b44d74eb40eac9f802f00fed641ea30acb179e659a73532e962d4e5c34a1c3",
+    "tent.ts": "761011cc35bb6fe6ac4164cd5628e12a742851829c90af4f01ff599e45d44ac5"
+  },
+  "tables": {
+    "customers": {
+      "access": {
+        "read": {
+          "rule": "signedIn"
+        }
+      },
+      "columns": {
+        "name": {
+          "kind": "text"
+        }
+      }
+    },
+    "notes": {
+      "access": {
+        "add": {
+          "rule": "signedIn"
+        },
+        "read": {
+          "rule": "signedIn"
+        }
+      },
+      "columns": {
+        "note": {
+          "kind": "text"
+        },
+        "source": {
+          "kind": "text"
+        }
+      }
+    },
+    "orders": {
+      "access": {
+        "change": {
+          "rule": "signedIn"
+        },
+        "read": {
+          "rule": "signedIn"
+        }
+      },
+      "columns": {
+        "customer": {
+          "kind": "link",
+          "table": "customers"
+        },
+        "photo": {
+          "kind": "text",
+          "optional": true
+        },
+        "status": {
+          "default": "open",
+          "kind": "choice",
+          "values": [
+            "open",
+            "paid"
+          ]
+        },
+        "total": {
+          "kind": "number",
+          "min": 0
+        }
+      }
+    }
+  }
+}

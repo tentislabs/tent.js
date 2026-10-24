@@ -1,0 +1,320 @@
+[
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "from": "https://registry.npmjs.org/sharp/-/sharp-0.35.5.tgz",
+    "fingerprint": "sha512-Ywn4OnzGukp7CDMrp08RQ50YKmuwG47brZgIVPTvBaaAfQlRlygrRqSrxdCiL9M+LlzLBiJ68IR1QqvzHyjC7g==",
+    "into": "node_modules/sharp"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "from": "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz",
+    "fingerprint": "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==",
+    "into": "node_modules/@img/colour"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "from": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
+    "fingerprint": "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==",
+    "into": "node_modules/detect-libc"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "from": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz",
+    "fingerprint": "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==",
+    "into": "node_modules/semver"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "win32-x64",
+    "from": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.35.5.tgz",
+    "fingerprint": "sha512-x76eH0vEiHlcMQu8Y8IenntaACtddpT6W0wmXtWrnKcnKI7ME5DdgqhAD6SEWOEl1v2zDvkZDhFA9KnURwpfqg==",
+    "into": "node_modules/@img/sharp-win32-x64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "win32-arm64",
+    "from": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.35.5.tgz",
+    "fingerprint": "sha512-X4t7g+7ZA5DKblCBEXGjUqqemj4vczING/5viFwAL8h4N3qYeyjwdCvRLHi4EdOUI+2Z7UFlp1VM+p/AuEtm6Q==",
+    "into": "node_modules/@img/sharp-win32-arm64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "darwin-x64",
+    "from": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.35.5.tgz",
+    "fingerprint": "sha512-+BR255RhDlpygUpOc/Jdt1nT6DQ3XG/ERo5wbcdOf5Q320dKtPCKPLR1LJs9VGXRaMa8l1uUa0tkCNOXiAxZUw==",
+    "into": "node_modules/@img/sharp-darwin-x64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "darwin-x64",
+    "from": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.3.4.tgz",
+    "fingerprint": "sha512-iR2OKH80yi0U+dUplyh3/xdpFvps6YkCwsXenIJxqxR1v9o+xtKTGbS9H7cps+2Vxjc8B1j96p75NmTGjIhtpQ==",
+    "into": "node_modules/@img/sharp-libvips-darwin-x64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "darwin-arm64",
+    "from": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.35.5.tgz",
+    "fingerprint": "sha512-QRUlFQ0WxvdWyqqG/WtI3iupfD5rBzmCHXSdPsY91sAtVtTo7Q4cb6zOccZ3gqEqkr0f1As1ehLqmEpDsRf+lg==",
+    "into": "node_modules/@img/sharp-darwin-arm64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "darwin-arm64",
+    "from": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.4.tgz",
+    "fingerprint": "sha512-5R89nBYiRdUlSWJxPhO+GVtaXzXSxKnRu/xqMn3KTA3L9EB9Oy/P+Nn2f2vlhPuUdy/Zusb2DarbyTpGCfEDuw==",
+    "into": "node_modules/@img/sharp-libvips-darwin-arm64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "linux-x64",
+    "from": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.5.tgz",
+    "fingerprint": "sha512-SxFtLTeJInhAA9Q836kux2vZNeOBQEx658qvbboZScr0wIARym3IcGmW7KpVD5sbVg0Ojy+udFQdayYIZyoNog==",
+    "into": "node_modules/@img/sharp-linux-x64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "linux-x64",
+    "from": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.3.4.tgz",
+    "fingerprint": "sha512-GJ//SSXbnwSDes02umB3nDJLFcQzw8a18V8fyhqr6tV515tOEMdImjjxj1AoafMRz56F3PHgftnj1QEKSU1zkw==",
+    "into": "node_modules/@img/sharp-libvips-linux-x64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "linux-arm64",
+    "from": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.35.5.tgz",
+    "fingerprint": "sha512-LYVx5JTsOM2CBzmxreh+nl64/3H6Xb09iSLknqH47z2T2DFFxDeFLP5y4dJwe6H7uGQlHPyEEtIqyo3DYsRwdQ==",
+    "into": "node_modules/@img/sharp-linux-arm64"
+  },
+  {
+    "name": "sharp",
+    "version": "0.35.5",
+    "system": "linux-arm64",
+    "from": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.3.4.tgz",
+    "fingerprint": "sha512-Y3dgX/6lE2QhQb+Gxy0WZxfg9MEm/JBjamZpS2IklP7xIQoKN4hzAm7KcMVGtaVDt3neE9OKBC7vAfonA/Lr1A==",
+    "into": "node_modules/@img/sharp-libvips-linux-arm64"
+  },
+  {
+    "name": "unpdf",
+    "version": "1.8.1",
+    "from": "https://registry.npmjs.org/unpdf/-/unpdf-1.8.1.tgz",
+    "fingerprint": "sha512-xkURhy2SoGpOIH0a1gLHNkASPIQYonadDJs2AQwPEfUakafeD9EA1WTWWsaR++gfTCXJpV27W7tU1nXuk82UKQ==",
+    "into": "node_modules/unpdf"
+  },
+  {
+    "name": "xlsx",
+    "version": "0.20.3",
+    "from": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
+    "fingerprint": "sha512-oLDq3jw7AcLqKWH2AhCpVTZl8mf6X2YReP+Neh0SJUzV/BdZYjth94tG5toiMB1PPrYtxOCfaoUCkvtuH+3AJA==",
+    "into": "node_modules/xlsx"
+  },
+  {
+    "name": "python-3.14",
+    "version": "3.14.8-20261013",
+    "system": "win32-x64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+    "fingerprint": "dce851f280b986764037bd952d40819e94ccceb08ac914004123f43ce17f4095"
+  },
+  {
+    "name": "python-3.14",
+    "version": "3.14.8-20261013",
+    "system": "win32-arm64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-pc-windows-msvc-install_only_stripped.tar.gz",
+    "fingerprint": "9c0b221413b0353550bdbf8f0b7bba21c02c8a1199b39dd6af08f06cd6be6851"
+  },
+  {
+    "name": "python-3.14",
+    "version": "3.14.8-20261013",
+    "system": "darwin-x64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-x86_64-apple-darwin-install_only_stripped.tar.gz",
+    "fingerprint": "f0137337ecf6234b30c9c955219dae2d71e1a00387c4d204d6c6929e24bf9a90"
+  },
+  {
+    "name": "python-3.14",
+    "version": "3.14.8-20261013",
+    "system": "darwin-arm64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-apple-darwin-install_only_stripped.tar.gz",
+    "fingerprint": "994adadc202c5df0b4570192cc9a70e3f2c131e512f4a125c56efa8562f44b28"
+  },
+  {
+    "name": "python-3.14",
+    "version": "3.14.8-20261013",
+    "system": "linux-x64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "fingerprint": "d8faa1b588506b9e3e5a3f57807bb056d534a1641a6b10d15b6ea3f0b413b960"
+  },
+  {
+    "name": "python-3.14",
+    "version": "3.14.8-20261013",
+    "system": "linux-arm64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "fingerprint": "d8ae14f303d3971431184cf423ae5467202de2bc19bf6491a490250b87647d4b"
+  },
+  {
+    "name": "python-3.15",
+    "version": "3.15.0-20261013",
+    "system": "win32-x64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.15.0%2B20261013-x86_64-pc-windows-msvc-install_only_stripped.tar.gz",
+    "fingerprint": "743d2269e74a98f7c4281dbc2e8710c171be1965693720aac818ff0157e4d965"
+  },
+  {
+    "name": "python-3.15",
+    "version": "3.15.0-20261013",
+    "system": "win32-arm64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.15.0%2B20261013-aarch64-pc-windows-msvc-install_only_stripped.tar.gz",
+    "fingerprint": "01367b4d9a6882429133772f69c3373e1d0c7e40ee7d57be9a7259338de16dfa"
+  },
+  {
+    "name": "python-3.15",
+    "version": "3.15.0-20261013",
+    "system": "darwin-x64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.15.0%2B20261013-x86_64-apple-darwin-install_only_stripped.tar.gz",
+    "fingerprint": "4760e8fb2821441c0dbc72be49a25400c6ae90be4daa7e2a49617ed09f6a2919"
+  },
+  {
+    "name": "python-3.15",
+    "version": "3.15.0-20261013",
+    "system": "darwin-arm64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.15.0%2B20261013-aarch64-apple-darwin-install_only_stripped.tar.gz",
+    "fingerprint": "b4ab2009803cef142e4ebf2ebef225f6875f83cc35caf4eefb437aa9b2b76783"
+  },
+  {
+    "name": "python-3.15",
+    "version": "3.15.0-20261013",
+    "system": "linux-x64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.15.0%2B20261013-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "fingerprint": "69740dcd9b3480b3d53760f2d3b75582adb14fa54434628dea32480ddede542a"
+  },
+  {
+    "name": "python-3.15",
+    "version": "3.15.0-20261013",
+    "system": "linux-arm64",
+    "from": "https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.15.0%2B20261013-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz",
+    "fingerprint": "064778ca701efc4c8366d0b235a2a0f5dbe14d921aeb2ef4f5c7b93e5a75cbd0"
+  },
+  {
+    "name": "uv",
+    "version": "0.13.1",
+    "system": "win32-x64",
+    "from": "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-pc-windows-msvc.zip",
+    "fingerprint": "3b2661a463a5baea7f5076ea2b25ab71d77f36a6c0d809e5350651792f80a672"
+  },
+  {
+    "name": "uv",
+    "version": "0.13.1",
+    "system": "win32-arm64",
+    "from": "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-aarch64-pc-windows-msvc.zip",
+    "fingerprint": "ec7846a5939b4654afee24f2d82bf6fde71bd7a6952d7748f1135ab301dd0a49"
+  },
+  {
+    "name": "uv",
+    "version": "0.13.1",
+    "system": "darwin-x64",
+    "from": "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-apple-darwin.tar.gz",
+    "fingerprint": "bb7b805bdcf3d0bc8c74ceb94569e6b3e8aa35bd492acdbb9d46bf46d9d4ff6b"
+  },
+  {
+    "name": "uv",
+    "version": "0.13.1",
+    "system": "darwin-arm64",
+    "from": "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-aarch64-apple-darwin.tar.gz",
+    "fingerprint": "cfe454573412ff7380d15fc7dae5997ab53ffce72fce0a78e91ddbc84001acd2"
+  },
+  {
+    "name": "uv",
+    "version": "0.13.1",
+    "system": "linux-x64",
+    "from": "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-unknown-linux-gnu.tar.gz",
+    "fingerprint": "eadd9d27c134ab5ac1ffd4473b97a741407f3ea238288f03121fc4deddf90220"
+  },
+  {
+    "name": "uv",
+    "version": "0.13.1",
+    "system": "linux-arm64",
+    "from": "https://github.com/astral-sh/uv/releases/download/0.13.1/uv-aarch64-unknown-linux-gnu.tar.gz",
+    "fingerprint": "9041c73c99fdc5892cf128140beb354eca9231d502068cc36e6cb53a8e59ad14"
+  },
+  {
+    "name": "browser",
+    "version": "1248",
+    "system": "win32-x64",
+    "from": "https://cdn.playwright.dev/builds/cft/156.0.8078.4/win64/chrome-headless-shell-win64.zip",
+    "fingerprint": "5af4c82cf4b351ec4bad4c71dcf938af14fccea8a0eb0d5c2a7b49ccc922698c"
+  },
+  {
+    "name": "browser",
+    "version": "1248",
+    "system": "linux-x64",
+    "from": "https://cdn.playwright.dev/builds/cft/156.0.8078.4/linux64/chrome-headless-shell-linux64.zip",
+    "fingerprint": "c3e50596aef52c58f8fda3c6b3411c33d34c88b177b3ed1c2243359fd3b8ba20"
+  },
+  {
+    "name": "browser",
+    "version": "1248",
+    "system": "linux-arm64",
+    "from": "https://cdn.playwright.dev/builds/cft/156.0.8078.4/linux-arm64/chrome-headless-shell-linux-arm64.zip",
+    "fingerprint": "81ab9d4d3c301dc5fdfb6c541b9e6632b16fc819a6a854460f40a76fe2b2c476"
+  },
+  {
+    "name": "browser",
+    "version": "1248",
+    "system": "darwin-x64",
+    "from": "https://cdn.playwright.dev/builds/cft/156.0.8078.4/mac-x64/chrome-headless-shell-mac-x64.zip",
+    "fingerprint": "8a9e4a32ba5b1a796f8b16d01896e355cf6662544d9743296394fd999d782331"
+  },
+  {
+    "name": "browser",
+    "version": "1248",
+    "system": "darwin-arm64",
+    "from": "https://cdn.playwright.dev/builds/cft/156.0.8078.4/mac-arm64/chrome-headless-shell-mac-arm64.zip",
+    "fingerprint": "94e4337b70cbc5638f0935fbc46b9f242bc7416f657e3fbe924baf348404b53d"
+  },
+  {
+    "name": "firefox",
+    "version": "1555",
+    "system": "win32-x64",
+    "from": "https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1555/firefox-win64.zip",
+    "fingerprint": "410e14bca6099c089c2092df67803320aab70433a754aae356c4c2e990cf6b77"
+  },
+  {
+    "name": "firefox",
+    "version": "1555",
+    "system": "linux-x64",
+    "from": "https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1555/firefox-ubuntu-24.04.zip",
+    "fingerprint": "564f74fa3c46cb83c6252145cf1569c95236c8c404d6a5a80cc736cf32265f0c"
+  },
+  {
+    "name": "firefox",
+    "version": "1555",
+    "system": "linux-arm64",
+    "from": "https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1555/firefox-ubuntu-24.04-arm64.zip",
+    "fingerprint": "fe2e1fd49048866e9b9249d1b9394b4989f58f589a35b19edcbce8aab1501f8c"
+  },
+  {
+    "name": "firefox",
+    "version": "1555",
+    "system": "darwin-x64",
+    "from": "https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1555/firefox-mac.zip",
+    "fingerprint": "ae2c6e477d4c5f59e76be39ca0db6c003e9bcf9bb9b3c4e13cf545275d6be388"
+  },
+  {
+    "name": "firefox",
+    "version": "1555",
+    "system": "darwin-arm64",
+    "from": "https://cdn.playwright.dev/dbazure/download/playwright/builds/firefox/1555/firefox-mac-arm64.zip",
+    "fingerprint": "72eb32289f368789786d16d252e8e4fef7b62ae721d57f82d3d6d9221d3fd2af"
+  }
+]

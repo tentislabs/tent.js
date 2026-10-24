@@ -1,0 +1,157 @@
+.pricing {
+  display: grid;
+  gap: var(--s-5);
+  justify-items: center;
+  text-align: center;
+}
+
+.period {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-top: var(--s-3);
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.period .on {
+  color: var(--ink);
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 56px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background 200ms;
+}
+
+.switch:hover {
+  background: color-mix(in srgb, var(--line) 70%, var(--ink));
+}
+
+.switch[aria-checked="true"] {
+  background: var(--accent);
+}
+
+.switch .knob {
+  position: absolute;
+  top: 4px;
+  inset-inline-start: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+  transition: transform 200ms;
+}
+
+.switch[aria-checked="true"] .knob {
+  transform: translateX(24px);
+}
+
+.saving {
+  padding: var(--s-1) var(--s-3);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.plans {
+  width: 100%;
+  list-style: none;
+  padding: 0;
+  margin: var(--s-5) 0 0;
+  display: grid;
+  gap: var(--s-5);
+  text-align: start;
+}
+
+@media (min-width: 900px) {
+  .plans {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: stretch;
+  }
+}
+
+.plan {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--s-4);
+  padding: var(--s-6);
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.plan:hover {
+  border-color: color-mix(in srgb, var(--line) 50%, var(--accent));
+}
+
+.plan.chosen {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent),
+    var(--shadow);
+}
+
+.plan h2 {
+  font-size: var(--text-xl);
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  color: var(--muted);
+}
+
+.price strong {
+  color: var(--ink);
+  font-size: var(--text-2xl);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.plan .about {
+  color: var(--muted);
+}
+
+.plan .choose {
+  justify-self: stretch;
+  background: transparent;
+  color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.plan .choose:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.badge {
+  justify-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch .knob,
+  .plan {
+    transition: none;
+  }
+}

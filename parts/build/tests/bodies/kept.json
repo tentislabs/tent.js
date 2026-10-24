@@ -1,0 +1,5098 @@
+{
+  "orderById": [
+    {
+      "return": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "orderList": [
+    {
+      "return": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "status",
+                    {
+                      "args": [
+                        {
+                          "name": [
+                            "input",
+                            "status"
+                          ]
+                        }
+                      ],
+                      "fn": "given"
+                    }
+                  ],
+                  [
+                    "total",
+                    {
+                      "object": [
+                        [
+                          "atLeast",
+                          {
+                            "left": {
+                              "name": [
+                                "input",
+                                "least"
+                              ]
+                            },
+                            "op": "??",
+                            "right": 0
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "with": [
+              "customer"
+            ]
+          },
+          {
+            "newest": [
+              "placedAt"
+            ]
+          },
+          {
+            "skip": [
+              {
+                "left": {
+                  "name": [
+                    "input",
+                    "skip"
+                  ]
+                },
+                "op": "??",
+                "right": 0
+              }
+            ]
+          },
+          {
+            "limit": [
+              {
+                "left": {
+                  "name": [
+                    "input",
+                    "limit"
+                  ]
+                },
+                "op": "??",
+                "right": {
+                  "named": {
+                    "top": "PAGE"
+                  },
+                  "value": 3
+                }
+              }
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    }
+  ],
+  "placeByText": [
+    {
+      "const": "rows",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "status",
+                    {
+                      "name": [
+                        "input",
+                        "tab"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "oldest": [
+              "placedAt"
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "const": "last",
+      "value": {
+        "name": [
+          "rows",
+          {
+            "left": {
+              "name": [
+                "rows",
+                "length"
+              ]
+            },
+            "op": "-",
+            "right": 1
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "label",
+            {
+              "path": [
+                {
+                  "name": [
+                    "input",
+                    "tab"
+                  ]
+                }
+              ],
+              "read": {
+                "named": {
+                  "top": "LABELS"
+                },
+                "value": {
+                  "object": [
+                    [
+                      "open",
+                      "Open orders"
+                    ],
+                    [
+                      "paid",
+                      "Paid orders"
+                    ]
+                  ]
+                }
+              }
+            }
+          ],
+          [
+            "open",
+            {
+              "path": [
+                "open"
+              ],
+              "read": {
+                "named": {
+                  "top": "LABELS"
+                },
+                "value": {
+                  "object": [
+                    [
+                      "open",
+                      "Open orders"
+                    ],
+                    [
+                      "paid",
+                      "Paid orders"
+                    ]
+                  ]
+                }
+              }
+            }
+          ],
+          [
+            "first",
+            {
+              "name": [
+                "rows",
+                0,
+                "?id"
+              ]
+            }
+          ],
+          [
+            "last",
+            {
+              "name": [
+                "last",
+                "?id"
+              ]
+            }
+          ],
+          [
+            "next",
+            {
+              "path": [
+                {
+                  "left": {
+                    "name": [
+                      "input",
+                      "at"
+                    ]
+                  },
+                  "op": "+",
+                  "right": 1
+                }
+              ],
+              "read": {
+                "named": {
+                  "top": "TABS"
+                },
+                "value": [
+                  "open",
+                  "paid"
+                ]
+              }
+            }
+          ],
+          [
+            "count",
+            {
+              "name": [
+                "input",
+                "counts",
+                "first order"
+              ]
+            }
+          ],
+          [
+            "picked",
+            {
+              "name": [
+                "input",
+                "counts",
+                {
+                  "name": [
+                    "input",
+                    "key"
+                  ]
+                }
+              ]
+            }
+          ],
+          [
+            "title",
+            {
+              "text": [
+                {
+                  "left": {
+                    "path": [
+                      {
+                        "name": [
+                          "input",
+                          "tab"
+                        ]
+                      }
+                    ],
+                    "read": {
+                      "named": {
+                        "top": "LABELS"
+                      },
+                      "value": {
+                        "object": [
+                          [
+                            "open",
+                            "Open orders"
+                          ],
+                          [
+                            "paid",
+                            "Paid orders"
+                          ]
+                        ]
+                      }
+                    }
+                  },
+                  "op": "??",
+                  "right": "Nothing"
+                },
+                ": ",
+                {
+                  "name": [
+                    "rows",
+                    "length"
+                  ]
+                }
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "nameNotHeld": [
+    {
+      "const": "order",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "noteLength",
+            {
+              "name": [
+                "input",
+                "note",
+                "length"
+              ]
+            }
+          ],
+          [
+            "tags",
+            {
+              "name": [
+                "input",
+                "tags",
+                "length"
+              ]
+            }
+          ],
+          [
+            "asText",
+            {
+              "name": [
+                "order",
+                "toString"
+              ]
+            }
+          ],
+          [
+            "sameMaker",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "constructor"
+                ]
+              },
+              "op": "===",
+              "right": {
+                "name": [
+                  "input",
+                  "extra",
+                  "constructor"
+                ]
+              }
+            }
+          ],
+          [
+            "sameFixed",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "total",
+                  "toFixed"
+                ]
+              },
+              "op": "===",
+              "right": {
+                "name": [
+                  "input",
+                  "count",
+                  "toFixed"
+                ]
+              }
+            }
+          ],
+          [
+            "trimmed",
+            {
+              "name": [
+                "input",
+                "note",
+                "trim"
+              ]
+            }
+          ],
+          [
+            "missing",
+            {
+              "name": [
+                "order",
+                "nowhere"
+              ]
+            }
+          ],
+          [
+            "deep",
+            {
+              "name": [
+                "order",
+                "nowhere",
+                "?deeper",
+                "still"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "twoMoments": [
+    {
+      "const": "order",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "const": "again",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "same",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "==",
+              "right": {
+                "name": [
+                  "again",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "strict",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "===",
+              "right": {
+                "name": [
+                  "again",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "itself",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "==",
+              "right": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "differ",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "!=",
+              "right": {
+                "name": [
+                  "again",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "notAfter",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "<=",
+              "right": {
+                "name": [
+                  "again",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "notBefore",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": ">=",
+              "right": {
+                "name": [
+                  "again",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "apart",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "-",
+              "right": {
+                "name": [
+                  "again",
+                  "placedAt"
+                ]
+              }
+            }
+          ],
+          [
+            "asText",
+            {
+              "left": {
+                "name": [
+                  "order",
+                  "placedAt"
+                ]
+              },
+              "op": "==",
+              "right": {
+                "name": [
+                  "input",
+                  "text"
+                ]
+              }
+            }
+          ],
+          [
+            "byWord",
+            {
+              "args": [
+                {
+                  "name": [
+                    "order",
+                    "placedAt"
+                  ]
+                },
+                {
+                  "name": [
+                    "again",
+                    "placedAt"
+                  ]
+                },
+                "ms"
+              ],
+              "fn": "between"
+            }
+          ],
+          [
+            "late",
+            {
+              "left": {
+                "args": [
+                  {
+                    "name": [
+                      "order",
+                      "placedAt"
+                    ]
+                  },
+                  "7 days"
+                ],
+                "fn": "later"
+              },
+              "op": "<",
+              "right": {
+                "name": [
+                  "now"
+                ]
+              }
+            }
+          ],
+          [
+            "age",
+            {
+              "args": [
+                {
+                  "name": [
+                    "order",
+                    "placedAt"
+                  ]
+                },
+                {
+                  "name": [
+                    "now"
+                  ]
+                },
+                "days"
+              ],
+              "fn": "between"
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "searchPage": [
+    {
+      "const": "hits",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "search": [
+              {
+                "name": [
+                  "input",
+                  "text"
+                ]
+              }
+            ]
+          },
+          {
+            "sort": [
+              "total"
+            ]
+          },
+          {
+            "pick": [
+              [
+                "id",
+                "total"
+              ]
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "const": "page",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "status",
+                    "open"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "after": [
+              {
+                "name": [
+                  "input",
+                  "cursor"
+                ]
+              }
+            ]
+          },
+          {
+            "limit": [
+              2
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "const": "close",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "near": [
+              "meaning",
+              {
+                "name": [
+                  "input",
+                  "like"
+                ]
+              },
+              {
+                "object": [
+                  [
+                    "within",
+                    0.5
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "limit": [
+              1
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "const": "byStatus",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "group": [
+              [
+                "status"
+              ],
+              {
+                "object": [
+                  [
+                    "total",
+                    {
+                      "object": [
+                        [
+                          "sum",
+                          "total"
+                        ]
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "intro",
+            {
+              "named": {
+                "as": "intro",
+                "textFile": "bodies/intro.txt"
+              },
+              "value": "Orders that fit what you asked for.\nThe newest stand first.\n"
+            }
+          ],
+          [
+            "letters",
+            {
+              "path": [
+                "length"
+              ],
+              "read": {
+                "named": {
+                  "as": "intro",
+                  "textFile": "bodies/intro.txt"
+                },
+                "value": "Orders that fit what you asked for.\nThe newest stand first.\n"
+              }
+            }
+          ],
+          [
+            "first",
+            {
+              "name": [
+                "hits",
+                "?",
+                0
+              ]
+            }
+          ],
+          [
+            "picked",
+            {
+              "name": [
+                "input",
+                "rows",
+                "?",
+                {
+                  "name": [
+                    "input",
+                    "at"
+                  ]
+                },
+                "?id"
+              ]
+            }
+          ],
+          [
+            "plain",
+            {
+              "name": [
+                "input",
+                "marks",
+                "late"
+              ]
+            }
+          ],
+          [
+            "late",
+            {
+              "name": [
+                "input",
+                "marks",
+                {
+                  "text": [
+                    "?late"
+                  ]
+                }
+              ]
+            }
+          ],
+          [
+            "maybe",
+            {
+              "name": [
+                "input",
+                "marks",
+                "?late"
+              ]
+            }
+          ],
+          [
+            "maybeLate",
+            {
+              "name": [
+                "input",
+                "marks",
+                "?",
+                {
+                  "text": [
+                    "?late"
+                  ]
+                }
+              ]
+            }
+          ],
+          [
+            "most",
+            {
+              "path": [
+                "orders",
+                "most"
+              ],
+              "read": {
+                "named": {
+                  "project": [
+                    "options",
+                    "limits"
+                  ]
+                },
+                "value": {
+                  "object": [
+                    [
+                      "orders",
+                      {
+                        "object": [
+                          [
+                            "most",
+                            50
+                          ]
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              }
+            }
+          ],
+          [
+            "title",
+            {
+              "named": {
+                "project": [
+                  "options",
+                  "title"
+                ]
+              },
+              "value": "Shop"
+            }
+          ],
+          [
+            "second",
+            {
+              "path": [
+                1
+              ],
+              "read": {
+                "named": {
+                  "project": [
+                    "options",
+                    "languages"
+                  ]
+                },
+                "value": [
+                  "en",
+                  "tr"
+                ]
+              }
+            }
+          ],
+          [
+            "closed",
+            {
+              "named": {
+                "project": [
+                  "options",
+                  "closed"
+                ]
+              },
+              "value": {
+                "nothing": true
+              }
+            }
+          ],
+          [
+            "page",
+            {
+              "name": [
+                "page"
+              ]
+            }
+          ],
+          [
+            "close",
+            {
+              "name": [
+                "close"
+              ]
+            }
+          ],
+          [
+            "byStatus",
+            {
+              "name": [
+                "byStatus"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "valueWords": [
+    {
+      "const": "rows",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "status",
+                    "open"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "const": "lines",
+      "value": {
+        "args": [
+          {
+            "name": [
+              "rows"
+            ]
+          },
+          {
+            "arrow": [
+              "o",
+              "i"
+            ],
+            "do": [
+              {
+                "return": {
+                  "object": [
+                    [
+                      "place",
+                      {
+                        "left": {
+                          "name": [
+                            "i"
+                          ]
+                        },
+                        "op": "+",
+                        "right": 1
+                      }
+                    ],
+                    [
+                      "id",
+                      {
+                        "name": [
+                          "o",
+                          "id"
+                        ]
+                      }
+                    ],
+                    [
+                      "gross",
+                      {
+                        "args": [
+                          {
+                            "left": {
+                              "name": [
+                                "o",
+                                "total"
+                              ]
+                            },
+                            "op": "*",
+                            "right": 1.2
+                          },
+                          2
+                        ],
+                        "fn": "round"
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "fn": "each"
+      }
+    },
+    {
+      "const": "big",
+      "value": {
+        "args": [
+          {
+            "name": [
+              "rows"
+            ]
+          },
+          {
+            "object": [
+              [
+                "total",
+                {
+                  "object": [
+                    [
+                      "above",
+                      {
+                        "name": [
+                          "input",
+                          "above"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "fn": "where"
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "lines",
+            {
+              "name": [
+                "lines"
+              ]
+            }
+          ],
+          [
+            "total",
+            {
+              "args": [
+                {
+                  "name": [
+                    "rows"
+                  ]
+                },
+                "total"
+              ],
+              "fn": "sum"
+            }
+          ],
+          [
+            "mean",
+            {
+              "args": [
+                {
+                  "name": [
+                    "rows"
+                  ]
+                },
+                "total"
+              ],
+              "fn": "avg"
+            }
+          ],
+          [
+            "least",
+            {
+              "args": [
+                {
+                  "name": [
+                    "rows"
+                  ]
+                },
+                "total"
+              ],
+              "fn": "min"
+            }
+          ],
+          [
+            "most",
+            {
+              "args": [
+                {
+                  "name": [
+                    "rows"
+                  ]
+                },
+                "total"
+              ],
+              "fn": "max"
+            }
+          ],
+          [
+            "bigIds",
+            {
+              "args": [
+                {
+                  "args": [
+                    {
+                      "name": [
+                        "big"
+                      ]
+                    },
+                    {
+                      "arrow": [
+                        "o"
+                      ],
+                      "do": [
+                        {
+                          "return": {
+                            "name": [
+                              "o",
+                              "id"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "fn": "each"
+                },
+                ", "
+              ],
+              "fn": "join"
+            }
+          ],
+          [
+            "marks",
+            {
+              "args": [
+                0,
+                {
+                  "name": [
+                    "input",
+                    "above"
+                  ]
+                },
+                100
+              ],
+              "fn": "range"
+            }
+          ],
+          [
+            "firstTwo",
+            {
+              "path": [
+                "length"
+              ],
+              "read": {
+                "args": [
+                  {
+                    "name": [
+                      "rows"
+                    ]
+                  },
+                  0,
+                  2
+                ],
+                "fn": "slice"
+              }
+            }
+          ],
+          [
+            "name",
+            {
+              "args": [
+                {
+                  "args": [
+                    {
+                      "args": [
+                        {
+                          "name": [
+                            "input",
+                            "name"
+                          ]
+                        },
+                        0,
+                        1
+                      ],
+                      "fn": "slice"
+                    }
+                  ],
+                  "fn": "upper"
+                },
+                {
+                  "args": [
+                    {
+                      "args": [
+                        {
+                          "name": [
+                            "input",
+                            "name"
+                          ]
+                        },
+                        1
+                      ],
+                      "fn": "slice"
+                    }
+                  ],
+                  "fn": "lower"
+                }
+              ],
+              "fn": "concat"
+            }
+          ],
+          [
+            "clean",
+            {
+              "args": [
+                {
+                  "name": [
+                    "input",
+                    "note"
+                  ]
+                }
+              ],
+              "fn": "trim"
+            }
+          ],
+          [
+            "late",
+            {
+              "args": [
+                {
+                  "name": [
+                    "input",
+                    "note"
+                  ]
+                },
+                "late"
+              ],
+              "fn": "contains"
+            }
+          ],
+          [
+            "whole",
+            {
+              "args": [
+                {
+                  "left": {
+                    "args": [
+                      {
+                        "name": [
+                          "rows"
+                        ]
+                      },
+                      "total"
+                    ],
+                    "fn": "sum"
+                  },
+                  "op": "/",
+                  "right": {
+                    "name": [
+                      "rows",
+                      "length"
+                    ]
+                  }
+                }
+              ],
+              "fn": "floor"
+            }
+          ],
+          [
+            "print",
+            {
+              "args": [
+                {
+                  "name": [
+                    "input",
+                    "name"
+                  ]
+                }
+              ],
+              "fn": "fingerprint"
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "signsAndMarks": [
+    {
+      "const": "lines",
+      "value": {
+        "name": [
+          "input",
+          "lines"
+        ]
+      }
+    },
+    {
+      "const": "first",
+      "value": {
+        "name": [
+          "lines",
+          0
+        ]
+      }
+    },
+    {
+      "const": "month",
+      "value": {
+        "name": [
+          "input",
+          "month"
+        ]
+      }
+    },
+    {
+      "const": "net",
+      "value": {
+        "args": [
+          {
+            "name": [
+              "lines"
+            ]
+          },
+          {
+            "arrow": [
+              "l"
+            ],
+            "do": [
+              {
+                "if": {
+                  "left": {
+                    "name": [
+                      "l",
+                      "qty"
+                    ]
+                  },
+                  "op": "<=",
+                  "right": 0
+                },
+                "then": [
+                  {
+                    "return": 0
+                  }
+                ]
+              },
+              {
+                "else": [
+                  {
+                    "return": {
+                      "left": {
+                        "name": [
+                          "l",
+                          "qty"
+                        ]
+                      },
+                      "op": "*",
+                      "right": {
+                        "name": [
+                          "l",
+                          "price"
+                        ]
+                      }
+                    }
+                  }
+                ],
+                "if": {
+                  "left": {
+                    "left": {
+                      "name": [
+                        "l",
+                        "note"
+                      ]
+                    },
+                    "op": "===",
+                    "right": "free"
+                  },
+                  "op": "||",
+                  "right": {
+                    "left": {
+                      "name": [
+                        "l",
+                        "price"
+                      ]
+                    },
+                    "op": "==",
+                    "right": null
+                  }
+                },
+                "then": [
+                  {
+                    "return": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "fn": "each"
+      }
+    },
+    {
+      "const": "total",
+      "value": {
+        "args": [
+          {
+            "name": [
+              "net"
+            ]
+          }
+        ],
+        "fn": "sum"
+      }
+    },
+    {
+      "const": "odd",
+      "value": {
+        "left": {
+          "left": {
+            "name": [
+              "lines",
+              "length"
+            ]
+          },
+          "op": "%",
+          "right": 2
+        },
+        "op": "!==",
+        "right": 0
+      }
+    },
+    {
+      "do": [
+        {
+          "if": {
+            "left": {
+              "name": [
+                "letter"
+              ]
+            },
+            "op": "==",
+            "right": "-"
+          },
+          "then": [
+            {
+              "return": {
+                "object": [
+                  [
+                    "month",
+                    {
+                      "name": [
+                        "month"
+                      ]
+                    }
+                  ],
+                  [
+                    "stopped",
+                    true
+                  ]
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "do": {
+            "args": [
+              {
+                "text": [
+                  "letter ",
+                  {
+                    "name": [
+                      "letter"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "call": {
+              "builtin": "log.info"
+            }
+          }
+        }
+      ],
+      "for": "letter",
+      "of": {
+        "name": [
+          "input",
+          "code"
+        ]
+      }
+    },
+    {
+      "do": [
+        {
+          "if": {
+            "left": {
+              "name": [
+                "l",
+                "qty"
+              ]
+            },
+            "op": ">",
+            "right": 99
+          },
+          "then": [
+            {
+              "return": {
+                "nothing": true
+              }
+            }
+          ]
+        }
+      ],
+      "for": "l",
+      "of": {
+        "name": [
+          "lines"
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "month",
+            {
+              "name": [
+                "month"
+              ]
+            }
+          ],
+          [
+            "total",
+            {
+              "name": [
+                "total"
+              ]
+            }
+          ],
+          [
+            "odd",
+            {
+              "name": [
+                "odd"
+              ]
+            }
+          ],
+          [
+            "half",
+            {
+              "left": {
+                "name": [
+                  "total"
+                ]
+              },
+              "op": "/",
+              "right": 2
+            }
+          ],
+          [
+            "less",
+            {
+              "left": {
+                "minus": {
+                  "name": [
+                    "total"
+                  ]
+                }
+              },
+              "op": "+",
+              "right": {
+                "name": [
+                  "first",
+                  "qty"
+                ]
+              }
+            }
+          ],
+          [
+            "many",
+            {
+              "left": {
+                "left": {
+                  "name": [
+                    "total"
+                  ]
+                },
+                "op": ">",
+                "right": 100
+              },
+              "op": "&&",
+              "right": {
+                "not": {
+                  "name": [
+                    "odd"
+                  ]
+                }
+              }
+            }
+          ],
+          [
+            "few",
+            {
+              "left": {
+                "left": {
+                  "name": [
+                    "total"
+                  ]
+                },
+                "op": "<",
+                "right": 10
+              },
+              "op": "||",
+              "right": {
+                "left": {
+                  "name": [
+                    "lines",
+                    "length"
+                  ]
+                },
+                "op": "!=",
+                "right": 3
+              }
+            }
+          ],
+          [
+            "note",
+            {
+              "left": {
+                "name": [
+                  "first",
+                  "note"
+                ]
+              },
+              "op": "??",
+              "right": null
+            }
+          ],
+          [
+            "size",
+            {
+              "else": {
+                "else": "small",
+                "if": {
+                  "left": {
+                    "name": [
+                      "total"
+                    ]
+                  },
+                  "op": ">",
+                  "right": 100
+                },
+                "then": "middle"
+              },
+              "if": {
+                "left": {
+                  "name": [
+                    "total"
+                  ]
+                },
+                "op": ">=",
+                "right": 1000
+              },
+              "then": "large"
+            }
+          ],
+          [
+            "nothing",
+            {
+              "nothing": true
+            }
+          ],
+          [
+            "flags",
+            [
+              true,
+              false,
+              null
+            ]
+          ],
+          [
+            "gap",
+            {
+              "left": {
+                "name": [
+                  "first",
+                  "price"
+                ]
+              },
+              "op": "-",
+              "right": {
+                "name": [
+                  "first",
+                  "qty"
+                ]
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "addOrder": [
+    {
+      "const": "customer",
+      "value": {
+        "plan": {
+          "db": "customers"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "customer"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "name": [
+            "customer"
+          ]
+        }
+      },
+      "then": [
+        {
+          "do": {
+            "args": [
+              "no-customer",
+              "That customer is not there."
+            ],
+            "fn": "fail"
+          }
+        }
+      ]
+    },
+    {
+      "const": "order",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "add": [
+              {
+                "object": [
+                  [
+                    "customer",
+                    {
+                      "name": [
+                        "customer",
+                        "id"
+                      ]
+                    }
+                  ],
+                  [
+                    "status",
+                    "open"
+                  ],
+                  [
+                    "total",
+                    {
+                      "name": [
+                        "input",
+                        "total"
+                      ]
+                    }
+                  ],
+                  [
+                    "placedAt",
+                    {
+                      "name": [
+                        "now"
+                      ]
+                    }
+                  ],
+                  [
+                    "code",
+                    {
+                      "args": [
+                        {
+                          "object": [
+                            [
+                              "digits",
+                              6
+                            ]
+                          ]
+                        }
+                      ],
+                      "fn": "token"
+                    }
+                  ],
+                  [
+                    "lucky",
+                    {
+                      "left": {
+                        "args": [],
+                        "fn": "random"
+                      },
+                      "op": "<",
+                      "right": 0.5
+                    }
+                  ],
+                  [
+                    "owner",
+                    {
+                      "name": [
+                        "user",
+                        "id"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "do": {
+        "plan": {
+          "db": "payments"
+        },
+        "then": [
+          {
+            "add": [
+              {
+                "object": [
+                  [
+                    "order",
+                    {
+                      "name": [
+                        "order",
+                        "id"
+                      ]
+                    }
+                  ],
+                  [
+                    "amount",
+                    0
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "const": [
+        "run"
+      ],
+      "value": {
+        "args": [
+          {
+            "flow": "invoiceApproval"
+          },
+          {
+            "object": [
+              [
+                "order",
+                {
+                  "name": [
+                    "order",
+                    "id"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "fn": "start"
+      }
+    },
+    {
+      "const": [
+        "rows",
+        "next"
+      ],
+      "value": {
+        "args": [
+          {
+            "object": [
+              [
+                "after",
+                {
+                  "name": [
+                    "input",
+                    "after"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "call": {
+          "function": "ordersPage"
+        }
+      }
+    },
+    {
+      "do": {
+        "args": [
+          "order.added",
+          {
+            "object": [
+              [
+                "order",
+                {
+                  "name": [
+                    "order",
+                    "id"
+                  ]
+                }
+              ],
+              [
+                "run",
+                {
+                  "name": [
+                    "run"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "fn": "emit"
+      }
+    },
+    {
+      "else": [
+        {
+          "do": {
+            "plan": {
+              "db": "payments"
+            },
+            "then": [
+              {
+                "remove": [
+                  {
+                    "name": [
+                      "input",
+                      "oldPayment"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "if": {
+        "name": [
+          "input",
+          "paid"
+        ]
+      },
+      "then": [
+        {
+          "do": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "order",
+                    {
+                      "name": [
+                        "order",
+                        "id"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "function": "markPaid"
+            }
+          }
+        },
+        {
+          "do": {
+            "plan": {
+              "db": "orders"
+            },
+            "then": [
+              {
+                "change": [
+                  {
+                    "name": [
+                      "order",
+                      "id"
+                    ]
+                  },
+                  {
+                    "object": [
+                      [
+                        "status",
+                        "paid"
+                      ],
+                      [
+                        "total",
+                        {
+                          "args": [
+                            {
+                              "object": [
+                                [
+                                  "order",
+                                  {
+                                    "name": [
+                                      "order",
+                                      "id"
+                                    ]
+                                  }
+                                ]
+                              ]
+                            }
+                          ],
+                          "call": {
+                            "function": "orderTotal"
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "order",
+            {
+              "name": [
+                "order",
+                "id"
+              ]
+            }
+          ],
+          [
+            "run",
+            {
+              "name": [
+                "run"
+              ]
+            }
+          ],
+          [
+            "others",
+            {
+              "name": [
+                "rows",
+                "length"
+              ]
+            }
+          ],
+          [
+            "next",
+            {
+              "name": [
+                "next"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "orderPage": [
+    {
+      "const": "order",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "name": [
+            "order"
+          ]
+        }
+      },
+      "then": [
+        {
+          "return": {
+            "nothing": true
+          }
+        }
+      ]
+    },
+    {
+      "const": "base",
+      "value": {
+        "else": {
+          "plan": {
+            "db": "orders"
+          },
+          "then": []
+        },
+        "if": {
+          "name": [
+            "input",
+            "mine"
+          ]
+        },
+        "then": {
+          "plan": {
+            "db": "orders"
+          },
+          "then": [
+            {
+              "where": [
+                {
+                  "object": [
+                    [
+                      "owner",
+                      {
+                        "name": [
+                          "user",
+                          "id"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "const": "found",
+      "value": {
+        "plan": {
+          "name": [
+            "base"
+          ]
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "customer",
+                    {
+                      "name": [
+                        "order",
+                        "customer"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "const": "customers",
+      "value": {
+        "plan": {
+          "db": "customers"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "id",
+                    {
+                      "name": [
+                        "order",
+                        "customer"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "order",
+            {
+              "name": [
+                "order"
+              ]
+            }
+          ],
+          [
+            "customer",
+            {
+              "name": [
+                "customers",
+                0
+              ]
+            }
+          ],
+          [
+            "others",
+            {
+              "plan": {
+                "name": [
+                  "found"
+                ]
+              },
+              "then": [
+                {
+                  "with": [
+                    "customer"
+                  ]
+                },
+                {
+                  "limit": [
+                    20
+                  ]
+                },
+                {
+                  "all": []
+                }
+              ]
+            }
+          ],
+          [
+            "paid",
+            {
+              "left": {
+                "path": [
+                  "?amount"
+                ],
+                "read": {
+                  "plan": {
+                    "db": "payments"
+                  },
+                  "then": [
+                    {
+                      "where": [
+                        {
+                          "object": [
+                            [
+                              "order",
+                              {
+                                "name": [
+                                  "order",
+                                  "id"
+                                ]
+                              }
+                            ]
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "first": []
+                    }
+                  ]
+                }
+              },
+              "op": "??",
+              "right": 0
+            }
+          ],
+          [
+            "payments",
+            {
+              "plan": {
+                "db": "payments"
+              },
+              "then": [
+                {
+                  "where": [
+                    {
+                      "object": [
+                        [
+                          "order",
+                          {
+                            "name": [
+                              "order",
+                              "id"
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "count": []
+                }
+              ]
+            }
+          ],
+          [
+            "history",
+            {
+              "plan": {
+                "db": "orders"
+              },
+              "then": [
+                {
+                  "history": [
+                    {
+                      "name": [
+                        "order",
+                        "id"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          [
+            "open",
+            {
+              "plan": {
+                "db": "orders"
+              },
+              "then": [
+                {
+                  "count": [
+                    {
+                      "object": [
+                        [
+                          "status",
+                          "open"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "walkRows": [
+    {
+      "const": "rows",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "status",
+                    "open"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "all": []
+          }
+        ]
+      }
+    },
+    {
+      "const": "lines",
+      "value": {
+        "args": [
+          {
+            "name": [
+              "rows"
+            ]
+          },
+          {
+            "arrow": [
+              "o"
+            ],
+            "do": [
+              {
+                "return": {
+                  "object": [
+                    [
+                      "id",
+                      {
+                        "name": [
+                          "o",
+                          "id"
+                        ]
+                      }
+                    ],
+                    [
+                      "gross",
+                      {
+                        "args": [
+                          {
+                            "left": {
+                              "name": [
+                                "o",
+                                "total"
+                              ]
+                            },
+                            "op": "*",
+                            "right": {
+                              "left": 1,
+                              "op": "+",
+                              "right": {
+                                "name": [
+                                  "input",
+                                  "vat"
+                                ]
+                              }
+                            }
+                          },
+                          2
+                        ],
+                        "fn": "round"
+                      }
+                    ],
+                    [
+                      "big",
+                      {
+                        "left": {
+                          "name": [
+                            "o",
+                            "total"
+                          ]
+                        },
+                        "op": ">",
+                        "right": {
+                          "name": [
+                            "input",
+                            "big"
+                          ]
+                        }
+                      }
+                    ]
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "fn": "each"
+      }
+    },
+    {
+      "do": [
+        {
+          "if": {
+            "name": [
+              "line",
+              "big"
+            ]
+          },
+          "then": [
+            {
+              "do": {
+                "plan": {
+                  "db": "orders"
+                },
+                "then": [
+                  {
+                    "change": [
+                      {
+                        "name": [
+                          "line",
+                          "id"
+                        ]
+                      },
+                      {
+                        "object": [
+                          [
+                            "big",
+                            true
+                          ]
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "for": "line",
+      "of": {
+        "name": [
+          "lines"
+        ]
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "count",
+            {
+              "name": [
+                "rows",
+                "length"
+              ]
+            }
+          ],
+          [
+            "total",
+            {
+              "args": [
+                {
+                  "name": [
+                    "lines"
+                  ]
+                },
+                "gross"
+              ],
+              "fn": "sum"
+            }
+          ],
+          [
+            "big",
+            {
+              "path": [
+                "length"
+              ],
+              "read": {
+                "args": [
+                  {
+                    "name": [
+                      "lines"
+                    ]
+                  },
+                  {
+                    "object": [
+                      [
+                        "big",
+                        true
+                      ]
+                    ]
+                  }
+                ],
+                "fn": "where"
+              }
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "payOrder": [
+    {
+      "const": "order",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "do": {
+        "plan": {
+          "db": "payments"
+        },
+        "then": [
+          {
+            "add": [
+              {
+                "object": [
+                  [
+                    "order",
+                    {
+                      "name": [
+                        "input",
+                        "order"
+                      ]
+                    }
+                  ],
+                  [
+                    "amount",
+                    {
+                      "name": [
+                        "input",
+                        "amount"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "left": {
+          "not": {
+            "name": [
+              "order"
+            ]
+          }
+        },
+        "op": "||",
+        "right": {
+          "left": {
+            "name": [
+              "order",
+              "status"
+            ]
+          },
+          "op": "!=",
+          "right": "open"
+        }
+      },
+      "then": [
+        {
+          "do": {
+            "args": [
+              "not-open",
+              {
+                "text": [
+                  "Order ",
+                  {
+                    "name": [
+                      "input",
+                      "order"
+                    ]
+                  },
+                  " is not open."
+                ]
+              }
+            ],
+            "fn": "fail"
+          }
+        }
+      ]
+    },
+    {
+      "do": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "change": [
+              {
+                "name": [
+                  "order",
+                  "id"
+                ]
+              },
+              {
+                "object": [
+                  [
+                    "status",
+                    "paid"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "name": [
+          "order",
+          "id"
+        ]
+      }
+    }
+  ],
+  "buyerLine": [
+    {
+      "const": "order",
+      "value": {
+        "plan": {
+          "db": "orders"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "input",
+                  "order"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "const": "customer",
+      "value": {
+        "plan": {
+          "db": "customers"
+        },
+        "then": [
+          {
+            "get": [
+              {
+                "name": [
+                  "order",
+                  "customer"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "return": {
+        "text": [
+          {
+            "name": [
+              "customer",
+              "name"
+            ]
+          },
+          " <",
+          {
+            "name": [
+              "customer",
+              "email"
+            ]
+          },
+          ">"
+        ]
+      }
+    }
+  ],
+  "refund": [
+    {
+      "const": "order",
+      "value": {
+        "await": {
+          "plan": {
+            "db": "orders",
+            "system": true
+          },
+          "then": [
+            {
+              "get": [
+                {
+                  "name": [
+                    "input",
+                    "order"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "name": [
+            "order",
+            "?chargeId"
+          ]
+        }
+      },
+      "then": [
+        {
+          "do": {
+            "args": [
+              "not-charged",
+              "This order was never charged."
+            ],
+            "fn": "fail"
+          }
+        }
+      ]
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "charge",
+                  {
+                    "name": [
+                      "order",
+                      "chargeId"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "call": "createRefund",
+            "service": "stripe"
+          }
+        }
+      }
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "order",
+                  {
+                    "name": [
+                      "order",
+                      "id"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "function": "reopen"
+          }
+        }
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "ok",
+            true
+          ],
+          [
+            "by",
+            {
+              "name": [
+                "user",
+                "id"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "eachWaits": [
+    {
+      "const": "totals",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "name": [
+                "input",
+                "orders"
+              ]
+            },
+            {
+              "arrow": [
+                "id",
+                "i"
+              ],
+              "do": [
+                {
+                  "const": "order",
+                  "value": {
+                    "await": {
+                      "plan": {
+                        "db": "orders"
+                      },
+                      "then": [
+                        {
+                          "get": [
+                            {
+                              "name": [
+                                "id"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "if": {
+                    "not": {
+                      "name": [
+                        "order"
+                      ]
+                    }
+                  },
+                  "then": [
+                    {
+                      "return": 0
+                    }
+                  ]
+                },
+                {
+                  "do": {
+                    "await": {
+                      "args": [
+                        {
+                          "object": [
+                            [
+                              "to",
+                              {
+                                "name": [
+                                  "input",
+                                  "to"
+                                ]
+                              }
+                            ],
+                            [
+                              "subject",
+                              {
+                                "text": [
+                                  "Order ",
+                                  {
+                                    "left": {
+                                      "name": [
+                                        "i"
+                                      ]
+                                    },
+                                    "op": "+",
+                                    "right": 1
+                                  },
+                                  " of ",
+                                  {
+                                    "name": [
+                                      "input",
+                                      "orders",
+                                      "length"
+                                    ]
+                                  }
+                                ]
+                              }
+                            ],
+                            [
+                              "text",
+                              {
+                                "text": [
+                                  "Total ",
+                                  {
+                                    "name": [
+                                      "order",
+                                      "total"
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          ]
+                        }
+                      ],
+                      "call": {
+                        "builtin": "mail.send"
+                      }
+                    }
+                  }
+                },
+                {
+                  "return": {
+                    "name": [
+                      "order",
+                      "total"
+                    ]
+                  }
+                }
+              ],
+              "waits": true
+            }
+          ],
+          "fn": "each"
+        }
+      }
+    },
+    {
+      "const": "read",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "name": [
+                "input",
+                "orders"
+              ]
+            },
+            {
+              "arrow": [
+                "id"
+              ],
+              "do": [
+                {
+                  "return": {
+                    "plan": {
+                      "db": "orders"
+                    },
+                    "then": [
+                      {
+                        "get": [
+                          {
+                            "name": [
+                              "id"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "fn": "each"
+        }
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "totals",
+            {
+              "name": [
+                "totals"
+              ]
+            }
+          ],
+          [
+            "sum",
+            {
+              "args": [
+                {
+                  "name": [
+                    "totals"
+                  ]
+                }
+              ],
+              "fn": "sum"
+            }
+          ],
+          [
+            "buyers",
+            {
+              "args": [
+                {
+                  "name": [
+                    "read"
+                  ]
+                },
+                {
+                  "arrow": [
+                    "o"
+                  ],
+                  "do": [
+                    {
+                      "return": {
+                        "name": [
+                          "o",
+                          "?customer"
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ],
+              "fn": "each"
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "handles": [
+    {
+      "do": {
+        "args": [
+          "signing in",
+          {
+            "object": [
+              [
+                "user",
+                {
+                  "name": [
+                    "user",
+                    "id"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "call": {
+          "builtin": "log.info"
+        }
+      }
+    },
+    {
+      "const": "session",
+      "value": {
+        "args": [
+          {
+            "name": [
+              "user",
+              "id"
+            ]
+          },
+          {
+            "object": [
+              [
+                "for",
+                "30 days"
+              ]
+            ]
+          }
+        ],
+        "call": {
+          "builtin": "sessions.start"
+        }
+      }
+    },
+    {
+      "const": "file",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "text": [
+                "Hello ",
+                {
+                  "setting": "shopName"
+                }
+              ]
+            },
+            {
+              "object": [
+                [
+                  "name",
+                  "hello.txt"
+                ],
+                [
+                  "kind",
+                  "text/plain"
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "builtin": "files.put"
+          }
+        }
+      }
+    },
+    {
+      "const": "address",
+      "value": {
+        "args": [
+          {
+            "service": "calendar"
+          },
+          {
+            "object": [
+              [
+                "back",
+                {
+                  "name": [
+                    "input",
+                    "back"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "call": {
+          "builtin": "connections.start"
+        }
+      }
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "to",
+                  {
+                    "name": [
+                      "input",
+                      "to"
+                    ]
+                  }
+                ],
+                [
+                  "subject",
+                  {
+                    "args": [
+                      "Welcome to ",
+                      {
+                        "setting": "shopName"
+                      }
+                    ],
+                    "fn": "concat"
+                  }
+                ],
+                [
+                  "text",
+                  {
+                    "text": [
+                      "Your file is ",
+                      {
+                        "name": [
+                          "file"
+                        ]
+                      },
+                      ", from ",
+                      {
+                        "named": {
+                          "project": [
+                            "options",
+                            "title"
+                          ]
+                        },
+                        "value": "Shop"
+                      },
+                      "."
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "builtin": "mail.send"
+          }
+        }
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "session",
+            {
+              "name": [
+                "session",
+                "id"
+              ]
+            }
+          ],
+          [
+            "file",
+            {
+              "name": [
+                "file"
+              ]
+            }
+          ],
+          [
+            "address",
+            {
+              "name": [
+                "address"
+              ]
+            }
+          ],
+          [
+            "soon",
+            {
+              "left": {
+                "args": [],
+                "fn": "now"
+              },
+              "op": "<=",
+              "right": {
+                "args": [
+                  {
+                    "args": [],
+                    "fn": "now"
+                  },
+                  "1 minute"
+                ],
+                "fn": "later"
+              }
+            }
+          ],
+          [
+            "title",
+            {
+              "named": {
+                "project": [
+                  "options",
+                  "title"
+                ]
+              },
+              "value": "Shop"
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "models": [
+    {
+      "const": "order",
+      "value": {
+        "await": {
+          "plan": {
+            "db": "orders"
+          },
+          "then": [
+            {
+              "get": [
+                {
+                  "name": [
+                    "input",
+                    "order"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "const": "reply",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "text": [
+                "Thank the buyer of order ",
+                {
+                  "name": [
+                    "order",
+                    "id"
+                  ]
+                }
+              ]
+            }
+          ],
+          "call": {
+            "call": "reply",
+            "model": "writer"
+          }
+        }
+      }
+    },
+    {
+      "const": "read",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "types": {
+                "mood": {
+                  "kind": "choice",
+                  "values": [
+                    "calm",
+                    "angry"
+                  ]
+                },
+                "summary": {
+                  "kind": "text",
+                  "max": 200
+                }
+              }
+            },
+            {
+              "name": [
+                "input",
+                "message"
+              ]
+            }
+          ],
+          "call": {
+            "call": "fill",
+            "model": "writer"
+          }
+        }
+      }
+    },
+    {
+      "const": "picture",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "prompt",
+                  {
+                    "name": [
+                      "read",
+                      "summary"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "model": "painter"
+          }
+        }
+      }
+    },
+    {
+      "const": "answer",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "message",
+                  {
+                    "name": [
+                      "input",
+                      "message"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "flow": "helper"
+          }
+        }
+      }
+    },
+    {
+      "const": "welcome",
+      "value": {
+        "else": {
+          "nothing": true
+        },
+        "if": {
+          "left": {
+            "name": [
+              "read",
+              "mood"
+            ]
+          },
+          "op": "==",
+          "right": "angry"
+        },
+        "then": {
+          "await": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "customer",
+                    {
+                      "name": [
+                        "order",
+                        "customer"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "flow": "sendWelcome"
+            }
+          }
+        }
+      }
+    },
+    {
+      "const": "receipt",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "order",
+                  {
+                    "name": [
+                      "order",
+                      "id"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "function": "sendReceipt"
+          }
+        }
+      }
+    },
+    {
+      "const": "charge",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "id",
+                  {
+                    "name": [
+                      "order",
+                      "chargeId"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "call": "getCharge",
+            "service": "stripe"
+          }
+        }
+      }
+    },
+    {
+      "const": "approved",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "name": [
+                "input",
+                "run"
+              ]
+            },
+            "refund"
+          ],
+          "call": {
+            "agent": "helper",
+            "member": "approve"
+          }
+        }
+      }
+    },
+    {
+      "const": "busy",
+      "value": [
+        {
+          "await": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "customer",
+                    {
+                      "name": [
+                        "order",
+                        "customer"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "flow": "sendWelcome",
+              "member": "working"
+            }
+          }
+        },
+        {
+          "await": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "order",
+                    {
+                      "name": [
+                        "order",
+                        "id"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "function": "sendReceipt",
+              "member": "working"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "text",
+            {
+              "name": [
+                "reply",
+                "text"
+              ]
+            }
+          ],
+          [
+            "mood",
+            {
+              "name": [
+                "read",
+                "mood"
+              ]
+            }
+          ],
+          [
+            "picture",
+            {
+              "name": [
+                "picture",
+                "picture"
+              ]
+            }
+          ],
+          [
+            "said",
+            {
+              "name": [
+                "answer",
+                "text"
+              ]
+            }
+          ],
+          [
+            "welcome",
+            {
+              "name": [
+                "welcome"
+              ]
+            }
+          ],
+          [
+            "sent",
+            {
+              "name": [
+                "receipt",
+                "sent"
+              ]
+            }
+          ],
+          [
+            "paid",
+            {
+              "name": [
+                "charge",
+                "paid"
+              ]
+            }
+          ],
+          [
+            "approved",
+            {
+              "name": [
+                "approved"
+              ]
+            }
+          ],
+          [
+            "busy",
+            {
+              "name": [
+                "busy"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "awaitOrder": [
+    {
+      "const": "user",
+      "value": {
+        "args": [
+          {
+            "object": [
+              [
+                "name",
+                {
+                  "name": [
+                    "input",
+                    "name"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "call": {
+          "function": "addUser"
+        },
+        "system": true
+      }
+    },
+    {
+      "const": "charge",
+      "value": {
+        "args": [
+          {
+            "object": [
+              [
+                "id",
+                {
+                  "name": [
+                    "input",
+                    "charge"
+                  ]
+                }
+              ]
+            ]
+          }
+        ],
+        "call": {
+          "call": "getCharge",
+          "service": "stripe"
+        }
+      }
+    },
+    {
+      "const": "posted",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "object": [
+                [
+                  "channel",
+                  "#sales"
+                ],
+                [
+                  "text",
+                  {
+                    "text": [
+                      "New buyer ",
+                      {
+                        "name": [
+                          "user",
+                          "name"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "call": {
+            "call": "postMessage",
+            "service": "slack"
+          }
+        }
+      }
+    },
+    {
+      "const": "receipt",
+      "value": {
+        "else": {
+          "await": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "order",
+                    {
+                      "name": [
+                        "input",
+                        "order"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "function": "sendReceipt"
+            }
+          }
+        },
+        "if": {
+          "name": [
+            "input",
+            "fast"
+          ]
+        },
+        "then": {
+          "await": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "order",
+                    {
+                      "name": [
+                        "input",
+                        "order"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "function": "sendReceipt"
+            },
+            "system": true
+          }
+        }
+      }
+    },
+    {
+      "const": "both",
+      "value": [
+        {
+          "args": [
+            "between"
+          ],
+          "call": {
+            "builtin": "log.info"
+          }
+        },
+        {
+          "await": {
+            "args": [
+              {
+                "object": [
+                  [
+                    "charge",
+                    {
+                      "name": [
+                        "input",
+                        "charge"
+                      ]
+                    }
+                  ]
+                ]
+              }
+            ],
+            "call": {
+              "call": "createRefund",
+              "service": "stripe"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "const": "count",
+      "value": {
+        "path": [
+          "length"
+        ],
+        "read": {
+          "await": {
+            "plan": {
+              "db": "orders",
+              "system": true
+            },
+            "then": [
+              {
+                "where": [
+                  {
+                    "object": [
+                      [
+                        "status",
+                        "open"
+                      ]
+                    ]
+                  }
+                ]
+              },
+              {
+                "all": []
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "const": "first",
+      "value": {
+        "left": {
+          "path": [
+            "?id"
+          ],
+          "read": {
+            "await": {
+              "plan": {
+                "db": "orders"
+              },
+              "then": [
+                {
+                  "where": [
+                    {
+                      "object": [
+                        [
+                          "status",
+                          {
+                            "name": [
+                              "input",
+                              "status"
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "first": []
+                }
+              ]
+            }
+          }
+        },
+        "op": "??",
+        "right": {
+          "path": [
+            "id"
+          ],
+          "read": {
+            "await": {
+              "plan": {
+                "db": "orders"
+              },
+              "then": [
+                {
+                  "get": [
+                    "o1"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "const": "none",
+      "value": {
+        "left": {
+          "name": [
+            "input",
+            "skip"
+          ]
+        },
+        "op": "&&",
+        "right": {
+          "await": {
+            "args": [
+              "never asked"
+            ],
+            "call": {
+              "call": "reply",
+              "model": "writer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "const": "some",
+      "value": {
+        "left": {
+          "name": [
+            "input",
+            "skip"
+          ]
+        },
+        "op": "||",
+        "right": {
+          "await": {
+            "args": [
+              "asked"
+            ],
+            "call": {
+              "call": "reply",
+              "model": "writer"
+            }
+          }
+        }
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "user",
+            {
+              "name": [
+                "user",
+                "id"
+              ]
+            }
+          ],
+          [
+            "paid",
+            {
+              "path": [
+                "paid"
+              ],
+              "read": {
+                "await": {
+                  "name": [
+                    "charge"
+                  ]
+                }
+              }
+            }
+          ],
+          [
+            "posted",
+            {
+              "name": [
+                "posted",
+                "ok"
+              ]
+            }
+          ],
+          [
+            "sent",
+            {
+              "name": [
+                "receipt",
+                "sent"
+              ]
+            }
+          ],
+          [
+            "refund",
+            {
+              "name": [
+                "both",
+                1,
+                "id"
+              ]
+            }
+          ],
+          [
+            "count",
+            {
+              "name": [
+                "count"
+              ]
+            }
+          ],
+          [
+            "first",
+            {
+              "name": [
+                "first"
+              ]
+            }
+          ],
+          [
+            "none",
+            {
+              "name": [
+                "none"
+              ]
+            }
+          ],
+          [
+            "some",
+            {
+              "name": [
+                "some"
+              ]
+            }
+          ]
+        ]
+      }
+    }
+  ],
+  "bigOrder": [
+    {
+      "const": "customer",
+      "value": {
+        "await": {
+          "args": [
+            "find customer",
+            {
+              "arrow": [],
+              "do": [
+                {
+                  "return": {
+                    "plan": {
+                      "db": "customers"
+                    },
+                    "then": [
+                      {
+                        "get": [
+                          {
+                            "name": [
+                              "event",
+                              "row",
+                              "customer"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "fn": "step"
+        }
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "name": [
+            "customer"
+          ]
+        }
+      },
+      "then": [
+        {
+          "return": {
+            "nothing": true
+          }
+        }
+      ]
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            "tell sales",
+            {
+              "arrow": [],
+              "do": [
+                {
+                  "return": {
+                    "args": [
+                      {
+                        "object": [
+                          [
+                            "channel",
+                            "#sales"
+                          ],
+                          [
+                            "text",
+                            {
+                              "text": [
+                                "Big order from ",
+                                {
+                                  "name": [
+                                    "customer",
+                                    "name"
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        ]
+                      }
+                    ],
+                    "call": {
+                      "call": "postMessage",
+                      "service": "slack"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "fn": "step"
+        }
+      }
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            "3 days"
+          ],
+          "fn": "step.wait"
+        }
+      }
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            "follow up",
+            {
+              "arrow": [],
+              "do": [
+                {
+                  "return": {
+                    "args": [
+                      {
+                        "object": [
+                          [
+                            "to",
+                            {
+                              "name": [
+                                "customer",
+                                "email"
+                              ]
+                            }
+                          ],
+                          [
+                            "subject",
+                            "How was your order?"
+                          ],
+                          [
+                            "text",
+                            "Tell us how it went."
+                          ]
+                        ]
+                      }
+                    ],
+                    "call": {
+                      "builtin": "mail.send"
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "fn": "step"
+        }
+      }
+    }
+  ],
+  "flowTools": [
+    {
+      "const": "at",
+      "value": {
+        "await": {
+          "args": [],
+          "fn": "step.now"
+        }
+      }
+    },
+    {
+      "const": "open",
+      "value": {
+        "await": {
+          "args": [
+            "read open",
+            {
+              "arrow": [],
+              "do": [
+                {
+                  "return": {
+                    "plan": {
+                      "db": "orders"
+                    },
+                    "then": [
+                      {
+                        "where": [
+                          {
+                            "object": [
+                              [
+                                "status",
+                                "open"
+                              ]
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "all": []
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ],
+          "fn": "step"
+        }
+      }
+    },
+    {
+      "const": "told",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "name": [
+                "open"
+              ]
+            },
+            {
+              "arrow": [
+                "order",
+                "i"
+              ],
+              "do": [
+                {
+                  "const": "posted",
+                  "value": {
+                    "await": {
+                      "args": [
+                        "tell sales",
+                        {
+                          "arrow": [],
+                          "do": [
+                            {
+                              "return": {
+                                "args": [
+                                  {
+                                    "object": [
+                                      [
+                                        "channel",
+                                        "#sales"
+                                      ],
+                                      [
+                                        "text",
+                                        {
+                                          "text": [
+                                            {
+                                              "left": {
+                                                "name": [
+                                                  "i"
+                                                ]
+                                              },
+                                              "op": "+",
+                                              "right": 1
+                                            },
+                                            ". order ",
+                                            {
+                                              "name": [
+                                                "order",
+                                                "id"
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    ]
+                                  }
+                                ],
+                                "call": {
+                                  "call": "postMessage",
+                                  "service": "slack"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "object": [
+                            [
+                              "tries",
+                              2
+                            ]
+                          ]
+                        }
+                      ],
+                      "fn": "step"
+                    }
+                  }
+                },
+                {
+                  "return": {
+                    "name": [
+                      "posted",
+                      "ok"
+                    ]
+                  }
+                }
+              ],
+              "waits": true
+            }
+          ],
+          "fn": "step.all"
+        }
+      }
+    },
+    {
+      "const": "fastest",
+      "value": {
+        "await": {
+          "args": [
+            [
+              {
+                "arrow": [],
+                "do": [
+                  {
+                    "return": {
+                      "args": [
+                        "ask writer",
+                        {
+                          "arrow": [],
+                          "do": [
+                            {
+                              "return": {
+                                "args": [
+                                  "Sum up"
+                                ],
+                                "call": {
+                                  "call": "reply",
+                                  "model": "writer"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "fn": "step"
+                    }
+                  }
+                ]
+              },
+              {
+                "arrow": [],
+                "do": [
+                  {
+                    "return": {
+                      "args": [
+                        "1 minute",
+                        {
+                          "object": [
+                            [
+                              "name",
+                              "give up"
+                            ]
+                          ]
+                        }
+                      ],
+                      "fn": "step.wait"
+                    }
+                  }
+                ]
+              }
+            ]
+          ],
+          "fn": "step.first"
+        }
+      }
+    },
+    {
+      "const": "paid",
+      "value": {
+        "await": {
+          "args": [
+            {
+              "args": [
+                "order.paid"
+              ],
+              "fn": "event"
+            },
+            {
+              "object": [
+                [
+                  "where",
+                  {
+                    "object": [
+                      [
+                        "order",
+                        {
+                          "name": [
+                            "input",
+                            "order"
+                          ]
+                        }
+                      ]
+                    ]
+                  }
+                ],
+                [
+                  "timeout",
+                  {
+                    "name": [
+                      "input",
+                      "patience"
+                    ]
+                  }
+                ]
+              ]
+            }
+          ],
+          "fn": "step.waitFor"
+        }
+      }
+    },
+    {
+      "if": {
+        "name": [
+          "paid",
+          "timedOut"
+        ]
+      },
+      "then": [
+        {
+          "const": "say",
+          "value": {
+            "await": {
+              "args": [
+                "approval",
+                {
+                  "object": [
+                    [
+                      "timeout",
+                      {
+                        "name": [
+                          "input",
+                          "ask"
+                        ]
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "fn": "step.waitFor"
+            }
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "name": [
+                "say",
+                "approved"
+              ]
+            }
+          },
+          "then": [
+            {
+              "do": {
+                "await": {
+                  "args": [
+                    {
+                      "object": [
+                        [
+                          "ended",
+                          "refused"
+                        ],
+                        [
+                          "at",
+                          {
+                            "name": [
+                              "at"
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ],
+                  "fn": "step.done"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "do": [
+        {
+          "do": {
+            "await": {
+              "args": [
+                "mail",
+                {
+                  "arrow": [],
+                  "do": [
+                    {
+                      "return": {
+                        "args": [
+                          {
+                            "object": [
+                              [
+                                "to",
+                                {
+                                  "name": [
+                                    "input",
+                                    "to"
+                                  ]
+                                }
+                              ],
+                              [
+                                "subject",
+                                {
+                                  "text": [
+                                    "Order ",
+                                    {
+                                      "name": [
+                                        "order",
+                                        "id"
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ],
+                              [
+                                "text",
+                                "It is on its way."
+                              ]
+                            ]
+                          }
+                        ],
+                        "call": {
+                          "builtin": "mail.send"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ],
+              "fn": "step"
+            }
+          }
+        }
+      ],
+      "for": "order",
+      "of": {
+        "name": [
+          "open"
+        ]
+      }
+    },
+    {
+      "const": "news",
+      "value": {
+        "plan": {
+          "table": "videos"
+        },
+        "then": [
+          {
+            "where": [
+              {
+                "object": [
+                  [
+                    "state",
+                    "new"
+                  ]
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "const": "encoded",
+      "value": {
+        "await": {
+          "args": [
+            "encode",
+            {
+              "plan": {
+                "name": [
+                  "news"
+                ]
+              },
+              "then": [
+                {
+                  "pick": [
+                    [
+                      "id"
+                    ]
+                  ]
+                },
+                {
+                  "first": []
+                }
+              ]
+            },
+            {
+              "flow": "encodeOne"
+            },
+            {
+              "object": [
+                [
+                  "atOnce",
+                  2
+                ]
+              ]
+            }
+          ],
+          "fn": "step.many"
+        }
+      }
+    },
+    {
+      "const": "counted",
+      "value": {
+        "await": {
+          "args": [
+            "count",
+            {
+              "plan": {
+                "table": "videos"
+              },
+              "then": [
+                {
+                  "count": [
+                    {
+                      "object": [
+                        [
+                          "state",
+                          "new"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "flow": "encodeOne"
+            }
+          ],
+          "fn": "step.many"
+        }
+      }
+    },
+    {
+      "const": "sum",
+      "value": {
+        "path": [
+          "text"
+        ],
+        "read": {
+          "await": {
+            "args": [
+              "ask",
+              {
+                "arrow": [],
+                "do": [
+                  {
+                    "return": {
+                      "args": [
+                        {
+                          "text": [
+                            "Sum up ",
+                            {
+                              "name": [
+                                "told",
+                                "length"
+                              ]
+                            },
+                            " orders"
+                          ]
+                        }
+                      ],
+                      "call": {
+                        "call": "reply",
+                        "model": "writer"
+                      }
+                    }
+                  }
+                ]
+              }
+            ],
+            "fn": "step"
+          }
+        }
+      }
+    },
+    {
+      "do": {
+        "await": {
+          "args": [
+            "3 days"
+          ],
+          "fn": "step.wait"
+        }
+      }
+    },
+    {
+      "return": {
+        "object": [
+          [
+            "at",
+            {
+              "name": [
+                "at"
+              ]
+            }
+          ],
+          [
+            "told",
+            {
+              "name": [
+                "told"
+              ]
+            }
+          ],
+          [
+            "fastest",
+            {
+              "name": [
+                "fastest",
+                "?text"
+              ]
+            }
+          ],
+          [
+            "encoded",
+            {
+              "name": [
+                "encoded",
+                "done"
+              ]
+            }
+          ],
+          [
+            "counted",
+            {
+              "name": [
+                "counted",
+                "done"
+              ]
+            }
+          ],
+          [
+            "sum",
+            {
+              "name": [
+                "sum"
+              ]
+            }
+          ],
+          [
+            "lucky",
+            {
+              "left": {
+                "await": {
+                  "args": [],
+                  "fn": "step.random"
+                }
+              },
+              "op": "<",
+              "right": 0.5
+            }
+          ]
+        ]
+      }
+    }
+  ]
+}
