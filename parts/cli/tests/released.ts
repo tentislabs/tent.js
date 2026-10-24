@@ -262,6 +262,19 @@ export const npm = (person: Person, words: string[], cwd: string, input?: string
     ...(input === undefined ? {} : { input }),
   })
 
+/**
+ * Runs npm as `npm` does, as a person whose umask is 0002, Ubuntu's own: every folder npm lays is open to its
+ * group. The umask is the program's own, which npm inherits and never loosens; `npm_config_umask` alone only adds to it.
+ */
+export async function npmOpenToGroup(person: Person, words: string[], cwd: string): Promise<Ran> {
+  const was = process.umask(0o002)
+  try {
+    return await npm(person, words, cwd)
+  } finally {
+    process.umask(was)
+  }
+}
+
 /** A server of this computer, ended with the test. */
 interface Served {
   address: string

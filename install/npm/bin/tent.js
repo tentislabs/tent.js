@@ -3,7 +3,7 @@
 // the pinned runtime with the player and the words it was handed. Where the files of this system are missing or
 // are of another system, it repairs them first: it fetches the layer of this system of its own version from where
 // releases are served, holds it to `systems.json` of this package, and lays it into the install's own folder.
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
@@ -33,17 +33,30 @@ function homeOf() {
 
 /**
  * Whether, on Linux, the group of an id holds no person but the current user: the private group each user has
- * there, which npm leaves its folders open to under the umask 0002 that Ubuntu gives. On macOS the person's own
- * group, staff, holds every person of the computer, so a group is never the person alone there.
+ * there, named as the user, which npm leaves its folders open to under the umask 0002 that Ubuntu gives. Every name
+ * the id goes by is read, each also as the system's own lookup answers it, which holds members from beyond the file
+ * (LDAP, sssd); anything it cannot read for certain is no group of one. On macOS the person's own group, staff,
+ * holds every person of the computer, so a group is never the person alone there.
  */
 function groupOfOne(gid) {
   if (process.platform !== 'linux' || gid !== process.getgid()) return false
   try {
     const me = userInfo().username
-    const fields = (file) => readFileSync(file, 'utf8').split('\n').map((line) => line.split(':'))
-    const group = fields('/etc/group').find((one) => Number(one[2]) === gid)
-    if (!group || (group[3] ?? '').split(',').some((name) => name !== '' && name !== me)) return false
-    return !fields('/etc/passwd').some((one) => one[0] && one[0] !== me && Number(one[3]) === gid)
+    const fields = (text) =>
+      text
+        .split('\n')
+        .filter((line) => line.trim() !== '' && !line.startsWith('#'))
+        .map((line) => line.split(':'))
+    const others = (members) => (members ?? '').split(',').some((name) => name.trim() !== '' && name.trim() !== me)
+    const named = fields(readFileSync('/etc/group', 'utf8')).filter((one) => Number(one[2]) === gid)
+    if (!named.some((one) => one[0] === me)) return false
+    for (const one of named) {
+      if (others(one[3])) return false
+      const looked = spawnSync('getent', ['group', one[0]], { encoding: 'utf8' })
+      if (looked.status !== 0) return false
+      if (fields(looked.stdout).some((line) => Number(line[2]) !== gid || others(line[3]))) return false
+    }
+    return !fields(readFileSync('/etc/passwd', 'utf8')).some((one) => one[0] !== me && Number(one[3]) === gid)
   } catch {
     return false
   }

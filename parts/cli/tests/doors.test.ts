@@ -12,6 +12,7 @@ import {
   laidInstall,
   launcherIn,
   npm,
+  npmOpenToGroup,
   npmTent,
   outsideFolderOf,
   packedOf,
@@ -105,9 +106,8 @@ test('[41-12.18] under the npm door with a umask of 0002, the launcher runs from
   const registry = await registryOf(t, packedOf(rel))
   person.env.npm_config_registry = registry.address
   // npm lays every folder open to its group, as Ubuntu's default umask has it.
-  person.env.npm_config_umask = '0002'
   const prefix = join(person.home, 'npm-global')
-  const installed = await npm(person, ['install', '-g', 'tentjs@1.0.0', '--prefix', prefix], person.home)
+  const installed = await npmOpenToGroup(person, ['install', '-g', 'tentjs@1.0.0', '--prefix', prefix], person.home)
   assert.equal(installed.status, 0, installed.err)
   const asked = await tentOf(prefix, person)(['--version'], person.home)
   if (process.platform === 'linux') {
