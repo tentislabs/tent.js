@@ -67,19 +67,26 @@ export const dataFolderOf = (o: { folder: string; data?: unknown }): string =>
   typeof o.data === 'string' ? resolve(o.folder, o.data) : join(o.folder, '.tent')
 
 /** The request of a command to the admin channel of an engine. */
-const request = (at: Running, command: string, args: object): Request =>
-  new Request(`http://127.0.0.1:${at.port}/_t/admin/${command}`, {
+const request = (at: Running, command: string, args: object, origin = `http://127.0.0.1:${at.port}`): Request =>
+  new Request(`${origin}/_t/admin/${command}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${at.token}` },
     body: JSON.stringify({ args }),
   })
 
 /**
- * Takes an app that this program opened on a data folder, the name of a command of the admin channel, and its
- * words. Has the app carry the command out with no network, and answers what it answered.
+ * Takes an app that this program opened on a data folder, the name of a command of the admin channel, its words,
+ * and the address the app is served at where it serves names of its own, as with `--domain`, since it answers no
+ * other name. Has the app carry the command out with no network, and answers what it answered.
  */
-export async function askedOfOwn(app: App, dataFolder: string, command: string, args: object): Promise<Asked> {
-  return read(await app.request(request(ownEngine(dataFolder), command, args)))
+export async function askedOfOwn(
+  app: App,
+  dataFolder: string,
+  command: string,
+  args: object,
+  at?: string,
+): Promise<Asked> {
+  return read(await app.request(request(ownEngine(dataFolder), command, args, at)))
 }
 
 /**

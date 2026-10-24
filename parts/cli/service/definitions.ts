@@ -9,7 +9,15 @@ export interface Defined {
   words: string[]
   // Started with the machine, rather than at the sign-in of the user.
   machine: boolean
+  // What starts the launcher where it is no launcher of the install's own folder: under the npm door, the Node.js
+  // that ran it and its script.
+  launcher?: string[]
+  // The folder the app runs in, where a path that is no whole one is read from: the one `tent service` was typed in.
+  folder?: string
 }
+
+/** What starts the launcher of a definition: the one handed, or the install's own of that name. */
+const launcherOf = (o: Defined, own: string): string[] => o.launcher ?? [own]
 
 /**
  * Takes the name of an app, which the description of its bundle gives and nobody typed. Answers the name that a
@@ -57,7 +65,7 @@ function windowsWord(word: string): string {
 
 /** A systemd unit that starts the app at the start of the machine, as its user, with the right to the low ports alone. */
 function unitOf(o: Defined): string {
-  const launcher = posix.join(o.home, 'bin', 'tent')
+  const launcher = launcherOf(o, posix.join(o.home, 'bin', 'tent'))
   return [
     '[Unit]',
     // A `%` of the unit's own text starts a specifier of systemd, which a doubled one does not.
@@ -66,7 +74,8 @@ function unitOf(o: Defined): string {
     '',
     '[Service]',
     `User=${o.user}`,
-    `ExecStart=${[launcher, ...o.words].map(unitWord).join(' ')}`,
+    ...(o.folder === undefined ? [] : [`WorkingDirectory=${o.folder.replaceAll('%', '%%')}`]),
+    `ExecStart=${[...launcher, ...o.words].map(unitWord).join(' ')}`,
     'Restart=always',
     'RestartSec=2',
     'AmbientCapabilities=CAP_NET_BIND_SERVICE',
@@ -81,7 +90,7 @@ function unitOf(o: Defined): string {
 
 /** A launchd file: of the person, which starts at their sign-in, or of the machine, as that user. */
 function launchdOf(o: Defined): string {
-  const launcher = posix.join(o.home, 'bin', 'tent')
+  const launcher = launcherOf(o, posix.join(o.home, 'bin', 'tent'))
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">',
@@ -91,8 +100,9 @@ function launchdOf(o: Defined): string {
     `  <string>com.tentjs.${definitionName(o.name)}</string>`,
     '  <key>ProgramArguments</key>',
     '  <array>',
-    ...[launcher, ...o.words].map((word) => `    <string>${xmlText(word)}</string>`),
+    ...[...launcher, ...o.words].map((word) => `    <string>${xmlText(word)}</string>`),
     '  </array>',
+    ...(o.folder === undefined ? [] : ['  <key>WorkingDirectory</key>', `  <string>${xmlText(o.folder)}</string>`]),
     '  <key>RunAtLoad</key>',
     '  <true/>',
     '  <key>KeepAlive</key>',
@@ -109,6 +119,7 @@ function launchdOf(o: Defined): string {
  * with no password kept, started again a minute after a failure. The launcher with no window of its own runs it.
  */
 function taskOf(o: Defined): string {
+  const [command = '', ...before] = launcherOf(o, win32.join(o.home, 'bin', 'tentw.exe'))
   const trigger = o.machine
     ? ['    <BootTrigger>', '      <Enabled>true</Enabled>', '    </BootTrigger>']
     : [
@@ -146,8 +157,9 @@ function taskOf(o: Defined): string {
     '  </Settings>',
     '  <Actions Context="Author">',
     '    <Exec>',
-    `      <Command>${xmlText(win32.join(o.home, 'bin', 'tentw.exe'))}</Command>`,
-    `      <Arguments>${xmlText(o.words.map(windowsWord).join(' '))}</Arguments>`,
+    `      <Command>${xmlText(command)}</Command>`,
+    `      <Arguments>${xmlText([...before, ...o.words].map(windowsWord).join(' '))}</Arguments>`,
+    ...(o.folder === undefined ? [] : [`      <WorkingDirectory>${xmlText(o.folder)}</WorkingDirectory>`]),
     '    </Exec>',
     '  </Actions>',
     '</Task>',
@@ -162,7 +174,8 @@ export function definitionOf(system: 'linux' | 'darwin' | 'win32', o: Defined): 
 
 /** The one line that starts the app, for a builder's own wrapper, as the shell of the system takes it. */
 export function lineOf(system: 'linux' | 'darwin' | 'win32', o: Defined): string {
-  if (system === 'win32') return [win32.join(o.home, 'bin', 'tent.exe'), ...o.words].map(windowsWord).join(' ')
+  if (system === 'win32')
+    return [...launcherOf(o, win32.join(o.home, 'bin', 'tent.exe')), ...o.words].map(windowsWord).join(' ')
   const quoted = (word: string): string => (/^[\w@%+=:,./-]+$/.test(word) ? word : `'${word.replaceAll("'", `'\\''`)}'`)
-  return [posix.join(o.home, 'bin', 'tent'), ...o.words].map(quoted).join(' ')
+  return [...launcherOf(o, posix.join(o.home, 'bin', 'tent')), ...o.words].map(quoted).join(' ')
 }

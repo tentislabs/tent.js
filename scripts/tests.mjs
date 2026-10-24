@@ -1,5 +1,6 @@
 // Carries out the tests of a tree with the test runner of the runtime and the reporter of the runs.
-// Run: node scripts/tests.mjs [folder] [--night]      The light tests, or with --night the heavy ones alone.
+// Run: node scripts/tests.mjs [folder] [--night] [--shard=<n>/<of>]      The light tests, or with --night the heavy
+// ones alone; with --shard the share of them that one of several machines runs side by side.
 import { spawnSync } from 'node:child_process'
 import { rmSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -8,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const words = process.argv.slice(2)
 const night = words.includes('--night')
+const shard = words.find((word) => word.startsWith('--shard='))?.slice('--shard='.length)
 const folder = words.find((word) => !word.startsWith('--')) ?? root
 
 // The rigs of a run each write a small file here, and one that an earlier run left would be gathered as its own.
@@ -25,6 +27,7 @@ const ended = spawnSync(
     `--import=${pathToFileURL(join(root, 'rig', 'offline.ts')).href}`,
     '--test',
     night ? '--test-name-pattern=\\[night\\]' : '--test-skip-pattern=\\[night\\]',
+    ...(shard ? [`--test-shard=${shard}`] : []),
     '--test-reporter=spec',
     '--test-reporter-destination=stdout',
     `--test-reporter=${pathToFileURL(join(root, 'rig', 'report.ts')).href}`,

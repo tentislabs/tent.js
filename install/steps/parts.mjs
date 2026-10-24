@@ -321,6 +321,10 @@ function moduleText(root, layout, file, into, start) {
     if (node.type !== 'Literal' || typeof node.value !== 'string' || imported.has(node.start)) return
     const value = node.value
     if (!value.startsWith('./') && !value.startsWith('../')) return
+    // Dot segments alone name no file: they are a prefix a path is held against, as `name.startsWith('./')`, and are
+    // a place only as the address of `new URL('../', import.meta.url)`.
+    const asPlace = holder?.type === 'NewExpression' && holder.callee?.name === 'URL' && holder.arguments?.[0] === node
+    if (/^(\.\.?\/)+$/.test(value) && !asPlace) return
     const target = resolve(dirname(file), value)
     // A release holds only what lies inside the repository: a path that leads out of it names nothing of the release,
     // whatever lies there on the computer that builds it.

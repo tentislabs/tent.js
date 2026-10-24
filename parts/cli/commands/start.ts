@@ -315,7 +315,7 @@ export const command: Command = {
         })
       if (args.seed === true) {
         // A seed is for data that holds no row: tables that an earlier command made, with nothing in them, are empty.
-        const empty = await askedOfOwn(app, dataFolder, 'data', { what: 'empty' })
+        const empty = await askedOfOwn(app, dataFolder, 'data', { what: 'empty' }, secured?.at)
         if (empty.findings) return { findings: empty.findings }
         if (empty.value === true) await app.seed()
         // Where it is not applied, the command says so, and never nothing.

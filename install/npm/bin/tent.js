@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { homedir } from 'node:os'
+import { homedir, userInfo } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { layEntries, readLayer } from './layer.mjs'
@@ -31,11 +31,30 @@ function homeOf() {
   return join(process.env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'Tent')
 }
 
+/**
+ * Whether, on Linux, the group of an id holds no person but the current user: the private group each user has
+ * there, which npm leaves its folders open to under the umask 0002 that Ubuntu gives. On macOS the person's own
+ * group, staff, holds every person of the computer, so a group is never the person alone there.
+ */
+function groupOfOne(gid) {
+  if (process.platform !== 'linux' || gid !== process.getgid()) return false
+  try {
+    const me = userInfo().username
+    const fields = (file) => readFileSync(file, 'utf8').split('\n').map((line) => line.split(':'))
+    const group = fields('/etc/group').find((one) => Number(one[2]) === gid)
+    if (!group || (group[3] ?? '').split(',').some((name) => name !== '' && name !== me)) return false
+    return !fields('/etc/passwd').some((one) => one[0] && one[0] !== me && Number(one[3]) === gid)
+  } catch {
+    return false
+  }
+}
+
 /** Whether a folder is one the launcher runs from: the person's own, and not one others can write into. */
 function ownFolder(folder) {
   if (process.platform === 'win32') return true
   const stat = statSync(folder)
-  return stat.uid === process.getuid() && (stat.mode & 0o022) === 0
+  if (stat.uid !== process.getuid() || (stat.mode & 0o002) !== 0) return false
+  return (stat.mode & 0o020) === 0 || groupOfOne(stat.gid)
 }
 
 /** The folder of the package of this system, where npm laid it beside this one and it holds its runtime. */
@@ -116,8 +135,10 @@ if (!ownFolder(from)) stop(`Tent.js runs nothing from ${from}: it is not your ow
 // The program files of the build tools lie beside the runtime, in the package of the system or where they were laid.
 const natives = own ?? join(laid, 'natives')
 const hook = `${pathToFileURL(join(here, 'bin', 'natives.mjs')).href}?at=${encodeURIComponent(natives)}`
+// The program is told what started it, so that a definition of the system starts it the same way again.
 const child = spawn(join(from, node), [`--import=${hook}`, join(here, 'player', 'tent.mjs'), ...process.argv.slice(2)], {
   stdio: 'inherit',
+  env: { ...process.env, TENT_LAUNCHER: fileURLToPath(import.meta.url), TENT_NODE: process.execPath },
 })
 for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => child.kill(signal))
 child.on('exit', (code, signal) => process.exit(code ?? (signal ? 1 : 0)))

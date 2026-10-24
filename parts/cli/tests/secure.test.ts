@@ -131,6 +131,30 @@ test('[41-9] tent start with a domain serves over a secure connection, by the pr
   await run.stop()
 })
 
+test('[41-9] tent start with a domain and --seed applies the seed to empty data, and serves its names', async (t) => {
+  const folder = workOf(t, 'seeded-domain')
+  const { project, bundle } = await builtShop(folder, {
+    'tables/notes.ts': `import { anyone, table, text } from 'tentjs'\n\nexport const notes = table('notes', {\n  columns: { words: text() },\n  access: { read: anyone('the notes are open') },\n})\n`,
+    'seed.ts': `import { seed } from 'tentjs'\nimport { notes } from './tables/notes'\n\nexport default seed([notes.add({ words: 'first' })])\n`,
+  })
+  const s = await standing(t, folder)
+  const data = join(folder, 'data')
+  // The command asks the app it opened whether the data is empty, by a name the app serves.
+  const run = startTent(t, [bundle, '--data', data, '--seed', '--domain', 'shop.test', ...secureWords(s)], {
+    cwd: project,
+  })
+  assert.equal((await served(s.port, 'shop.test', s.authority.root)).status, 200, run.err.join(''))
+  const said = run.err.join('')
+  assert.doesNotMatch(said, /T0017|the seed was not applied/)
+  await run.stop()
+  // Started again on that data, the seed is not applied twice, and the command says so.
+  const again = startTent(t, [bundle, '--data', data, '--seed', '--domain', 'shop.test', ...secureWords(s)], {
+    cwd: project,
+  })
+  await untilMinute(() => again.err.join('').includes('the seed was not applied'), 'the seed left alone')
+  await again.stop()
+})
+
 test('[41-9] where the plain port cannot be listened on, the name is proven inside the secure connection', async (t) => {
   const folder = workOf(t, 'inside-proof')
   const { project, bundle } = await builtShop(folder)

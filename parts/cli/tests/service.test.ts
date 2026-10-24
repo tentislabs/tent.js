@@ -136,6 +136,42 @@ test('[41-13a] tent service prints, for the system it runs on, a definition with
   assert.ok(line.out.includes(data))
 })
 
+test('[41-13a] a definition starts the app in the folder tent service was typed in, and under the npm door by the Node.js and the script that started tent', async (t) => {
+  const o = { name: 'shop', user: 'ada', home: '/home/ada/.tent', words: ['start', '/srv/shop'], machine: false }
+  const npmDoor = { ...o, launcher: ['/usr/bin/node', '/home/ada/.npm-global/lib/node_modules/tentjs/bin/tent.js'] }
+  const unit = definitionOf('linux', { ...npmDoor, folder: '/home/ada/site' }).split('\n')
+  assert.ok(unit.includes('WorkingDirectory=/home/ada/site'), unit.join('\n'))
+  assert.ok(
+    unit.includes(
+      'ExecStart="/usr/bin/node" "/home/ada/.npm-global/lib/node_modules/tentjs/bin/tent.js" "start" "/srv/shop"',
+    ),
+    unit.join('\n'),
+  )
+  const person = definitionOf('darwin', { ...npmDoor, folder: '/Users/ada/site' })
+  assert.match(person, /<array>\s*<string>\/usr\/bin\/node<\/string>\s*<string>[^<]*tent\.js<\/string>\s*<string>start/)
+  assert.match(person, /<key>WorkingDirectory<\/key>\s*<string>\/Users\/ada\/site<\/string>/)
+  const task = definitionOf('win32', {
+    ...o,
+    launcher: ['C:\\nodejs\\node.exe', 'C:\\npm\\node_modules\\tentjs\\bin\\tent.js'],
+    folder: 'C:\\site',
+  })
+  assert.match(task, /<Command>C:\\nodejs\\node\.exe<\/Command>/)
+  assert.match(task, /<Arguments>C:\\npm\\node_modules\\tentjs\\bin\\tent\.js start \/srv\/shop<\/Arguments>/)
+  assert.match(task, /<WorkingDirectory>C:\\site<\/WorkingDirectory>/)
+  // The direct door's launcher stands where no other was handed, and so does no folder.
+  assert.ok(definitionOf('linux', o).includes('ExecStart="/home/ada/.tent/bin/tent"'))
+  assert.doesNotMatch(definitionOf('linux', o), /WorkingDirectory/)
+  // tent service writes the folder it was typed in.
+  const folder = workOf(t, 'service-folder')
+  const { project, bundle } = await builtShop(folder)
+  const printed = await typed(['service', bundle, '--data', join(folder, 'data')], project)
+  assert.equal(printed.code, 0, printed.out)
+  assert.ok(
+    printed.out.includes(process.platform === 'win32' ? project.replaceAll('&', '&amp;') : project),
+    printed.out,
+  )
+})
+
 test('[41-13a] each of the three forms holds what the system reads, with every word written as that form asks', () => {
   const words = ['start', 'C:\\apps\\100% shop & co', '--data', '/var/a "b" <c>', '--domain', "shop.test,o'k.test"]
   const o = { name: 'shop', user: 'ada', home: '/home/ada/.tent', words, machine: false }

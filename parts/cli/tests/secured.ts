@@ -39,10 +39,17 @@ export function workOf(t: TestContext, name: string): string {
   return folder
 }
 
-/** Copies the shop into a folder and builds it. Answers the folder of the project and of its bundle. */
-export async function builtShop(folder: string): Promise<{ project: string; bundle: string; versionId: string }> {
+/** Copies the shop into a folder, with the files handed beside it, and builds it. Answers the folder of the project and of its bundle. */
+export async function builtShop(
+  folder: string,
+  files: Record<string, string> = {},
+): Promise<{ project: string; bundle: string; versionId: string }> {
   const project = join(folder, 'shop')
   cpSync(shop, project, { recursive: true })
+  for (const [path, text] of Object.entries(files)) {
+    mkdirSync(join(project, path, '..'), { recursive: true })
+    writeFileSync(join(project, path), text)
+  }
   const built = await buildProject(project, { for: 'release' })
   const errors = built.findings.filter((one) => one.level === 'error')
   if (errors.length) throw new Error(errors.map((one) => `${one.code} ${one.message}`).join(', '))

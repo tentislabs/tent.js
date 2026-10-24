@@ -147,6 +147,44 @@ test('[29-2] [21-6] tent start of an install, as it ships, of an app with no lin
   )
 })
 
+test('[41-1] tent start of an install, as it ships, runs an app whose server modules share a file: each loads the module of what they share', async (t) => {
+  const rel = await released('1.0.0')
+  const folder = outsideFolderOf(t, 'shipped-shared')
+  const person = personIn(folder, { npm: false })
+  const launcher = laidInstall(rel, person.tent, ['runtime', 'player'])
+  // Two functions, each in a file of its own, read one helper: the build writes the helper as a module both import.
+  const helper = "export const greeting = (name: string): string => ['Hello, ', name, '.'].join('')\n"
+  const caller = (name: string) =>
+    `import { action, anyone, text } from 'tentjs'\nimport { greeting } from '../lib/greeting.ts'\n\nexport const ${name} = action('${name}', {\n  access: anyone('anyone may be greeted'),\n  input: { name: text() },\n  output: text(),\n  run: async ({ input }) => greeting(input.name),\n})\n`
+  const project = shopIn(folder, {
+    files: {
+      'lib/greeting.ts': helper,
+      'functions/hello.ts': caller('hello'),
+      'functions/welcome.ts': caller('welcome'),
+    },
+  })
+  const built = await buildProject(project, { for: 'release' })
+  const server = readdirSync(join(built.bundleFolder, 'server'))
+  assert.ok(
+    server.some((file) => file.startsWith('shared.')),
+    `the build wrote what the functions share as a module of its own: ${server.join(', ')}`,
+  )
+  const data = join(folder, 'data')
+  const run = startedIn(t, launcher, startWords(['start', built.bundleFolder, '--data', data, '--port', '0']), {
+    cwd: folder,
+    env: person.env,
+  })
+  await until(async () => engineOf(data).port !== undefined || run.child.exitCode !== null, 'the engine', 60_000)
+  assert.equal(run.child.exitCode, null, `tent start runs: ${run.said()}`)
+  const asked = await fetch(`http://127.0.0.1:${engineOf(data).port}/_t/call/welcome`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ input: { name: 'Maya' } }),
+  })
+  const answer: unknown = await asked.json()
+  assert.equal(Reflect.get(Object(answer), 'value'), 'Hello, Maya.', `${JSON.stringify(answer)} ${run.said()}`)
+})
+
 test('[41-1] the player of a release holds the code of each part as one file, and no file of code of a part by itself', async (t) => {
   const rel = await released('1.0.0')
   const person = personIn(outsideFolderOf(t, 'shipped-files'), { npm: false })

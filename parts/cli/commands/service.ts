@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir, userInfo } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, resolve } from 'node:path'
 import type { Finding } from '../../core/index.ts'
 import { boolean, text } from '../../core/index.ts'
 import { finding, writeOwnerOnly } from '../../core/internal.ts'
@@ -98,14 +98,36 @@ function writtenInto(
     ...(o.machine ? ['--machine'] : []),
     ...o.words.slice(1),
   ].join(' ')
-  if (needsRoot && !root)
+  if (needsRoot && !root && system === 'win32')
     return {
       findings: [
         finding('T0013', `The definition of ${named} is written where only an administrator may write.`, {
-          fix: system === 'win32' ? `In a terminal opened as an administrator, type: ${again}` : `Type: sudo ${again}`,
+          fix: `In a terminal opened as an administrator, type: ${again}`,
         }),
       ],
     }
+  // On macOS and Linux the definition is laid beside the data, and the administrator copies it into place: Tent.js
+  // itself is never run as root, which runs nothing from a folder that another user owns.
+  if (needsRoot && !root && place) {
+    const laid = join(o.data, basename(place))
+    mkdirSync(o.data, { recursive: true })
+    writeFileSync(laid, o.text)
+    const started =
+      system === 'linux'
+        ? `sudo systemctl daemon-reload && sudo systemctl enable --now tent-${named}`
+        : `sudo launchctl bootstrap system ${place}`
+    return {
+      findings: [
+        finding(
+          'T0013',
+          `The definition of ${named} is written where only an administrator may write: it lies in ${laid}.`,
+          {
+            fix: `Type: sudo install -m 644 ${laid} ${place} && ${started}`,
+          },
+        ),
+      ],
+    }
+  }
   if (root && !o.typedUser)
     return {
       findings: [
@@ -190,7 +212,12 @@ export const command: Command = {
           }),
         ],
       }
-    const launcher = join(home, 'bin', system === 'win32' ? 'tentw.exe' : 'tent')
+    // The npm door names its own script, and the Node.js that runs it: the install's own folder holds no launcher then.
+    const npmDoor =
+      typeof process.env.TENT_LAUNCHER === 'string' && typeof process.env.TENT_NODE === 'string'
+        ? [process.env.TENT_NODE, process.env.TENT_LAUNCHER]
+        : undefined
+    const launcher = npmDoor?.[1] ?? join(home, 'bin', system === 'win32' ? 'tentw.exe' : 'tent')
     for (const [what, path] of [
       ['The data folder', data],
       ['The launcher', launcher],
@@ -218,7 +245,15 @@ export const command: Command = {
         }
     }
     const user = typeof args.user === 'string' ? args.user : userNow()
-    const defined: Defined = { name: appName(bundle), user, home, words, machine: args.machine === true }
+    const defined: Defined = {
+      name: appName(bundle),
+      user,
+      home,
+      words,
+      machine: args.machine === true,
+      folder,
+      ...(npmDoor ? { launcher: npmDoor } : {}),
+    }
     if (args.line === true) return { value: lineOf(system, defined) }
     const shown = definitionOf(system, defined)
     if (args.install !== true) return { value: shown }

@@ -95,6 +95,30 @@ test("[41-1] the npm door installs tentjs with the package of this system, and t
   assert.deepEqual(outside, [])
 })
 
+test('[41-12.18] under the npm door with a umask of 0002, the launcher runs from folders its group may write where that group is the person alone, as on Linux, and from none where others share it, as staff on macOS', {
+  todo: process.platform === 'win32' ? 'the bits of a group are those of macOS and Linux: owed to them' : false,
+}, async (t) => {
+  assert.notEqual(process.platform, 'win32', 'the launcher of macOS and Linux runs there')
+  const rel = await made()
+  const folder = outsideFolderOf(t, 'npm-umask')
+  const person = personIn(folder, { npm: true })
+  const registry = await registryOf(t, packedOf(rel))
+  person.env.npm_config_registry = registry.address
+  // npm lays every folder open to its group, as Ubuntu's default umask has it.
+  person.env.npm_config_umask = '0002'
+  const prefix = join(person.home, 'npm-global')
+  const installed = await npm(person, ['install', '-g', 'tentjs@1.0.0', '--prefix', prefix], person.home)
+  assert.equal(installed.status, 0, installed.err)
+  const asked = await tentOf(prefix, person)(['--version'], person.home)
+  if (process.platform === 'linux') {
+    assert.equal(asked.status, 0, `${asked.out}${asked.err}`)
+    assert.equal(asked.out.trim(), rel.version)
+  } else {
+    assert.equal(asked.status, 2, `${asked.out}${asked.err}`)
+    assert.match(asked.err, /runs nothing from/)
+  }
+})
+
 test('[41-1] the direct door: the installer of this system puts the release into TENT_HOME, writes current and bin/, and puts bin/ on the path', {
   todo:
     process.platform === 'win32'

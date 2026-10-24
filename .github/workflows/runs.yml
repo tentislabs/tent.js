@@ -19,11 +19,15 @@ concurrency:
 
 jobs:
   run:
-    name: ${{ matrix.system }}
+    name: ${{ matrix.system }} ${{ matrix.shard }}/4
     strategy:
       # Each system runs to its end when another fails.
       fail-fast: false
+      # The tests of each system are shared out over four machines side by side: a whole run on one free runner
+      # takes most of an hour, and longer than that on macOS.
       matrix:
+        system: [linux, windows, macos]
+        shard: [1, 2, 3, 4]
         include:
           - system: linux
             os: ubuntu-latest
@@ -32,8 +36,7 @@ jobs:
           - system: macos
             os: macos-latest
     runs-on: ${{ matrix.os }}
-    # The whole run of one system takes most of an hour on a free runner; the limit leaves room for a slow one.
-    timeout-minutes: 90
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -48,22 +51,30 @@ jobs:
           cache: npm
       - name: npm ci
         run: npm ci
+      # The browsers of the tests, as the pinned playwright-core names them, with what Linux needs to run them.
+      - name: The browsers of the tests
+        run: npx playwright-core install ${{ matrix.system == 'linux' && '--with-deps' || '' }} chromium firefox webkit
+      # The checks of the whole tree run once for each system, on its first machine.
       # A run on main fails where a joined list differs from the one it makes. A pull request goes on with its own.
       - name: node scripts/lists.mjs
+        if: matrix.shard == 1
         run: npm run lists -- ${{ github.event_name == 'push' && '--main' || '' }}
       - name: The formatter, the linter and scripts/comments.mjs
+        if: matrix.shard == 1
         run: npm run lint
       - name: The type check
+        if: matrix.shard == 1
         run: npm run types
       - name: The search for what nothing uses
+        if: matrix.shard == 1
         run: node scripts/search.mjs
       - name: The tests
-        run: npm test
+        run: npm test -- --shard=${{ matrix.shard }}/4
       - name: Keep the result file and the new pictures
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: results-${{ matrix.system }}
+          name: results-${{ matrix.system }}-${{ matrix.shard }}
           path: |
             results/${{ matrix.system }}.json
             **/*.new.png
