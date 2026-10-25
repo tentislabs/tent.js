@@ -37,7 +37,11 @@ function reads(page: Page): () => number {
  */
 function heard(page: Page): () => boolean {
   let one = false
-  page.on('websocket', (socket) => socket.on('framesent', () => void (one = true)))
+  page.on('websocket', (socket) =>
+    socket.on('framesent', () => {
+      one = true
+    }),
+  )
   return () => one
 }
 
