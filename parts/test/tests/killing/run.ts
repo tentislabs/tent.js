@@ -21,6 +21,8 @@ const runs = all().map((run) => ({
   steps: app.runs.read(run.id)?.steps.map((step) => `${step.name}:${step.state}`),
 }))
 const marks = await app.read({ from: 'marks' }, system)
-console.log(`ended: ${JSON.stringify({ runs, marks: marks.map((row) => row.tag) })}`)
+// Written to a pipe, a long line is still going out when the program ends: the end waits until it is written.
+const line = `ended: ${JSON.stringify({ runs, marks: marks.map((row) => row.tag) })}\n`
+await new Promise((done) => process.stdout.write(line, done))
 await engine.close()
 process.exit(0)

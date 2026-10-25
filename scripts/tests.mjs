@@ -118,7 +118,9 @@ function triedOf(set, more) {
 
 // The runner given no file runs every file it finds by its own patterns, so a set with none is not run.
 const sets = [
-  [others, []],
+  // A heavy test holds a machine's processor and memory by itself: side by side they starved a runner of Windows
+  // until it lost its server, so the night runs its files one at a time.
+  [others, night ? ['--test-concurrency=1'] : []],
   [measures, ['--test-concurrency=1']],
 ].filter(([set]) => set.length)
 if (sets.length < 2) process.exit(sets.length ? triedOf(...sets[0]) : 0)
