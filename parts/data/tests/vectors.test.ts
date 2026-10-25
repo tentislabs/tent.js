@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import type { TestContext } from 'node:test'
 import { test } from 'node:test'
+import { held } from '../../../rig/budgets.ts'
 import type { Row, Store } from '../index.ts'
 import { at, reading, user, writing } from './shop.ts'
 import type { Kept } from './near.ts'
@@ -191,7 +192,8 @@ test('[20-16] a vector column is absent from rows unless picked, and reading the
   const [withVectors, without] = [Math.min(...times.articles), Math.min(...times.plain)]
   const said = `${withVectors.toFixed(1)} ms with the vectors, ${without.toFixed(1)} ms without`
   t.diagnostic(said)
-  assert.ok(withVectors <= without * 1.1, said)
+  // What the vectors add, held to its bar of 10% in budgets.json, where the owner may mark it owed.
+  held('vectors.cost', Math.max(0, Math.round((withVectors / without - 1) * 10_000) / 100), 'percent')
 })
 
 test('[20-17a] a write that fails leaves the copy as it was, and a search inside a change does not see that change its own vector', (t) => {

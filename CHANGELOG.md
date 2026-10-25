@@ -17,6 +17,8 @@ Fixes found by the first deploys from npm and by the automatic runs on Windows, 
 - **Scripts of `head`:** a script with `load: 'idle'` runs after those with `load: 'alive'`.
 - **`tent new`:** the new project's site has the Tent.js mark as its icon, in `assets/icon.svg`.
 - **`tent test --plan`:** fills a choice field.
+- **Keys:** checking a key takes the same time for an id that names no key as for a wrong key, so the time tells them apart on no computer.
+- **`app.settled()`:** after `app.clock.advance`, waits for a run the move made due, also on a busy computer.
 
 ## 1.0.0 - 2026-10-24
 

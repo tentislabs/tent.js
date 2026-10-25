@@ -64,7 +64,14 @@ test('[40-15b] a second publish at once is T9103', async (t) => {
   )
   await here.save()
   let done = false
-  const first = publish({ project: here.project, history: here.history, to, fetch: fetched }).finally(() => {
+  // The first publish holds its turn a moment longer between its requests, so that a quick computer, which ends a
+  // publish before a second one is sent, still meets it under way.
+  let asked = 0
+  const slowed: typeof fetched = async (...given) => {
+    if (asked++ > 0) await new Promise((wait) => setTimeout(wait, 300))
+    return fetched(...given)
+  }
+  const first = publish({ project: here.project, history: here.history, to, fetch: slowed }).finally(() => {
     done = true
   })
   const codes = new Set<string>()
@@ -72,6 +79,8 @@ test('[40-15b] a second publish at once is T9103', async (t) => {
     const answer = await sent(server, '/_t/publish', {}, to.key)
     codes.add(String(Object(answer.answer.error).code))
     if (Object(answer.answer.error).fields?.reason === 'busy') codes.add('busy')
+    // A pause between asks keeps them under the limit of requests of one caller.
+    await new Promise((wait) => setTimeout(wait, 50))
   }
   await first
   assert.ok(codes.has('busy'), `one publish runs at a time: ${[...codes]}`)

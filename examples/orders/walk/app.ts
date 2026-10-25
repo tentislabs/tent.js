@@ -1,4 +1,4 @@
-import { type ChildProcess, execFile, spawn } from 'node:child_process'
+import { type ChildProcess, execFile, execFileSync, spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { cp, mkdir, mkdtemp, rm, symlink, unlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -71,11 +71,34 @@ export async function buildApp(folder: string, out: string): Promise<string> {
 }
 
 /** Starts a bundle with `tent start --mode test --seed` on a data folder, on a free port. */
+/**
+ * Whether this program runs with the rights of an administrator of Windows, as a machine of the automatic runs does:
+ * Windows names the level of its rights among its groups, `S-1-16-12288` or above.
+ */
+function elevated(): boolean {
+  if (process.platform !== 'win32') return false
+  const whoami = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'whoami.exe')
+  return /S-1-16-(12288|16384)/.test(execFileSync(whoami, ['/groups'], { encoding: 'utf8' }))
+}
+
 export async function startApp(folder: string, bundle: string, dataFolder: string): Promise<RunningApp> {
   await mkdir(dataFolder, { recursive: true })
   const child = spawn(
     process.execPath,
-    [SHELL, 'start', bundle, '--mode', 'test', '--seed', '--port', '0', '--data', dataFolder],
+    // `tent start` runs as an administrator only where it is told it is meant.
+    [
+      SHELL,
+      'start',
+      ...(elevated() ? ['--as-root'] : []),
+      bundle,
+      '--mode',
+      'test',
+      '--seed',
+      '--port',
+      '0',
+      '--data',
+      dataFolder,
+    ],
     { cwd: folder, stdio: ['ignore', 'pipe', 'pipe'] },
   )
   try {
