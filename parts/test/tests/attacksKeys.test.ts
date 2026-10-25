@@ -4,6 +4,7 @@ import type { TestApp } from '../index.ts'
 import { tempOf } from './projects.ts'
 import { api, called, keyedApp, keyOf, sent } from './keyedApp.ts'
 import { bytesUnder } from './storms.ts'
+import { held } from '../../../rig/budgets.ts'
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'
 
@@ -68,7 +69,7 @@ test('[05-11.15] a guessed key, a removed key, an ended key, an id of no key and
     times[1] = Math.min(times[1], await timed(tried['an id of no key']))
     times[2] = Math.min(times[2], await timed(tried.removed))
   }
-  assert.ok(Math.max(...times) / Math.min(...times) < 3, `the times differ: ${times.join(', ')} ms`)
+  held('keys.sameTime', (Math.max(...times) / Math.min(...times) - 1) * 100, 'percent')
 })
 
 test('[05-11.16] a key with the scope of one function is T3101 at /api/, at /_t/call/ and as a watch; its own function that calls another inside runs', async (t) => {

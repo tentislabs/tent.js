@@ -8,6 +8,7 @@ import { describe } from '../../core/internal.ts'
 import type { Change, Point } from '../index.ts'
 import { lineOf } from '../index.ts'
 import { ada, codeOf, day, fingerprintOf, openedIn, pointOf, put, started, workFolder } from './work.ts'
+import { held } from '../../../rig/budgets.ts'
 
 /** The stored call of one step that tells somebody some words. */
 const step = (name: string, words: string): object => ({
@@ -310,5 +311,5 @@ test('[40-3b] a history of 10,000 points compares two of its points within a sec
   const changes = history.compare(points[17].id, 'now')
   const took = performance.now() - began
   assert.deepEqual(changes, [{ change: 'changed', what: 'file', name: 'tent.ts', lines: 33 }])
-  assert.ok(took < 1000, `it took ${Math.round(took)} ms`)
+  held('history.compare', took, 'ms')
 })

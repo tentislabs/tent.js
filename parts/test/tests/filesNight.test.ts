@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
-import { measure } from '../../../rig/budgets.ts'
+import { measure, held } from '../../../rig/budgets.ts'
 import {
   addOrder,
   addTeam,
@@ -91,7 +91,7 @@ test('[50-6] [night] a table of a million rows that is rebuilt while its file is
   }
   assert.ok(reads.length >= 10, `${reads.length} reads were answered while the file was brought up`)
   const longest = Math.max(...reads)
-  assert.ok(longest <= 50, `the longest read of another tenant took ${longest.toFixed(1)} ms`)
+  held('files.readBeside', longest, 'ms')
   // How long a write of another tenant waited is measured and written down, and held to no bar.
   await measure('files.writeBesideRebuild', () => Math.max(...writes), { unit: 'ms' })
   assert.equal(await app.call('countOrders', { team: large }, system), 1_000_001)

@@ -1,4 +1,20 @@
 {
+  "call.seam.action.cost": {
+    "bar": 1,
+    "unit": "percent"
+  },
+  "call.seam.change.cost": {
+    "bar": 1,
+    "unit": "percent"
+  },
+  "call.seam.query.cost": {
+    "bar": 1,
+    "unit": "percent"
+  },
+  "call.seam.screen.cost": {
+    "bar": 1,
+    "unit": "percent"
+  },
   "check.rules": {
     "bar": 1000,
     "unit": "ms"
@@ -19,6 +35,58 @@
     "bar": 99614720,
     "unit": "bytes"
   },
+  "files.readBeside": {
+    "bar": 50,
+    "unit": "ms"
+  },
+  "flow.pastKeep": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "flow.resume.10": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "flow.resume.1000": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "flow.resume.10000": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "freezing.cost": {
+    "bar": 10,
+    "unit": "percent"
+  },
+  "history.compare": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "history.newest": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "hub.callMeanwhile": {
+    "bar": 50,
+    "unit": "ms"
+  },
+  "keyForm.sameTime": {
+    "bar": 50,
+    "unit": "percent"
+  },
+  "keys.sameTime": {
+    "bar": 200,
+    "unit": "percent"
+  },
+  "keys.tenReads": {
+    "bar": 1000,
+    "unit": "ms"
+  },
+  "live.besideWatches": {
+    "bar": 1000,
+    "unit": "ms"
+  },
   "memory.idle": {
     "bar": 125829120,
     "unit": "bytes"
@@ -26,6 +94,10 @@
   "page.weight": {
     "bar": 92160,
     "unit": "bytes"
+  },
+  "restore.day": {
+    "bar": 10000,
+    "unit": "ms"
   },
   "save.seen": {
     "bar": 300,
@@ -46,5 +118,13 @@
     "bar": 10,
     "unit": "percent",
     "owed": "reached after the release, by the owner's word of 2026-10-25"
+  },
+  "workspace.changedBy": {
+    "bar": 50,
+    "unit": "ms"
+  },
+  "workspace.compare": {
+    "bar": 50,
+    "unit": "ms"
   }
 }

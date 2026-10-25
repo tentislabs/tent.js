@@ -14,6 +14,7 @@ import { command } from './desks.ts'
 import { closing, copyOf } from './projects.ts'
 import type { S3StandIn } from './s3StandIn.ts'
 import { s3StandIn } from './s3StandIn.ts'
+import { held as heldToBar } from '../../../rig/budgets.ts'
 
 const system = { as: { kind: 'system' } } as const
 
@@ -258,5 +259,5 @@ test('[45-1] a restore of a day of a busy app takes seconds', async (t) => {
   const took = performance.now() - started
   assert.ok(Number(restored.changes) >= 4000, `the changes of the day: ${String(restored.changes)}`)
   assert.equal(await printOf(held.app), print)
-  assert.ok(took < 10_000, `the restore of a day took ${Math.round(took)} ms`)
+  heldToBar('restore.day', took, 'ms')
 })

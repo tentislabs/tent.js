@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { fits, newApiKey } from '../keys/form.ts'
+import { held } from '../../../rig/budgets.ts'
 
 const randomOf = (key: string): string => key.slice(-43)
 
@@ -25,7 +26,7 @@ test('[05-11.15] the check of a key takes the same time for an id of no key, for
     times[1] = Math.min(times[1], timed(wrong, undefined))
     times[2] = Math.min(times[2], timed(first, fingerprint))
   }
-  assert.ok(Math.max(...times) / Math.min(...times) < 1.5, `the times differ: ${times.map(Math.round).join(', ')} ms`)
+  held('keyForm.sameTime', (Math.max(...times) / Math.min(...times) - 1) * 100, 'percent')
   assert.equal(fits(random, fingerprint), true)
   for (const other of [wrong, first]) assert.equal(fits(other, fingerprint), false)
   assert.equal(fits(random, undefined), false)

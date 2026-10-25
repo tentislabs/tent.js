@@ -5,6 +5,7 @@ import { send, system } from './apps.ts'
 import type { RawLive } from './rawLive.ts'
 import { quietOf, rawLive } from './rawLive.ts'
 import { addCard, board, limited, liveMoment, runsOf, untilTried, watcher } from './watching.ts'
+import { held } from '../../../rig/budgets.ts'
 
 /** A watch of the count of the cards, as the text of its frame. */
 const countWatch = (id: string): string => JSON.stringify({ t: 'watch', id, query: 'countCards', input: {} })
@@ -222,7 +223,7 @@ test('[05-5.11] a hundred watches of heavy queries from one address wait for the
     longest = Math.max(longest, performance.now() - from)
     await liveMoment(5)
   }
-  assert.ok(longest < 1000, `the longest call beside a hundred heavy watches took ${longest} ms`)
+  held('live.besideWatches', longest, 'ms')
   await untilTried('each of the hundred was answered', () => pages[0].got.length + pages[1].got.length === 100, 3000)
   for (const page of pages)
     for (const message of page.got) {

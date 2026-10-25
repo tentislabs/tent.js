@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import type { Store } from '../../data/index.ts'
 import { bench, openStore, settle } from './bench.ts'
+import { held } from '../../../rig/budgets.ts'
 
 const hour = 3_600_000
 const minute = 60_000
@@ -30,7 +31,7 @@ test('[23-10] [night] resuming a run with 10, 1,000 and 10,000 saved steps, each
     assert.equal(await b.runner.wait(run), steps * answer.length)
     const took = performance.now() - began
     console.log(`resuming ${steps} saved steps took ${took.toFixed(1)} ms`)
-    assert.ok(took < 1000, `resuming a run with ${steps} saved steps took ${took.toFixed(1)} ms`)
+    held(`flow.resume.${steps}`, took, 'ms')
   }
 })
 

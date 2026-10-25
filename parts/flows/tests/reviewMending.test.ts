@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { pastKeep } from '../removal.ts'
 import type { RunRow } from '../rows.ts'
+import { held as heldToBar } from '../../../rig/budgets.ts'
 
 const day = 86_400_000
 
@@ -36,5 +37,5 @@ test('[51-5] the runs that are past their keep are found among 60,000 runs at on
   t.diagnostic(`${past.length} runs found past their keep in ${took.toFixed(0)} ms`)
   assert.equal(past.length, 60_000)
   // A walk that reads each run once takes a few milliseconds; one that looks for each top among every run, seconds.
-  assert.ok(took < 1000, `the runs past their keep were found in ${took.toFixed(0)} ms`)
+  heldToBar('flow.pastKeep', took, 'ms')
 })
