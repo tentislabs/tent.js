@@ -5,7 +5,7 @@ import { fingerprintOf } from '../../core/internal.ts'
 const form = /^tent_([0-9a-hjkmnp-tv-z]{26})_([A-Za-z0-9_-]{43})$/
 
 // What the door compares against for an id that names no key, so that such an id takes the time of a wrong key.
-const none = Buffer.alloc(32)
+const none = '0'.repeat(64)
 
 /** The fingerprint that the data keeps of a key: of its 32 random bytes, and never the bytes. */
 const keyPrint = (random: string): string => fingerprintOf(Buffer.from(random, 'base64url'))
@@ -32,9 +32,12 @@ export function readKey(written: string): { id: string; random: string } | undef
  * fixed fingerprint where no row is, so that the time does not tell an id of no key from a wrong key.
  */
 export function fits(random: string, kept: string | undefined): boolean {
+  // Every path does the same work, a row or none: the same test of the form, the same reading, the same compare.
   const made = Buffer.from(keyPrint(random), 'hex')
-  const held = kept !== undefined && /^[0-9a-f]{64}$/.test(kept) ? Buffer.from(kept, 'hex') : none
-  return timingSafeEqual(made, held) && kept !== undefined
+  const written = kept ?? none
+  const formed = /^[0-9a-f]{64}$/.test(written)
+  const held = Buffer.from(formed ? written : none, 'hex')
+  return timingSafeEqual(made, held) && kept !== undefined && formed
 }
 
 /** The key that a request sends: in `Authorization: Bearer`, and nowhere else. */

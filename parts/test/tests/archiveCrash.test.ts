@@ -182,6 +182,11 @@ test('[45-1] a part of the archive that a killed program left open is sent at th
   for (let m = 1; m <= 10; m++) await minute(held, teams, m)
   const end = held.now()
   const print = await printOf(held.app)
+  // The archive writes its open part beside each commit as it goes: on a busy computer the part stands a moment
+  // after the last call answered, and the kill is taken once it does.
+  const open = join(held.dataFolder, 'archive', 'open.part')
+  for (const until = performance.now() + 10_000; !existsSync(open) && performance.now() < until; )
+    await new Promise((done) => setTimeout(done, 20))
   const killed = killedNow(held.dataFolder)
   assert.ok(killed.archive.has(join('archive', 'open.part')), 'the kill left a part open')
   const sent = (): number =>

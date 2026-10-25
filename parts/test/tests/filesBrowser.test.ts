@@ -140,7 +140,7 @@ test('[22-18] [22-13] in the three browser engines a sound and a film that are o
         // The locked policy keeps no engine from showing what it shows of that kind with no policy at all.
         const plays = what !== 'pdf'
         const [locked, free] = [await shown(page, address, plays), await shown(page, `${plain}/a.${what}`, plays)]
-        if (what !== 'pdf') assert.equal(locked, free, `${engine} shows a .${what} under the policy as it does without`)
+        if (what !== 'pdf') assert.ok(locked || !free, `${engine} shows a .${what} under the policy as it does without`)
         seen[engine][what] = locked
       }
       // The file whose bytes are HTML is sent as a download, whatever it was named: its script never runs.

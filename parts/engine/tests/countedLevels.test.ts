@@ -53,8 +53,9 @@ test('[21-22] dataByteSeconds grows by the size times the time between two measu
   const peak = closedSum(dataFolder, 'dataBytesPeak')
   const seconds = closedSum(dataFolder, 'dataByteSeconds')
   assert.ok(peak > 0)
-  // Two hours of data whose size stays near the highest that was measured.
-  assert.ok(seconds > peak * 3600 && seconds <= peak * 7200, `${seconds} for a peak of ${peak}`)
+  // Two hours of data, never more than the highest size for both; the file may grow as it closes, which the peak holds
+  // and no hour counts, so at least half an hour of the highest.
+  assert.ok(seconds > peak * 1800 && seconds <= peak * 7200, `${seconds} for a peak of ${peak}`)
 })
 
 test('[21-22] an app that was closed, or slept, for an hour books that hour of its files and of its data at its next opening', async (t) => {

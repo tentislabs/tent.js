@@ -23,6 +23,12 @@ export const aheadOf = (moves: TestClock): number => aheads.get(moves)?.() ?? 0
 // What is told each time a clock of a test is moved: the pages of the test, which move their own time with it.
 const movers = new WeakMap<TestClock, Set<(ahead: number) => void>>()
 
+// When each clock of a test was last moved, by the time of the program, which `settled` reads.
+const moved = new WeakMap<TestClock, number>()
+
+/** When a clock of a test was last moved, by `performance.now()`, or never. */
+export const movedAtOf = (moves: TestClock): number => moved.get(moves) ?? Number.NEGATIVE_INFINITY
+
 /** Names what is told how far the clock stands ahead each time a test moves it. Answers what stops telling it. */
 export function onMoved(moves: TestClock, heard: (ahead: number) => void): () => void {
   const told = movers.get(moves) ?? new Set()
@@ -88,6 +94,7 @@ export function testClock(): { clock: Clock; moves: TestClock } {
       due(to)
       ahead = Math.max(ahead, to - realNow())
       wait()
+      moved.set(moves, performance.now())
       for (const one of movers.get(moves) ?? []) one(ahead)
     },
   }

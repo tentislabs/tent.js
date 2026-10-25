@@ -86,7 +86,12 @@ async function tampered(t: TestContext): Promise<Tampered> {
     lost: () => readdirSync(folder).filter((name) => name.startsWith('lost.')),
     async level() {
       made.tamper = asItIs
-      for (let i = 0; i < 60 && made.reader.at().n !== writer.at().n; i++) await world.beat()
+      // A reader that fetches the data anew takes as many beats as the computer is slow: up to a minute of them.
+      for (
+        const until = performance.now() + 60_000;
+        made.reader.at().n !== writer.at().n && performance.now() < until;
+      )
+        await world.beat()
       assert.equal(made.reader.at().n, writer.at().n, 'the reader holds the number of the writer')
       await current(world, made.reader)
     },

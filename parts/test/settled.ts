@@ -1,8 +1,14 @@
 import type { App } from '../engine/index.ts'
+import type { TestClock } from './clock.ts'
+import { movedAtOf } from './clock.ts'
 
 // How long the runs stand still, in milliseconds, before a run that is queued is taken to wait for a time or for
 // the run ahead of it: one that may go now is taken up by its runner well within it.
 const stillFor = 50
+
+// How long after the clock was moved a run that waits may still be one that came due and is not taken up yet: a
+// busy computer takes up a run that a move made due later than `stillFor`.
+const afterMove = 1000
 
 /** What says where the runs stand: each with its state and the state of each of its steps. */
 const standing = (runs: { id: string; state: string; steps: { state: string }[] }[]): string =>
@@ -13,7 +19,7 @@ const standing = (runs: { id: string; state: string; steps: { state: string }[] 
  * working, in every file of it: each is done, failed or stopped, or waits for a time, an event or a person. A run
  * that stays queued while nothing moves waits for a time, as a start that its pace keeps, or for the run ahead of it.
  */
-export async function settledOf(app: () => App): Promise<void> {
+export async function settledOf(app: () => App, moves: TestClock): Promise<void> {
   let was = ''
   let since = performance.now()
   for (;;) {
@@ -24,7 +30,11 @@ export async function settledOf(app: () => App): Promise<void> {
       since = performance.now()
     }
     const still = performance.now() - since >= stillFor
-    if (still && !runs.some((run) => run.state === 'running')) return
+    // A run that waits, and has not moved since the clock was moved, may be one the move made due.
+    const movedAt = movedAtOf(moves)
+    const dueByMove =
+      since <= movedAt && performance.now() - movedAt < afterMove && runs.some((run) => run.state === 'waiting')
+    if (still && !dueByMove && !runs.some((run) => run.state === 'running')) return
     await new Promise<void>((next) => setTimeout(next, 2))
   }
 }

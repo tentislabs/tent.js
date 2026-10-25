@@ -53,9 +53,9 @@ async function installed(t: TestContext, person: Person, rel: Released, open = f
 
 // npm adds its umask to the umask of the process and never loosens it, so the test of the row installs as a person
 // whose own umask is 0002: only then does it meet a folder its group may write.
-test('[41-12.18] review: an install as a person whose umask is 0002, as the test of the row makes it, lays the folder of the package of this system open to its group', {
-  todo: process.platform === 'win32' ? 'the bits of a group are those of macOS and Linux: owed to them' : false,
-}, async (t) => {
+test('[41-12.18] review: an install as a person whose umask is 0002, as the test of the row makes it, lays the folder of the package of this system open to its group', async (t) => {
+  // The bits of a group are those of macOS and Linux: on Windows there is none to lay open.
+  if (process.platform === 'win32') return
   const rel = await made()
   const person = personIn(outsideFolderOf(t, 'review-umask'), { npm: true })
   const prefix = await installed(t, person, rel, true)

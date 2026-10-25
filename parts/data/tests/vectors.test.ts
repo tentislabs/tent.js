@@ -170,7 +170,7 @@ test('[20-16] a vector column is absent from rows unless picked, and reading the
   assert.deepEqual(picked.meaning, Array.from(kept[3].vector ?? []))
 
   // The same plan over the same rows, on the table with the vectors and on the one without, each run of four reads,
-  // taken as the rig takes a measure: five runs each way, in turns, and the middle ones compared.
+  // five runs each way, in turns, and the quickest of each compared: other work on the computer only adds time.
   const read = (name: string) => {
     const before = performance.now()
     for (let i = 0; i < 4; i++)
@@ -188,8 +188,7 @@ test('[20-16] a vector column is absent from rows unless picked, and reading the
   const times: Record<string, number[]> = { articles: [], plain: [] }
   for (let run = 0; run < 5; run++)
     for (const name of run % 2 ? ['articles', 'plain'] : ['plain', 'articles']) times[name].push(read(name))
-  const middle = (all: number[]) => [...all].sort((a, b) => a - b)[Math.floor(all.length / 2)]
-  const [withVectors, without] = [middle(times.articles), middle(times.plain)]
+  const [withVectors, without] = [Math.min(...times.articles), Math.min(...times.plain)]
   const said = `${withVectors.toFixed(1)} ms with the vectors, ${without.toFixed(1)} ms without`
   t.diagnostic(said)
   assert.ok(withVectors <= without * 1.1, said)

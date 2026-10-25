@@ -208,12 +208,13 @@ test('[25-15b] with the stand-in switched off a first call fails with T0016 and 
   const error = await refusal(off.app.call('slow', { seconds: 0 }, { as: ada }))
   assert.equal(error.code, 'T0016')
   assert.ok(await off.app.write([{ add: 'customers', values: { name: 'Lovelace' } }], { as: 'system' }))
-  // With the stand-in, the first call waits for the installer, the Python and the environment, which take longer
-  // than the two seconds the call may take, and answers.
+  // With the stand-in, the first call waits for the installer, the Python and the environment, and answers: its own
+  // work of a second and a half and the making together pass the two seconds the call may take, so the making is not
+  // counted on its time.
   process.env.TENT_PARTS = parts
   const on = await opened(t, shared)
   const grace = await on.user()
   const began = performance.now()
-  assert.equal(typeof (await on.app.call('slow', { seconds: 0 }, { as: grace })), 'number')
+  assert.equal(typeof (await on.app.call('slow', { seconds: 1.5 }, { as: grace })), 'number')
   assert.ok(performance.now() - began > 2000, 'the making was waited for')
 })

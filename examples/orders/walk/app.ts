@@ -76,7 +76,7 @@ export async function startApp(folder: string, bundle: string, dataFolder: strin
   const child = spawn(
     process.execPath,
     [SHELL, 'start', bundle, '--mode', 'test', '--seed', '--port', '0', '--data', dataFolder],
-    { cwd: folder, stdio: ['ignore', 'ignore', 'pipe'] },
+    { cwd: folder, stdio: ['ignore', 'pipe', 'pipe'] },
   )
   try {
     return { folder, address: await saidAddress(child), dataFolder, stop: () => ended(child) }
@@ -115,11 +115,15 @@ export async function devApp(folder: string): Promise<RunningApp> {
   }
 }
 
-// `tent start` and `tent dev` say on the standard error where the app runs.
+// `tent start` and `tent dev` say on the standard error where the app runs, and on the standard output what stopped them.
 function saidAddress(child: ChildProcess): Promise<string> {
   return new Promise((resolve, reject) => {
     let said = ''
     const timer = setTimeout(() => reject(new Error(`The app did not start in 120 seconds: ${said}`)), 120_000)
+    child.stdout?.setEncoding('utf8')
+    child.stdout?.on('data', (piece: string) => {
+      said += piece
+    })
     child.stderr?.setEncoding('utf8')
     child.stderr?.on('data', (piece: string) => {
       said += piece

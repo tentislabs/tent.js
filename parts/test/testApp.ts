@@ -318,7 +318,7 @@ function faceOf(
     },
     worker: (o?: WorkerAsked) => workerOf(world, machine, o),
     kill: () => killMachine(machine),
-    settled: () => settledOf(app),
+    settled: () => settledOf(app, moves),
     async restart(o: { reads?: TestApp; at?: Mark } = {}): Promise<void> {
       await closeMachine(machine)
       if (o.at) putBack(machine, o.at.file)

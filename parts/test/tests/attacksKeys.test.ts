@@ -61,7 +61,13 @@ test('[05-11.15] a guessed key, a removed key, an ended key, an id of no key and
     return performance.now() - began
   }
   await timed(tried.guessed)
-  const times = [await timed(tried.guessed), await timed(tried['an id of no key']), await timed(tried.removed)]
+  // The cases are taken in turn five times and each is held by its quickest: other work only ever adds time.
+  const times = [Infinity, Infinity, Infinity]
+  for (let round = 0; round < 5; round++) {
+    times[0] = Math.min(times[0], await timed(tried.guessed))
+    times[1] = Math.min(times[1], await timed(tried['an id of no key']))
+    times[2] = Math.min(times[2], await timed(tried.removed))
+  }
   assert.ok(Math.max(...times) / Math.min(...times) < 3, `the times differ: ${times.join(', ')} ms`)
 })
 

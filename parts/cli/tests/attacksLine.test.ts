@@ -202,13 +202,15 @@ test('[05-12.21] `file <id>` with no `--out`, where the server names the file `.
   const home = homeOf(t)
   const { reach, asked } = serverOf((path) =>
     path.startsWith('/_t/files/')
-      ? new Response('x', { headers: { 'content-disposition': 'attachment; filename="../../x"' } })
+      ? new Response('x', { headers: { 'content-disposition': 'attachment; filename="../../tent-attack-file"' } })
       : undefined,
   )
   const { terminal } = terminalOf()
   assert.equal(await runCommandLine({ words: ['file', 'f1'], terminal, reach, home, target, env: {} }), 2)
   assert.deepEqual(asked, [])
-  assert.equal(existsSync(join(home, '..', '..', 'x')), false)
+  // A name that no folder of the system holds: macOS keeps a folder `X` two above its temporary one, and its names
+  // tell no capitals apart.
+  assert.equal(existsSync(join(home, '..', '..', 'tent-attack-file')), false)
 })
 
 test('[05-12.9] a file flag whose value is a folder is refused', async (t) => {
