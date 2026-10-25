@@ -57,32 +57,34 @@ test('[40-15b] [16-2@8c] a point that says checked over files that fail the chec
 
 test('[40-15b] a second publish at once is T9103', async (t) => {
   const { here, to, server } = await published(t)
-  here.edit(
-    tables,
-    '    note: text({ optional: true, max: NOTE_LENGTH }),',
-    '    note: text({ optional: true, max: NOTE_LENGTH }),\n    rush: boolean({ optional: true }),',
-  )
-  await here.save()
-  let done = false
-  // The first publish holds its turn a moment longer between its requests, so that a quick computer, which ends a
-  // publish before a second one is sent, still meets it under way.
-  let asked = 0
-  const slowed: typeof fetched = async (...given) => {
-    if (asked++ > 0) await new Promise((wait) => setTimeout(wait, 300))
-    return fetched(...given)
-  }
-  const first = publish({ project: here.project, history: here.history, to, fetch: slowed }).finally(() => {
-    done = true
-  })
+  // A second publish is sent again and again while a first one is under way. A quick computer may end a publish
+  // between two of them: the publish is made again, five times at most, until one is met under way.
   const codes = new Set<string>()
-  while (!done) {
-    const answer = await sent(server, '/_t/publish', {}, to.key)
-    codes.add(String(Object(answer.answer.error).code))
-    if (Object(answer.answer.error).fields?.reason === 'busy') codes.add('busy')
-    // A pause between asks keeps them under the limit of requests of one caller.
-    await new Promise((wait) => setTimeout(wait, 50))
+  for (let round = 0; round < 5 && !codes.has('busy'); round++) {
+    here.edit(
+      tables,
+      '    note: text({ optional: true, max: NOTE_LENGTH }),',
+      `    note: text({ optional: true, max: NOTE_LENGTH }),
+    rush${round}: boolean({ optional: true }),`,
+    )
+    await here.save()
+    let done = false
+    const first = publish({
+      project: here.project,
+      history: here.history,
+      to,
+      fetch: fetched,
+      acceptImpact: true,
+    }).finally(() => {
+      done = true
+    })
+    while (!done) {
+      const answer = await sent(server, '/_t/publish', {}, to.key)
+      codes.add(String(Object(answer.answer.error).code))
+      if (Object(answer.answer.error).fields?.reason === 'busy') codes.add('busy')
+    }
+    await first
   }
-  await first
   assert.ok(codes.has('busy'), `one publish runs at a time: ${[...codes]}`)
 })
 

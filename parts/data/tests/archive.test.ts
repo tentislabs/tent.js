@@ -11,17 +11,19 @@ const shop = shopOf()
 /** A few writes of the shop: customers added, one changed and one removed, an order with its lines. */
 function someWrites(writer: Store): void {
   const write = writing(writer, shop, system, { seal, system: true })
-  for (const name of ['Acme', 'Bolt', 'Cog']) write((db) => at(db, 'customers').add({ name, taxNo: `TR-${name}` }))
+  // The customer added last is removed by its id: a quick computer adds all three in one millisecond.
+  let last = ''
+  for (const name of ['Acme', 'Bolt', 'Cog'])
+    write((db) => {
+      last = String(at(db, 'customers').add({ name, taxNo: `TR-${name}` }).id)
+    })
   write((db) => {
     const [first] = at(db, 'customers').all()
     at(db, 'customers').change(String(first.id), { name: 'Acme works' })
     const order = at(db, 'orders').add({ customer: first.id, net: 12 })
     at(db, 'lines').add({ order: order.id, qty: 2 })
   })
-  write((db) => {
-    const last = at(db, 'customers').newest('createdAt').first()
-    if (last) at(db, 'customers').remove(String(last.id))
-  })
+  write((db) => at(db, 'customers').remove(last))
 }
 
 /** A sink that keeps what it is handed: with `records`, as the archive of the engine states it. */

@@ -155,7 +155,12 @@ test('[05-11.14] a signature that differs in its last character takes the time o
     return performance.now() - began
   }
   await timed(flip(right, 0))
-  const [first, last] = [await timed(flip(right, 0)), await timed(flip(right, right.length - 1))]
+  // The two are taken in turn three times and each is held by its quickest: other work only ever adds time.
+  let [first, last] = [Infinity, Infinity]
+  for (let round = 0; round < 3; round++) {
+    first = Math.min(first, await timed(flip(right, 0)))
+    last = Math.min(last, await timed(flip(right, right.length - 1)))
+  }
   assert.ok(Math.max(first, last) / Math.min(first, last) < 2, `the first took ${first} ms and the last ${last} ms`)
   assert.equal(await settled(app, 'githubReceived', 0), 0)
 })

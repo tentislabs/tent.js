@@ -180,6 +180,8 @@ test('[45-1] an app with an archive and no reader keeps no change in its data fi
 test('[45-1] a part of the archive that a killed program left open is sent at the next start: a restore reaches a change that only that part held', async (t) => {
   const { held, teams } = await archivedWithTeams(t)
   for (let m = 1; m <= 10; m++) await minute(held, teams, m)
+  // The archive may send its part as the clock moves on: a change after the last move stands in a part left open.
+  await held.app.call('writeNote', { title: 'note after', secret: 'the secret after the last minute' }, system)
   const end = held.now()
   const print = await printOf(held.app)
   // The archive writes its open part beside each commit as it goes: on a busy computer the part stands a moment

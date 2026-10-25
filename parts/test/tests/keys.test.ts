@@ -118,7 +118,8 @@ test("[24-9] `/_t/live` opened by a key with no `Origin` is taken, and with a ma
 test('[24-9] an id of no key takes the time of a wrong key: its check hashes and compares as for a wrong key', async (t) => {
   const app = await keyedApp(t)
   const { key } = await keyOf(app, { scopes: ['*'] })
-  const wrong = `${key.slice(0, -1)}${key.endsWith('A') ? 'B' : 'A'}`
+  // A last character keeps its two lowest bits empty, so the wrong key has the form of a key and is compared.
+  const wrong = `${key.slice(0, -1)}${key.endsWith('A') ? 'E' : 'A'}`
   const none = `tent_01m4vne21rehxa0vhe4ztfk1qx_${key.slice(-43)}`
   // The time of a request hides the time of one hash: what each check does is counted instead, call by call.
   const hashes = t.mock.method(crypto, 'createHash')

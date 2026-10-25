@@ -3,7 +3,7 @@
 // Each start opens the app on a clock that the program moves past each wait, places the big order where none is
 // placed yet, and prints `step done <name>` as each step is saved. Once the run has ended it prints `ended:` with
 // the rows and the steps, and ends by itself.
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, writeSync } from 'node:fs'
 
 const [bundle, dataFolder, mailFile] = process.argv.slice(2)
 const { createEngine } = await import('../../../engine/index.ts')
@@ -34,7 +34,12 @@ const mailer = {
   },
 }
 const engine = createEngine({ port: 0, makers: { clock: () => clock, mailer: () => mailer } })
-engine.on('step.done', (told) => console.log(`step done ${told.step}`))
+// The line is written at once, and the program then stands still a moment: a kill at the line lands before the
+// next step does anything, on a quick computer as on a slow one.
+engine.on('step.done', (told) => {
+  writeSync(1, `step done ${told.step}\n`)
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500)
+})
 const app = await engine.open(bundle, { dataFolder, mode: 'test' })
 const orders = await app.read({ from: 'orders' }, system)
 if (orders.length === 0) await app.call('placeBigOrder', {}, system)
