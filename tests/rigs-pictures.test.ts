@@ -80,7 +80,9 @@ test('[03-22] a stored picture with no approval, and one whose approval holds an
     const alone = run(copyOf(t, '22', others))
     assert.notEqual(alone.code, 0, alone.out)
     assert.ok(alone.out.includes(words), alone.out)
-    assert.equal(alone.out.match(/is not approved: /g)?.length, 1, alone.out)
+    // The failing test is run a second time, which says it again: what counts is that no other picture is named.
+    for (const [other, said] of Object.entries(cases))
+      if (other !== one) assert.ok(!alone.out.includes(said), alone.out)
   }
 
   const none = run(copyOf(t, '22', Object.keys(cases)))
