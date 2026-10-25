@@ -35,9 +35,9 @@ function columnsOf(at: Served): string[] {
 }
 
 /** Waits until what is asked holds, and fails the test once the time is up. */
-async function until(what: string, holds: () => boolean, within = 15_000): Promise<void> {
+async function until(what: string, holds: () => boolean | Promise<boolean>, within = 15_000): Promise<void> {
   const ends = performance.now() + within
-  while (!holds()) {
+  while (!(await holds())) {
     assert.ok(performance.now() < ends, `never: ${what}`)
     await new Promise((done) => setTimeout(done, 100))
   }
@@ -77,18 +77,19 @@ test('[44-7] a page view in the three browsers sends its measures when it is hid
       await page.waitForTimeout(300)
       await page.getByRole('link', { name: 'To the second screen' }).click()
       await page.getByRole('heading', { name: 'The second screen' }).waitFor()
-      await until(
-        `the part that measures was loaded, in ${engine}`,
-        () => asked.some((url) => /vitals[^/]*\.js$/.test(url)),
-        2000,
+      await until(`the part that measures was loaded, in ${engine}`, () =>
+        asked.some((url) => /vitals[^/]*\.js$/.test(url)),
       )
-      // The page is hidden: it sends what it measured, once.
-      await page.evaluate(() => {
-        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
-        document.dispatchEvent(new Event('visibilitychange'))
+      // The page is hidden: it sends what it measured, once. The part may hear only once it has run, a moment after
+      // it was asked for, so the page is told it is hidden again until the measures come; it sends them once all
+      // the same. A beacon, and its row, reach the log as the computer has time: some seconds on a busy one.
+      await until(`the measures stand in the log, in ${engine}`, async () => {
+        await page.evaluate(() => {
+          Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+          document.dispatchEvent(new Event('visibilitychange'))
+        })
+        return vitalsOf(at).length > before
       })
-      // A beacon of a page, and its row, reach the log as the computer has time: some seconds on a busy one.
-      await until(`the measures stand in the log, in ${engine}`, () => vitalsOf(at).length > before, 2000)
       const rows = vitalsOf(at).slice(before)
       const of = (screen: string, measure: string) =>
         rows.filter((row) => row.screen === screen && row.measure === measure)

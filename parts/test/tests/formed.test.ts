@@ -32,7 +32,8 @@ for (const engine of browserEngines) {
       // nine as in Istanbul, the zone of the project; a day is the day that was picked.
       assert.equal(await page.locator('.when').textContent(), '2026-10-08T03:30:00.000Z 2026-10-09')
       assert.equal(await page.locator('.what').textContent(), 'bed+view 4250 agreed loud')
-      // After a send that worked the fields are back at their start.
+      // After a send that worked the fields are back at their start, which the page draws a moment after the answer.
+      await page.waitForFunction(() => document.querySelector<HTMLInputElement>('#guest input')?.value === '')
       assert.equal(await page.locator('#guest input').inputValue(), '')
       assert.equal(await page.locator('#price').inputValue(), '')
       assert.equal(await page.locator('#agreed').isChecked(), false)

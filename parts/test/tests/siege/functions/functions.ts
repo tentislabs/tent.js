@@ -164,7 +164,8 @@ export const walks = query('walks', {
   access: open,
   output: number(),
   run: () => {
-    for (const i of range(0, 1_000_000)) i
+    // A million walks of a million entries: no computer is quick enough to end it inside the time of a query.
+    for (const j of range(0, 1_000_000)) for (const i of range(0, 1_000_000)) [j, i]
     return 1
   },
 })
