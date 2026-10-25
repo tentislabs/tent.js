@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { measure } from '../../../rig/budgets.ts'
+import { held, measure } from '../../../rig/budgets.ts'
 import { openedOf } from '../app.ts'
 import { spanned } from '../trace/span.ts'
 import { logColumns, logRows, running } from './apps.ts'
@@ -100,5 +100,6 @@ test('[44-1] a call with tracing on costs at most 2% more at the middle', async 
     { warm: true },
   )
   const added = Math.max(0, traced - turns) / called
-  assert.ok(added <= 0.02, `tracing adds ${(100 * added).toFixed(2)}% to a call`)
+  // Its bar of 2% stands in budgets.json, where the owner may mark it owed.
+  held('trace.cost', Math.round(10_000 * added) / 100, 'percent')
 })

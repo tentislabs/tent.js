@@ -58,6 +58,30 @@ test('[03-2] a measure above a bar that is owed, by the owner, after the release
   )
 })
 
+test('[03-2] a share that a test works out itself is held to its bar in percent, owed or not, and written', (t) => {
+  const folder = copyOf(t, '2', ['tests/over.test.ts', 'tests/under.test.ts'])
+  const bars = JSON.parse(readFileSync(join(folder, 'budgets.json'), 'utf8'))
+  bars['share.owed'] = { bar: 2, unit: 'percent', owed: 'reached after the release' }
+  bars['share.held'] = { bar: 2, unit: 'percent' }
+  writeFileSync(join(folder, 'budgets.json'), JSON.stringify(bars))
+  writeFileSync(
+    join(folder, 'tests', 'share.test.ts'),
+    [
+      "import { test } from 'node:test'",
+      `import { held } from '${budgets}'`,
+      "test('[99-8] a share above a bar that is owed', () => held('share.owed', 3, 'percent'))",
+      "test('[99-9] a share above a bar that is not owed', () => held('share.held', 3, 'percent'))",
+      '',
+    ].join('\n'),
+  )
+  const ran = run(folder)
+  const written = result(folder)
+  assert.equal(written.tests['99-8'], 'passed', ran.out)
+  assert.equal(written.tests['99-9'], 'failed', ran.out)
+  assert.deepEqual(written.measures['share.owed'], { value: 3, unit: 'percent', bar: 2 })
+  assert.match(ran.out, /the measure share\.held is 3 percent, above its bar of 2/)
+})
+
 test('[03-2] the files that measure run alone after the others, and the run writes one result file of both', (t) => {
   const folder = copyOf(t, '2', ['tests/over.test.ts'])
   // A file that measures nothing ends a second after it starts, and leaves a mark that it ended.

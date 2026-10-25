@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-type Unit = 'ms' | 'bytes'
+type Unit = 'ms' | 'bytes' | 'percent'
 // `owed` says why the owner lets the release stand above the bar until it is reached.
 type Bar = { bar: number; unit: Unit; owed?: string }
 
@@ -13,7 +13,7 @@ function barOf(name: string): Bar | undefined {
   if (line === undefined) return undefined
   if (
     typeof line.bar !== 'number' ||
-    (line.unit !== 'ms' && line.unit !== 'bytes') ||
+    (line.unit !== 'ms' && line.unit !== 'bytes' && line.unit !== 'percent') ||
     (line.owed !== undefined && typeof line.owed !== 'string')
   )
     throw new Error(`budgets.json holds the bar of ${name} in another form than { bar, unit, owed? }`)
@@ -46,7 +46,19 @@ export async function measure(
     if (!Number.isFinite(one)) throw new Error(`a measure of ${name} is no number: ${one}`)
     measures.push(one)
   }
-  const value = measures.sort((a, b) => a - b)[2]
+  return held(name, measures.sort((a, b) => a - b)[2], unit)
+}
+
+/**
+ * Holds a number that a test worked out itself under `name`, as `measure` holds the middle one of its five: takes
+ * the name, the number and its unit. Writes it to `results/parts/measure.<name>.json` with the bar of the name, and
+ * answers it. Throws where it is above a bar that is not owed, where it is no number, and where `unit` is not the
+ * unit of the bar.
+ */
+export function held(name: string, value: number, unit: Unit): number {
+  const line = barOf(name)
+  if (line && line.unit !== unit) throw new Error(`the measure ${name} is in ${unit}, and its bar in ${line.unit}`)
+  if (!Number.isFinite(value)) throw new Error(`a measure of ${name} is no number: ${value}`)
   const parts = join('results', 'parts')
   mkdirSync(parts, { recursive: true })
   writeFileSync(
