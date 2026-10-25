@@ -125,3 +125,22 @@ test('[03-2] the files that measure run alone after the others, and the run writ
   })
   assert.deepEqual(Object.keys(held.measures).sort(), ['alone.work', 'no.bar', 'quick.work', 'small.file'])
 })
+
+test('[03-35] in a run that reports its bars, as the automatic runs on shared machines do, a measure above a bar that is not owed is written and said, and its test passes', (t) => {
+  const folder = copyOf(t, '2', [])
+  const reported = run(folder, false, { TENT_BARS: 'report' })
+  assert.equal(reported.code, 0, reported.out)
+  const held = result(folder)
+  assert.deepEqual(held.tests, {
+    '99-1': 'passed',
+    '99-2': 'passed',
+    '99-3': 'passed',
+    '99-4': 'passed',
+    '99-5': 'passed',
+  })
+  assert.ok(timeOf(held.measures['slow.work'], 5) > 5, reported.out)
+  assert.match(
+    reported.out,
+    /the measure big\.file is 250 bytes, above its bar of 100, which this run reports and does not hold/,
+  )
+})

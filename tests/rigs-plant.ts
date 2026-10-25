@@ -37,7 +37,19 @@ export type Ended = { code: number | null; out: string }
  * root, and `words` are handed to it. Answers what it left behind. Throws when the program cannot be started.
  */
 export function start(folder: string, program: string, ...words: string[]): Ended {
-  const ended = spawnSync(process.execPath, [join(root, program), ...words], { cwd: folder, encoding: 'utf8' })
+  return startWith({}, folder, program, ...words)
+}
+
+// How the run that carries out these tests holds its bars is no part of a run that a test starts.
+const { TENT_BARS: _, ...handed } = process.env
+
+/** Starts a program as `start` does, with the variables of `env` beside those of this program. */
+function startWith(env: Record<string, string>, folder: string, program: string, ...words: string[]): Ended {
+  const ended = spawnSync(process.execPath, [join(root, program), ...words], {
+    cwd: folder,
+    encoding: 'utf8',
+    env: { ...handed, ...env },
+  })
   if (ended.error) throw ended.error
   return { code: ended.status, out: `${ended.stdout}${ended.stderr}`.replaceAll('\\', '/') }
 }
@@ -81,12 +93,12 @@ export function command(folder: string, name: string): Ended {
 
 /**
  * Starts a run of the tests of the tree in `folder`, by day or with `night` by night, after it has removed the
- * result file of such a run there, so that what is read afterwards is what this run wrote. Answers what the run
- * left behind.
+ * result file of such a run there, so that what is read afterwards is what this run wrote, with the variables of
+ * `env`. Answers what the run left behind.
  */
-export function run(folder: string, night = false): Ended {
+export function run(folder: string, night = false, env: Record<string, string> = {}): Ended {
   rmSync(resultFile(folder, night), { force: true })
-  return start(root, programs.tests, folder, ...(night ? ['--night'] : []))
+  return startWith(env, root, programs.tests, folder, ...(night ? ['--night'] : []))
 }
 
 const resultFile = (folder: string, night: boolean) =>

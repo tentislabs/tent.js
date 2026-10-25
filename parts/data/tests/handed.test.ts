@@ -5,6 +5,7 @@ import type { Row } from '../index.ts'
 import { createDb, handedAnswer } from '../index.ts'
 import { at, described, nOf, reading, seal, seedShop, shopStore, sqlOf, user, writing } from './shop.ts'
 import { codeOf, system } from './work.ts'
+import { held } from '../../../rig/budgets.ts'
 
 const description = described()
 
@@ -64,8 +65,8 @@ test('[20-14] [night] handedAnswer passes what db handed out, without the privat
     Object(handedAnswer(totals)).map((one: Row) => Object.keys(one).sort()),
     Array(3).fill(['n', 'name']),
   )
-  // A `db` that is limited leaves the same fields out by itself.
-  assert.deepEqual(at(db, 'users').group('salary', { n: count() }).all(), [{ n: 1 }, { n: 1 }, { n: 1 }])
+  // A `db` that is limited is refused a group by the column, and leaves a value worked out from it out by itself.
+  assert.throws(() => at(db, 'users').group('salary', { n: count() }).all(), { code: 'T0013' })
   assert.ok(
     at(db, 'users')
       .group('name', { total: sum('salary'), n: count() })
@@ -210,7 +211,7 @@ test('[20-14] [night] reading 10,000 rows with freezing is within a tenth of rea
   const [slow, fast] = [middle(withFreezing), middle(without)]
   const said = `with freezing ${slow.toFixed(2)} ms, without ${fast.toFixed(2)} ms: ${((slow / fast - 1) * 100).toFixed(1)} of a hundred more`
   t.diagnostic(said)
-  assert.ok(slow <= fast * 1.1, said)
+  held('freezing.cost', (slow / fast - 1) * 100, 'percent')
 })
 
 test('[20-14] [night] raw SQL through db: who has it, what ends a statement, and what is refused', (t) => {

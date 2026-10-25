@@ -6,6 +6,7 @@ import { test } from 'node:test'
 import { describeProject } from '../../build/index.ts'
 import { folderOf, held, product } from './held.ts'
 import { toolTemplates } from './tooled.ts'
+import { held as heldToBar } from '../../../rig/budgets.ts'
 
 // How many definitions the project holds, in how many files, and how many points its history holds.
 const definitions = 500
@@ -107,8 +108,8 @@ test('[40-22] compare and changedBy of a workspace answer what changed and who c
     const lastly = performance.now() - asked
     assert.equal(last.by.kind, 'ai')
     assert.equal(last.kind, 'command')
-    assert.ok(compared <= 50, `compare took ${Math.round(compared)} ms`)
-    assert.ok(lastly <= 50, `changedBy took ${Math.round(lastly)} ms`)
+    heldToBar('workspace.compare', compared, 'ms')
+    heldToBar('workspace.changedBy', lastly, 'ms')
   } finally {
     renameSync(`${project}.away`, project)
   }

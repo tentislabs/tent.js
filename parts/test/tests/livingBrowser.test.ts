@@ -30,6 +30,30 @@ function reads(page: Page): () => number {
   return () => count
 }
 
+/**
+ * Answers whether the page asked for its watches over its live connection yet. A page is alive before that
+ * connection opens: a call it makes in between is followed by a request for its queries, as a page with no
+ * connection does. The answers it already holds are sent again only where they change.
+ */
+function heard(page: Page): () => boolean {
+  let one = false
+  page.on('websocket', (socket) =>
+    socket.on('framesent', () => {
+      one = true
+    }),
+  )
+  return () => one
+}
+
+/** Waits until each page asked for its watches over its live connection, for at most fifteen seconds. */
+async function connected(...pages: (() => boolean)[]): Promise<void> {
+  const ends = performance.now() + 15_000
+  while (!pages.every((one) => one())) {
+    assert.ok(performance.now() < ends, 'a page never asked for its watches over its live connection')
+    await new Promise((done) => setTimeout(done, 50))
+  }
+}
+
 test('[31-11] a change called from a form updates every open page that watches a query it touched, and no page asks for it by a request', async (t) => {
   const at = await servedLive(t)
   for (const engine of browserEngines)
@@ -38,10 +62,12 @@ test('[31-11] a change called from a form updates every open page that watches a
       const before = await held(at)
       const other = await page.context().newPage()
       const [mine, theirs] = [reads(page), reads(other)]
+      const live = [heard(page), heard(other)]
       await alive(page, `${at.origin}/`)
       await alive(other, `${at.origin}/`)
       await counted(page, before)
       await counted(other, before)
+      await connected(...live)
       // One page presses: its own list grows, and so does the list of the other page, which did nothing.
       await page.getByRole('button', { name: 'Add one' }).click()
       await counted(page, before + 1)

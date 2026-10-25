@@ -12,3 +12,9 @@ test('[03-23] a heavy test is left out of the run of a pull request, and the nig
   assert.equal(byNight.code, 0, byNight.out)
   assert.deepEqual(result(planted('23'), true).tests, { '99-2': 'passed', '99-4': 'passed', '99-6': 'passed' })
 })
+
+test('[03-34] the night run ends where a file holds no heavy test and its first hook opens what its last one closes', () => {
+  const byNight = run(planted('34'), true)
+  assert.equal(byNight.code, 0, byNight.out)
+  assert.deepEqual(result(planted('34'), true).tests, { '99-2': 'passed' })
+})

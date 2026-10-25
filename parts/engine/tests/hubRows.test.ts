@@ -5,6 +5,7 @@ import { dial } from '../borrowed/ws.ts'
 import { send, system } from './apps.ts'
 import type { Message } from './watching.ts'
 import { addCard, applied, board, idsOf, limited, liveMoment, runsOf, untilTried, watcher } from './watching.ts'
+import { held as heldToBar } from '../../../rig/budgets.ts'
 
 /** The mark of a value as it is sent: the first 16 characters of the fingerprint of its JSON. */
 const markOf = (value: unknown): string =>
@@ -323,7 +324,7 @@ test('[21-9] [night] a list of 5,000 rows in which one row changes is one rows m
   const changed = pages[7 % 50].of('rows', 'at 7')
   assert.equal(changed.length, 1)
   assert.ok(times.length > 3, `calls were made meanwhile: ${times.length}`)
-  assert.ok(Math.max(...times) <= 50, `a call made meanwhile took ${Math.max(...times).toFixed(1)} ms`)
+  heldToBar('hub.callMeanwhile', Math.max(...times), 'ms')
   for (const one of [...pages, lastOne]) one.close()
   await liveMoment(50)
 

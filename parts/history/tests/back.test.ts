@@ -7,6 +7,7 @@ import { runKilled } from '../../../rig/kill.ts'
 import type { Point, Writer } from '../index.ts'
 import { openHistory } from '../index.ts'
 import { ada, codeOf, filesIn, fingerprintOf, heldIn, openedIn, pointOf, put, started, workFolder } from './work.ts'
+import { held } from '../../../rig/budgets.ts'
 
 test('[40-3a] go back 1, 3 and 10 points and forward again: the files match byte for byte, and a file that no point holds is untouched', (t) => {
   t.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 9, 14) })
@@ -132,7 +133,7 @@ test('[40-3a] a history of 10,000 points still opens, finds a point and lists it
       .reverse()
       .map((one) => one.id),
   )
-  assert.ok(took < 1000, `it took ${Math.round(took)} ms`)
+  held('history.newest', took, 'ms')
   assert.equal(history.list().length, 10_000)
   assert.equal(history.list({ kinds: ['named'] }).length, 100)
 })

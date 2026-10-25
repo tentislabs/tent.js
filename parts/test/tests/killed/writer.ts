@@ -108,7 +108,10 @@ if (!existsSync(join(work, `loaded.${round}`))) {
   let last = ''
   for (let turns = 0; ; turns++) {
     const took = existsSync(join(work, `took.${round}`)) ? read(`took.${round}`) : undefined
-    if (took && app.at().epoch === took.epoch && app.at().current) break
+    // A current reader may still be a write behind its writer, within the time of `behind`: it follows once it also
+    // holds every write it knows the writer holds.
+    const writerAt = app.machines().find((one) => one.role === 'writer')?.n ?? Number.POSITIVE_INFINITY
+    if (took && app.at().epoch === took.epoch && app.at().current && app.at().n >= writerAt) break
     // What it is and where it stands is written down when it changes, and every five seconds.
     const now = `role ${app.role}, at ${JSON.stringify(app.at())}, took ${JSON.stringify(took)}, machines ${JSON.stringify(app.machines())}`
     if (now !== last || turns % 250 === 0) say(`waits to follow the new writer: ${now}`)

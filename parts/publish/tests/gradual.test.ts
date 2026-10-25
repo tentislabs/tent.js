@@ -24,10 +24,14 @@ const user = (n: number): Caller => ({ kind: 'user', user: { id: `u${String(n).p
 const ping = (body: string): string =>
   `import { number, query, text } from 'tentjs'\n\nexport const ping = query('ping', {\n  access: 'signedIn',\n  input: { n: number() },\n  output: text(),\n  run: ({ input }) => {\n    ${body}\n  },\n})\n`
 
+// A call of these tests takes under a millisecond, whose 95th share other work on the computer moves by more than a
+// fifth: the time of a call is not what they hold, so the watch of time is set out of reach.
+const quick = 'calls: 20, slower: 1000'
+
 /** A server and a computer, the project releasing gradually by halves, and a first publish of it. */
 async function first(
   t: TestContext,
-  release = "{ steps: [0.5, 1], every: '1 hour', watch: { calls: 20 } }",
+  release = `{ steps: [0.5, 1], every: '1 hour', watch: { ${quick} } }`,
 ): Promise<{ server: Server; here: Computer; to: ReturnType<Server['key']>; was: string }> {
   const folder = folderOf(t)
   const server = await started(t, folder)
@@ -74,7 +78,7 @@ test('[44-3] a new version that fails one call in ten is taken back at its first
 })
 
 test('[44-3] a sound new version is widened step by step to every visitor, at the end of each step and by hand', async (t) => {
-  const { server, here, to, was } = await first(t, "{ steps: [0.25, 0.5, 1], every: '300 ms', watch: { calls: 20 } }")
+  const { server, here, to, was } = await first(t, `{ steps: [0.25, 0.5, 1], every: '300 ms', watch: { ${quick} } }`)
   writeFileSync(join(here.project, 'functions', 'ping.ts'), ping("return 'two'"))
   await here.save()
   const released = await publish({ project: here.project, history: here.history, to, fetch: fetched, gradual: true })

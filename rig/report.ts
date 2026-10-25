@@ -76,19 +76,24 @@ function gathered<T>(
 /**
  * The reporter of the runs, which the test runner of the runtime loads. Takes the events of a run and answers the
  * lines it prints. It writes `results/<system>.json`, or `results/<system>.night.json` in a night run, under the
- * folder the run was started in. It fails the run for a test that states the mark and passes, for a test with no id
+ * folder the run was started in, and beside it `results/failed.json`: each test that failed, by its file and its name,
+ * and each reason the run fails that no test is. It fails the run for a test that states the mark and passes, for a test with no id
  * in its name, for a test or a group that was skipped, for a test that stands inside another test, and for a file of
  * `results/parts/` of another form than its kind has. Throws on a system that is none of the three.
  */
 export default async function* report(source: AsyncIterable<TestEvent>): AsyncGenerator<string, void> {
   const tests: Record<string, State> = {}
   const wrong: string[] = []
+  // What `scripts/tests.mjs` runs a second time: each test that failed, by its file and its name.
+  const failing: { file: string; name: string }[] = []
   // The tests that ended one level deeper than a place of a file, and whose own holder has not ended yet.
   const below = new Map<string, string[]>()
   for await (const event of source) {
     if (event.type !== 'test:pass' && event.type !== 'test:fail') continue
     const { name, todo, details, nesting } = event.data
     const skipped = event.type === 'test:pass' && event.data.skip !== undefined
+    if (event.type === 'test:fail' && event.data.file !== undefined && details.type !== 'suite')
+      failing.push({ file: event.data.file, name })
     // The runner reports what stands inside a test or a group before it reports that test or group itself.
     const inside = below.get(`${event.data.file} ${nesting + 1}`) ?? []
     below.delete(`${event.data.file} ${nesting + 1}`)
@@ -133,6 +138,7 @@ export default async function* report(source: AsyncIterable<TestEvent>): AsyncGe
   const file = join('results', `${result.system}${process.env.TENT_RUN === 'night' ? '.night' : ''}.json`)
   mkdirSync('results', { recursive: true })
   writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`)
+  writeFileSync(join('results', 'failed.json'), `${JSON.stringify({ failing, wrong }, null, 2)}\n`)
 
   const count = (state: State) => Object.values(result.tests).filter((one) => one === state).length
   yield `\n${file.replaceAll('\\', '/')}: ${count('passed')} passed, ${count('failed')} failed, ${count('owed')} owed\n`

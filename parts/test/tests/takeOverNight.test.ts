@@ -254,7 +254,10 @@ test('[29-7] [night] the writer is killed as a program of its own a hundred time
     // a write that the new writer lacks, it kept its file, under the number that it held.
     await until(`the old writer of round ${round} came back as a reader`, () => existsSync(folder(`back.${round}`)))
     const back = JSON.parse(readFileSync(folder(`back.${round}`), 'utf8'))
-    assert.equal(back.n, near.app.at().n, `round ${round}: the old writer holds what the new one holds`)
+    // The new writer records the old one among its near readers by a write of its own, once that one is current: the
+    // old writer may have ended before that write reached it.
+    const behind = near.app.at().n - back.n
+    assert.ok(behind === 0 || behind === 1, `round ${round}: the old writer holds what the new one holds, ${behind}`)
     assert.ok(back.lost.length <= 1, `round ${round}: ${back.lost}`)
     for (const name of back.lost) {
       const [, epoch, n] = /^lost\.(\d+)\.(\d+)\.db$/.exec(name) ?? []
