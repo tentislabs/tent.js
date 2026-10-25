@@ -32,7 +32,7 @@ function filesUnder(folder: string, skip: (path: string) => boolean = () => fals
   return found.sort()
 }
 
-test('[43-1] tent new writes a bare project - tent.ts, package.json, AGENTS.md, one screen at / and one query it reads, and nothing else - and the check passes on it', async (t) => {
+test('[43-1] tent new writes a bare project - tent.ts, package.json, AGENTS.md, the icon of its site, one screen at / and one query it reads, and nothing else - and the check passes on it', async (t) => {
   const folder = workFolder(t, 'new-bare')
   const made = await typed(folder, 'new', 'my-app', '--json')
   assert.equal(made.ended, 0, made.printed)
@@ -43,6 +43,7 @@ test('[43-1] tent new writes a bare project - tent.ts, package.json, AGENTS.md, 
   assert.deepEqual(files, [
     '.gitignore',
     'AGENTS.md',
+    'assets/icon.svg',
     'functions/greeting.ts',
     'package.json',
     'screens/home.tsx',
@@ -68,6 +69,10 @@ test('[43-1] tent new writes a bare project - tent.ts, package.json, AGENTS.md, 
   const answer = String(await app.as('nobody').call('greeting'))
   assert.ok(answer.length > 0)
   assert.ok(page.html.includes(answer), page.html)
+  // The site's icon is the mark of Tent.js, a dash and a dot, until the project names its own.
+  assert.match(page.html, /<link rel="icon" href="[^"]+">/)
+  const icon = readFileSync(join(project, 'assets', 'icon.svg'), 'utf8')
+  assert.ok(icon.includes('<rect width="23" height="10" rx="5"/><circle cx="32.5" cy="5" r="5"/>'), icon)
 })
 
 test('[43-1] the .gitignore of tent new leaves out the engine folder, the packages, the made type list, and results/, where a failed step of a test keeps what its page held', async (t) => {

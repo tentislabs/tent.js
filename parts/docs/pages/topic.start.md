@@ -19,7 +19,7 @@ tent new my-app
 cd my-app
 ```
 
-`npm create tent my-app` makes the same project with nothing installed first, by `tent new` of the newest `tentjs`. `tent new` writes a bare project: `tent.ts`, `package.json`, `AGENTS.md`, one screen at `/` and the query it reads. The files below take their place. A definition is a top-level `export const` made by a word of `tentjs`; `tent check` after every change reports every mistake at once, each with its fix.
+`npm create tent my-app` makes the same project with nothing installed first, by `tent new` of the newest `tentjs`. `tent new` writes a bare project: `tent.ts`, `package.json`, `AGENTS.md`, the mark of Tent.js as the icon of the site in `assets/icon.svg`, one screen at `/` and the query it reads. The files below take their place. A definition is a top-level `export const` made by a word of `tentjs`; `tent check` after every change reports every mistake at once, each with its fix.
 
 ## The project and its people
 

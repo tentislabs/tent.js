@@ -579,7 +579,7 @@ for (const engine of chosen) {
     })
 
     test(`[04-2.6] "Dark" holds when the browser is closed and opened again, from the first paint (${engine})`, async () => {
-      const profile = mkdtempSync(join(tmpdir(), 'app-2-profile-'))
+      const profile = mkdtempSync(join(tmpdir(), 'marketing-site-profile-'))
       const first = await kind.launchPersistentContext(profile, { headless: true, viewport: desk })
       const page = first.pages()[0] ?? (await first.newPage())
       await visit(page, `${running.origin}/`)
@@ -643,7 +643,7 @@ for (const engine of chosen) {
       let host: Files | undefined
       try {
         host = await files()
-        const out = mkdtempSync(join(tmpdir(), 'app-2-site-'))
+        const out = mkdtempSync(join(tmpdir(), 'marketing-site-site-'))
         await tent(['export', '--out', out, '--origin', host.origin, '--data', running.data])
         host.serve(out)
         const at = host.origin

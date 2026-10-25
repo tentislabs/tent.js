@@ -92,12 +92,12 @@ test('[48-2] a step that never lands fails after testStep, naming what it still 
     await assert.rejects(page.press('Never'), (error) => {
       assert.ok(error instanceof TentError, String(error))
       assert.equal(error.code, 'T0008', engine)
-      assert.match(error.message, /2 seconds/)
+      assert.match(error.message, /5 seconds/)
       assert.match(error.message, /\/_t\/call\/never/)
       return true
     })
-    // The project bounds a step at two seconds.
-    assert.ok(performance.now() - started >= 2000, `the step was given its time in ${engine}`)
+    // The project bounds a step at five seconds.
+    assert.ok(performance.now() - started >= 5000, `the step was given its time in ${engine}`)
     await closePage(page)
   }
 })

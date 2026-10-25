@@ -74,6 +74,12 @@ export function complaintsOf(page: Page): string[] {
     // A browser may note that a file which the page named ahead was not used yet: the module of the `error`
     // screen is named ahead and loaded only when a view fails. That note is no complaint of the page.
     if (/was preloaded using link preload but not used/.test(message.text())) return
+    // A project of the tests names a made-up host to connect to ahead, which a computer that resolves no such name
+    // fails to reach; WebKit notes it, though the page asks nothing of that host.
+    if (/^Failed to preconnect to https:\/\/[\w.-]+\.example\.com\//.test(message.text())) return
+    // Firefox notes a site that many pages open with no press of a person as one that tracks, as the tests open
+    // `localhost` again and again: that note is of the tests, and not of the page.
+    if (/“localhost” has been classified as a bounce tracker/.test(message.text())) return
     if (message.type() === 'error' || message.type() === 'warning') said.push(`${message.type()}: ${message.text()}`)
   })
   return said

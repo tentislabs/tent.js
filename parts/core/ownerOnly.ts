@@ -10,8 +10,8 @@ import { join } from 'node:path'
 export const windowsTool = (...names: string[]): string =>
   join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', ...names)
 
-/** What Windows says of the account that this program runs as: the id of its user, and the level of its rights. */
-type Account = { sid: string | undefined; level: number }
+/** What Windows says of the account that this program runs as: the id of its user, of its logon, and its level. */
+type Account = { sid: string | undefined; logon: string[]; level: number }
 
 let account: Account | undefined
 let asked: Promise<void> | undefined
@@ -23,8 +23,11 @@ const whoami = (): [string, string[]] => [windowsTool('whoami.exe'), ['/user', '
 function accountIn(lines: string): Account {
   // The user stands on the first line. The level is the group of a label, `S-1-16-<level>`, whose name is in the
   // language of the system and whose id is the same in every one.
-  const sid = /"(S-1-[\d-]+)"/.exec(lines.split('\n')[0] ?? '')?.[1]
-  return { sid, level: Number(/"S-1-16-(\d+)"/.exec(lines)?.[1] ?? 0) }
+  // The id of the logon session, `S-1-5-5-<x>-<y>`, is a group the default rights of a file may name.
+  const [first = '', ...rest] = lines.split('\n')
+  const sid = /"(S-1-[\d-]+)"/.exec(first)?.[1]
+  const logon = rest.flatMap((line) => /"(S-1-5-5-[\d-]+)"/.exec(line)?.[1] ?? [])
+  return { sid, logon, level: Number(/"S-1-16-(\d+)"/.exec(lines)?.[1] ?? 0) }
 }
 
 /**
@@ -70,11 +73,23 @@ export function runsElevated(): boolean {
   return accountOf().level >= 12288
 }
 
-/** The words of the system's own program that take away what a path inherits and leave the current user alone. */
+/**
+ * The words of the system's own program that take away what a path inherits and leave the current user alone. A
+ * file made in a folder that hands down no rights is given the account's default rights, stated on the file itself:
+ * those of SYSTEM, of Administrators and of the logon session are taken away in the same run. Only ids the computer
+ * always names are given, since the program refuses a whole run for one it cannot, as a group of Entra ID.
+ */
 function closingWords(path: string): string[] {
-  const user = currentSid()
-  return [path, '/inheritance:r', '/grant:r', `${user ? `*${user}` : userInfo().username}:F`]
+  const { sid, logon } = accountOf()
+  const others = ['S-1-5-18', 'S-1-5-32-544', ...logon].map((one) => `*${one}`)
+  return [path, '/inheritance:r', '/grant:r', `${sid ? `*${sid}` : userInfo().username}:F`, '/remove:g', ...others]
 }
+
+/** Runs the system's own program for rights with its words, beside what this program does meanwhile. */
+const rightsSet = (words: string[]): Promise<void> =>
+  new Promise((done, failed) => {
+    execFile(windowsTool('icacls.exe'), words, { windowsHide: true }, (error) => (error ? failed(error) : done()))
+  })
 
 /**
  * Takes the path of a file and its text or its bytes. Makes the file anew, so that only the current user can read
@@ -124,16 +139,7 @@ export function beginOwnerOnly(path: string): OwnerOnlyBegun {
     open = false
   }
   const closed =
-    process.platform === 'win32'
-      ? askAccount().then(
-          () =>
-            new Promise<void>((done, failed) => {
-              execFile(windowsTool('icacls.exe'), closingWords(begun), { windowsHide: true }, (error) =>
-                error ? failed(error) : done(),
-              )
-            }),
-        )
-      : Promise.resolve()
+    process.platform === 'win32' ? askAccount().then(() => rightsSet(closingWords(begun))) : Promise.resolve()
   // A file that is dropped is not waited for: its closing may fail as it goes.
   closed.catch(() => undefined)
   return {

@@ -69,6 +69,26 @@ test('[32-18] a script that loads alive is asked for only after the page lives, 
     })
 })
 
+test('[32-18] a script that loads idle runs after one that loads alive, also where that one is slow to come, in the three browsers', async () => {
+  const { address } = await site()
+  for (const engine of browserEngines)
+    await inBrowser(engine, async (page) => {
+      const said = `in ${engine}`
+      // The script that loads alive comes a second late, as on a slow network.
+      await page.route('**/assets/alive.*js', async (route) => {
+        await new Promise((done) => setTimeout(done, 1000))
+        await route.continue()
+      })
+      await page.goto(`${address}/`)
+      await page.waitForFunction(() => {
+        const said: unknown = Reflect.get(window, 'ran')
+        return Array.isArray(said) && said.includes('idle') && said.includes('alive')
+      })
+      const order = await ran(page)
+      assert.ok(order.indexOf('idle') > order.indexOf('alive'), `${said}: ${order}`)
+    })
+})
+
 test('[32-18] a script that waits for consent is not asked for while its state is false, and is added on the same page when it turns true, in the three browsers', async () => {
   const { address } = await site()
   for (const engine of browserEngines)

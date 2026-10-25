@@ -57,6 +57,9 @@ export async function inBrowser<Answer>(
   })
   try {
     const context = await browser.newContext({
+      // One zone on every computer, nine hours ahead of UTC all year and the zone of no project of the tests, so a
+      // page's own zone is never the zone of the project by chance, as UTC is on a machine of the automatic runs.
+      timezoneId: 'Asia/Tokyo',
       viewport: { width: o.width ?? 800, height: o.height ?? 600 },
       deviceScaleFactor: 1,
       javaScriptEnabled: o.scripts !== false,

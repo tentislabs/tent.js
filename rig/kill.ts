@@ -139,7 +139,7 @@ function once(
  * which is started with the runtime as a program of its own, with `args`. One round: it is started; it is killed,
  * with every program it started, when it prints the line `when`, or where no `when` is given at a moment between 0
  * and `within` milliseconds that is drawn from `seed`; it is started again and ends by itself. A round in which the
- * program ended by itself before its kill is done again. Answers a promise of the number of kills, which is `times`,
+ * program ended by itself before its kill is done again, its moment then drawn within the time that start took. Answers a promise of the number of kills, which is `times`,
  * the seed, and how the second start of each round ended. The seed is printed at the start, and drawn where none is
  * given. The promise is refused where neither `when` nor `within` is given, where the program cannot be started,
  * where it ended before its kill ten times in a row, and where a start has neither reached its kill nor ended by
@@ -160,11 +160,16 @@ export async function runKilled(
     new Error(`${basename(file)} ${what} after ${wait} milliseconds, in round ${round + 1}, seed ${seed}: it was ended`)
   try {
     for (let round = 0; round < times; round++) {
+      // A computer quicker than the one the moment was chosen for ends the work before most moments of `within`:
+      // a start that ended by itself tells how long the work now takes.
+      let span = within ?? 0
       for (let tries = 1; ; tries++) {
-        const kill = when === undefined ? { after: draw() * (within ?? 0), wait } : { when, wait }
+        const kill = when === undefined ? { after: draw() * span, wait } : { when, wait }
+        const began = performance.now()
         const first = await once(file, args, after, kill)
         if (first.hung) throw hangs('had neither reached its kill nor ended by itself', round)
         if (first.killed) break
+        span = Math.min(span, performance.now() - began)
         if (tries === again)
           throw new Error(
             `${basename(file)} ended before its kill ${again} times in a row, in round ${round + 1}, seed ${seed}`,

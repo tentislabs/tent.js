@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { test } from 'node:test'
 import { copyOf, planted, result, run } from './rigs-plant.ts'
+
+// The rig of the measures, by the address a planted file imports it from wherever the file lies.
+const budgets = new URL('../rig/budgets.ts', import.meta.url).href
 
 /** Holds that a measure of a time is written with its unit and its bar, and answers the time. */
 function timeOf(measure: unknown, bar: number): number {
@@ -35,4 +40,64 @@ test('[03-2] a measure above the bar of its name fails its test and is written, 
   const withoutThem = run(folder)
   assert.equal(withoutThem.code, 0, withoutThem.out)
   assert.deepEqual(result(folder).tests, { '99-3': 'passed', '99-4': 'passed', '99-5': 'passed' })
+})
+
+test('[03-2] a measure above a bar that is owed, by the owner, after the release is written and said, and its test passes', (t) => {
+  const folder = copyOf(t, '2', [])
+  const bars = JSON.parse(readFileSync(join(folder, 'budgets.json'), 'utf8'))
+  bars['slow.work'].owed = 'reached after the release'
+  writeFileSync(join(folder, 'budgets.json'), JSON.stringify(bars))
+  const owed = run(folder)
+  const held = result(folder)
+  assert.equal(held.tests['99-1'], 'passed', owed.out)
+  assert.equal(held.tests['99-2'], 'failed', 'a bar that is not owed holds as before')
+  assert.ok(timeOf(held.measures['slow.work'], 5) > 5, owed.out)
+  assert.match(
+    owed.out,
+    /the measure slow\.work is [\d.]+ ms, above its bar of 5, which is owed: reached after the release/,
+  )
+})
+
+test('[03-2] the files that measure run alone after the others, and the run writes one result file of both', (t) => {
+  const folder = copyOf(t, '2', ['tests/over.test.ts'])
+  // A file that measures nothing ends a second after it starts, and leaves a mark that it ended.
+  writeFileSync(
+    join(folder, 'tests', 'plain.test.ts'),
+    [
+      "import { writeFileSync } from 'node:fs'",
+      "import { test } from 'node:test'",
+      "import { setTimeout as wait } from 'node:timers/promises'",
+      "test('[99-6] a test that measures nothing', async () => {",
+      '  await wait(1000)',
+      "  writeFileSync('results/plain.done', '')",
+      '})',
+      '',
+    ].join('\n'),
+  )
+  // A file that measures finds the mark: no file ran beside it.
+  writeFileSync(
+    join(folder, 'tests', 'alone.test.ts'),
+    [
+      "import assert from 'node:assert/strict'",
+      "import { existsSync } from 'node:fs'",
+      "import { test } from 'node:test'",
+      `import { measure } from '${budgets}'`,
+      "test('[99-7] a file that measures starts after the others ended', async () => {",
+      "  assert.ok(existsSync('results/plain.done'))",
+      "  await measure('alone.work', () => 1, { unit: 'bytes' })",
+      '})',
+      '',
+    ].join('\n'),
+  )
+  const both = run(folder)
+  assert.equal(both.code, 0, both.out)
+  const held = result(folder)
+  assert.deepEqual(held.tests, {
+    '99-3': 'passed',
+    '99-4': 'passed',
+    '99-5': 'passed',
+    '99-6': 'passed',
+    '99-7': 'passed',
+  })
+  assert.deepEqual(Object.keys(held.measures).sort(), ['alone.work', 'no.bar', 'quick.work', 'small.file'])
 })

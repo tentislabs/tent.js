@@ -92,6 +92,13 @@ test('[03-3] a round in which the program ended before its kill is done again', 
   assert.equal(linesOf(join(never, 'starts.txt')).length, 10)
 })
 
+test('[03-3] a start that ended before its kill is started again with its kill drawn within the time that start took', async (t) => {
+  const folder = work(t)
+  const killed = await runKilled(program('brief'), { times: 1, within: 60_000, seed: 2, args: [folder] })
+  assert.equal(killed.kills, 1)
+  assert.deepEqual(killed.ended, [{ code: 0, out: 'ended\n' }])
+})
+
 /** Waits until the program of a file is gone, for five seconds at most, and answers whether it is. */
 async function gone(file: string): Promise<boolean> {
   // A system takes a moment to take a killed program off its list.

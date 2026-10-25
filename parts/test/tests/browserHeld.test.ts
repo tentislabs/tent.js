@@ -126,12 +126,13 @@ const opened: Record<string, string> = {
 
 // What an engine gives a page of the device whatever the header says, each thing with what the page then shows.
 // The header that closes the device is read by Chromium. Firefox does not read it, WebKit does not read it for the
-// place, and the WebKit of this driver has no camera and no microphone for a page at all. So of these the header
-// is held by its text, and a page shows the rest.
+// place; the WebKit of this driver has no camera and no microphone on Windows, and refuses a page both elsewhere,
+// whatever the header says. So of these the header is held by its text, and a page shows the rest.
+const unheld = process.platform === 'win32' ? 'none' : 'refused'
 const ofItself: Record<string, Record<string, string>> = {
   chromium: {},
   firefox: { camera: 'given', location: 'given', microphone: 'given' },
-  webkit: { camera: 'none', location: 'given', microphone: 'none' },
+  webkit: { camera: unheld, location: 'given', microphone: unheld },
 }
 
 // The smallest picture: one clear point.

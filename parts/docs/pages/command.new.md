@@ -1,6 +1,6 @@
 # `tent new`
 
-Makes a bare project folder - one screen and the query it reads - with `AGENTS.md`, the short index that every coding agent reads first.
+Makes a bare project folder - one screen and the query it reads, and the mark of Tent.js as the icon of the site - with `AGENTS.md`, the short index that every coding agent reads first.
 
 ## Usage
 

@@ -1,5 +1,5 @@
 {
-  "name": "app-1",
+  "name": "help-desk",
   "private": true,
   "type": "module",
   "engines": {
@@ -10,7 +10,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "daisyui": "^5.7.50",
     "lucide-react": "^1.60.0",
-    "recharts": "^3.10.1",
+    "playwright-core": "^1.64.0",
     "tailwindcss": "^4.3.3"
   }
 }

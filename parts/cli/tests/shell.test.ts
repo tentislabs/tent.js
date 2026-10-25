@@ -69,6 +69,8 @@ test('[15-4] tent new, then tent check, passes with no finding', () => {
       '.tent',
       '.tent/history.db',
       'AGENTS.md',
+      'assets',
+      'assets/icon.svg',
       'functions',
       'functions/greeting.ts',
       'package.json',

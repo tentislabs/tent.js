@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs'
 import { registerHooks } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -17,6 +18,15 @@ const mark = `tent-page:${Math.random().toString(36).slice(2)}/`
 // file holds the fingerprint of what was built, so a package built anew is another file.
 const packages = new Map<string, string>()
 
+/** The real path of a folder, or the folder itself where it is none on the disk. */
+const realOf = (folder: string): string => {
+  try {
+    return realpathSync(folder)
+  } catch {
+    return resolve(folder)
+  }
+}
+
 /** The text of the small module of one name, which hands on what this page code holds under it. */
 const textOf = (name: string): string => handedOn(name, Object.hasOwn(names, name) ? names[name] : {}, import.meta.url)
 
@@ -26,8 +36,12 @@ const textOf = (name: string): string => handedOn(name, Object.hasOwn(names, nam
  * with what `names` holds for it. Every other module of the program finds its imports as before.
  */
 export function findPageCode(folder: string): void {
-  const under = `${pathToFileURL(resolve(folder)).href}/`
-  if (!folders.includes(under)) folders.push(under)
+  // The runtime answers a module by its real path, which differs from the folder where a link reaches it, as the
+  // temporary folder of macOS is reached: the folder is known by both.
+  for (const path of new Set([resolve(folder), realOf(folder)])) {
+    const under = `${pathToFileURL(path).href}/`
+    if (!folders.includes(under)) folders.push(under)
+  }
   if (hooked) return
   hooked = true
   registerHooks({

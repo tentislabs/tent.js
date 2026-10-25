@@ -94,7 +94,8 @@ export function startHeld(o: {
   const execArgv = ['--permission', ...[...reads, ...o.nativeFolders.map(real)].map((one) => `--allow-fs-read=${one}`)]
   // A `native` names packages whose code runs outside the model, so loading native code is lifted for the whole program.
   if (o.native.length) execArgv.push('--allow-addons')
-  const child: ChildProcess = fork(hostFile, [code], {
+  // The program is handed its code by the real path it is granted: reaching it through a link would read the link.
+  const child: ChildProcess = fork(hostFile, [real(code)], {
     execArgv,
     // An empty environment: the version is named by an argument, not a variable, so it holds no secret of the engine.
     env: {},

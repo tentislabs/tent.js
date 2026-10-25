@@ -99,7 +99,13 @@ They are also on the site: [tentjs.com](https://tentjs.com).
 
 ## Examples
 
-[`samples/`](https://github.com/tentislabs/tent.js/tree/main/samples) holds whole apps built with Tent.js, the docs site among them.
+[`examples/`](https://github.com/tentislabs/tent.js/tree/main/examples) holds whole apps built with Tent.js, each with a README of how to run it:
+
+- [`orders`](https://github.com/tentislabs/tent.js/tree/main/examples/orders): an orders tool for a shop's staff and customers, with a sign-in, roles, live updates and two languages.
+- [`marketing-site`](https://github.com/tentislabs/tent.js/tree/main/examples/marketing-site): the site of a product, in two languages, with a gallery, a contact form and a sitemap.
+- [`help-desk`](https://github.com/tentislabs/tent.js/tree/main/examples/help-desk): mail becomes tickets, and an AI agent drafts answers from a guide of PDF files, asks before a refund, and listens and speaks.
+- [`app-builder`](https://github.com/tentislabs/tent.js/tree/main/examples/app-builder): people describe an app in a chat and an AI builds it, each in a workspace of their own.
+- [`bots`](https://github.com/tentislabs/tent.js/tree/main/examples/bots): always-on bots on your own computer, with a memory each, routines, MCP tools and an ask before anything that sends, pays or deletes.
 
 ## Community and contributing
 

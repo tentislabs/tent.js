@@ -11,7 +11,7 @@ import {
   tempFolder,
   tent,
   textOf,
-} from '../samples/app-1/walk/app.ts'
+} from '../examples/orders/walk/app.ts'
 
 const STAFF_EMAIL = 'sam@shop.example'
 // The password that the seed gives every person, on data of development and of test.

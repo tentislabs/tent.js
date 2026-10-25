@@ -43,7 +43,7 @@ export type Running = { origin: string; data: string; stop: () => void }
 
 /** Starts the bundle with `tent start --mode test --seed` on an empty data folder, and answers once it runs. */
 export function start(bundle: string): Promise<Running> {
-  const data = mkdtempSync(join(tmpdir(), 'app-2-walk-'))
+  const data = mkdtempSync(join(tmpdir(), 'marketing-site-walk-'))
   const child: ChildProcess = spawn(
     process.execPath,
     [shell, 'start', bundle, '--data', data, '--port', '0', '--mode', 'test', '--seed'],

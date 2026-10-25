@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { TentError } from '../../core/index.ts'
@@ -26,6 +26,23 @@ export interface Driven {
 const startTime = 20_000
 
 /**
+ * Whether this system refuses the sandbox of Chromium to a program, which needs namespaces of its own: Linux refuses
+ * them to root, and Ubuntu from 23.10 to a program that no AppArmor profile names, as the browsers that tests fetch
+ * into a person's own folder are. A browser installed in the system's own places, as Chrome, Edge or a snap, has a
+ * profile or a sandbox of its own, and keeps it.
+ */
+function sandboxRefused(program: string): boolean {
+  if (process.platform !== 'linux') return false
+  if (process.getuid?.() === 0) return true
+  if (/^\/(usr|opt|snap)\//.test(program)) return false
+  try {
+    return readFileSync('/proc/sys/kernel/apparmor_restrict_unprivileged_userns', 'utf8').trim() === '1'
+  } catch {
+    return false
+  }
+}
+
+/**
  * Takes the program of a browser of the Chromium family. Starts it with no window, in a folder of its own, and
  * opens one page in it over the browser's own channel for being driven, which is a pair of pipes of this program:
  * no other program of the computer can reach it, as it could a port. Answers what drives that page. Throws T0016
@@ -48,6 +65,8 @@ export async function driven(program: string): Promise<Driven> {
       '--disable-sync',
       '--hide-scrollbars',
       '--mute-audio',
+      // Where the system refuses the sandbox the browser runs without one, as playwright-core starts it everywhere.
+      ...(sandboxRefused(program) ? ['--no-sandbox'] : []),
       'about:blank',
     ],
     { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] },

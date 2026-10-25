@@ -17,7 +17,14 @@ test('[05-11.15] the check of a key takes the same time for an id of no key, for
   const wrong = randomOf(newApiKey('01m4vne21rehxa0vhe4ztfk1qx').key)
   const first = `${random[0] === 'A' ? 'B' : 'A'}${random.slice(1)}`
   timed(wrong, fingerprint)
-  const times = [timed(wrong, fingerprint), timed(wrong, undefined), timed(first, fingerprint)]
+  // The cases are taken in turn five times and each is held by its quickest: other work on the computer only ever
+  // adds time, so the quickest of a case is the nearest to the time of the check itself.
+  const times = [Infinity, Infinity, Infinity]
+  for (let round = 0; round < 5; round++) {
+    times[0] = Math.min(times[0], timed(wrong, fingerprint))
+    times[1] = Math.min(times[1], timed(wrong, undefined))
+    times[2] = Math.min(times[2], timed(first, fingerprint))
+  }
   assert.ok(Math.max(...times) / Math.min(...times) < 1.5, `the times differ: ${times.map(Math.round).join(', ')} ms`)
   assert.equal(fits(random, fingerprint), true)
   for (const other of [wrong, first]) assert.equal(fits(other, fingerprint), false)

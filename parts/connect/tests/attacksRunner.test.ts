@@ -134,6 +134,15 @@ test('[05-12.6] `keys.json` cannot be read by another user of the computer, also
   assert.deepEqual(othersOn(file), [], 'after the key of publishing is kept')
 })
 
+test('[05-12.6] `keys.json` cannot be read by another user of the computer where its folder hands down no rights, and the account gives its own', (t) => {
+  const home = homeOf(t)
+  // On Windows a file made in such a folder is given the account's default rights, as SYSTEM and Administrators.
+  if (process.platform === 'win32')
+    execFileSync('icacls', [home, '/inheritance:r', '/grant:r', `${userInfo().username}:F`], { stdio: 'ignore' })
+  keepKey(home, 'https://server.test', 'tent_the_key')
+  assert.deepEqual(othersOn(join(home, 'keys.json')), [], 'after a key is kept')
+})
+
 test("[05-12.11] a `command` that writes a model's words which hold codes that move the cursor: `write` and `error` print them as codes", async (t) => {
   const home = homeOf(t)
   const module = moduleNamed(

@@ -80,6 +80,16 @@ test("[41-1] the npm door installs tentjs with the package of this system, and t
   const about = JSON.parse(readFileSync(join(work, 'demo', 'package.json'), 'utf8'))
   assert.equal(about.dependencies.tentjs, '1.0.0')
   assert.equal(existsSync(join(work, 'demo', 'node_modules', 'tentjs', 'package.json')), true)
+  // The check of the new project, with a test of its own as most projects hold, finds nothing: its type check reads
+  // the framework's own code through `tentjs/test`, borrowed parts among it.
+  mkdirSync(join(work, 'demo', 'tests'), { recursive: true })
+  writeFileSync(
+    join(work, 'demo', 'tests', 'home.test.ts'),
+    "import test from 'node:test'\nimport { testApp } from 'tentjs/test'\n\ntest('the app opens', async (t) => {\n  const app = await testApp()\n  t.after(() => app.close())\n})\n",
+  )
+  const checked = await tent(['check', '--json'], join(work, 'demo'))
+  assert.equal(checked.status, 0, `${checked.out}${checked.err}`)
+  assert.deepEqual(JSON.parse(checked.out).findings, [], checked.out)
   const dev = startedIn(t, npmTent(prefix), ['dev'], {
     cwd: join(work, 'demo'),
     env: person.env,

@@ -35,6 +35,23 @@ test('[48-7] --plan writes a test for a screen with a form, which runs and passe
   assert.equal(valueOf(tested.answer).passed, 4, tested.printed)
 })
 
+test('[48-7] --plan picks the first value of a choice of the input, read where the description keeps a choice values', (t) => {
+  const project = copied(t, 'plan-choice', 'planned')
+  const functions = join(project, 'functions.ts')
+  writeFileSync(
+    functions,
+    readFileSync(functions, 'utf8')
+      .replace('import { boolean, change, input,', 'import { boolean, change, choice, input,')
+      .replace(
+        'input: { title: text(), count: number(), urgent: boolean() },',
+        "input: { title: text(), count: number(), urgent: boolean(), size: choice(['small', 'large']) },",
+      ),
+  )
+  const planned = typedApart(project, 'test', '--plan', 'ordersScreen', '--json')
+  assert.equal(planned.ended, 0, planned.printed)
+  assert.match(readFileSync(join(project, 'tests', 'ordersScreen.test.ts'), 'utf8'), /page\.pick\('size', 'small'\)/)
+})
+
 test('[48-7] --shard runs a share of the files split by their names, and --join gives the same report as one run', async (t) => {
   const project = copied(t, 'shard', 'planned')
   const whole = typedApart(project, 'test', '--json')

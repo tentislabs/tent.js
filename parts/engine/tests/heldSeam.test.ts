@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
+import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import type { TestContext } from 'node:test'
 import { test } from 'node:test'
@@ -86,6 +87,35 @@ test('[52-9] an action whose code ends its held program is refused, and the next
   const next = await app.as('nobody').call('actionProcess', {})
   assert.equal(typeof next, 'number')
   assert.notEqual(next, first, 'the next action ran in a program made anew')
+})
+
+test('[52-9] an app whose temporary folder is reached through a link, as macOS reaches its own, loads its modules in the engine and in the held program', async (t) => {
+  const folder = laid(t, 'true')
+  // The temporary folder is the test's own, and is taken away once the app that holds files in it is closed.
+  const real = mkdtempSync(join(tmpdir(), 'tent-linked-'))
+  const linked = `${real}-linked`
+  // A link to a folder needs no rights of an administrator on Windows where it is a junction.
+  symlinkSync(real, linked, process.platform === 'win32' ? 'junction' : 'dir')
+  const kept = { TMPDIR: process.env.TMPDIR, TEMP: process.env.TEMP, TMP: process.env.TMP }
+  process.env.TMPDIR = linked
+  process.env.TEMP = linked
+  process.env.TMP = linked
+  try {
+    assert.equal(tmpdir(), linked)
+    const app = await testApp({ folder, room: 'program' })
+    try {
+      assert.equal(await app.as('nobody').call('queryProcess', {}), process.pid)
+      assert.notEqual(await app.as('nobody').call('actionProcess', {}), process.pid)
+    } finally {
+      await app.close()
+    }
+  } finally {
+    for (const [name, value] of Object.entries(kept))
+      if (value === undefined) delete process.env[name]
+      else process.env[name] = value
+    rmSync(linked, { force: true })
+    rmSync(real, { recursive: true, force: true })
+  }
 })
 
 test('[52-9] with `hold` stated and the test room as the room, a fetch to a host `net` names answers, and one to another is T0035 naming its package', async (t) => {

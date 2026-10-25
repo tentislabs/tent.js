@@ -55,7 +55,7 @@ export type Walked = Builder & { writer: ReturnType<typeof fakeWriter>; folder: 
 
 /** Builds the product, and starts its program in the mode `test` on an empty data folder, with the seed applied. */
 export async function startWalk(): Promise<Walked> {
-  const folder = await mkdtemp(join(tmpdir(), 'tent-sample-app-4-'))
+  const folder = await mkdtemp(join(tmpdir(), 'tent-app-builder-'))
   const built = await tent(['build', '--out', join(folder, 'bundle')])
   const bundle = typeof built === 'object' && built !== null && 'bundle' in built ? String(built.bundle) : ''
   // The model is faked, so its key is a word that opens nothing.

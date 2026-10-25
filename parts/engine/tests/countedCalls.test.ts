@@ -81,8 +81,17 @@ test('[21-22] work on a background thread that holds the processor for a second 
   assert.equal(await app.call('heavy', { ms: 1000 }, { as: system }), 'held')
   const long = sum(await counted(), 'heavy', 'cpuMs')
   assert.ok(long >= 750 && long <= 1400, `a second, and not ${long}`)
-  assert.equal(await app.call('heavy', { ms: 0.5 }, { as: system }), 'held')
-  const short = sum(await counted(), 'heavy', 'cpuMs') - long
+  // A clock of the system that moves in steps counts short work by the time it took, which other work on the
+  // computer lengthens, and a count may land with the next call's: the work is done five times, held by its middle.
+  const shorts: number[] = []
+  let before = long
+  for (let round = 0; round < 5; round++) {
+    assert.equal(await app.call('heavy', { ms: 0.5 }, { as: system }), 'held')
+    const now = sum(await counted(), 'heavy', 'cpuMs')
+    shorts.push(now - before)
+    before = now
+  }
+  const short = shorts.sort((a, b) => a - b)[2]
   // The work is the half millisecond and what the engine did to carry it out: a few milliseconds at most.
   assert.ok(short > 0.3 && short < 5, `half a millisecond, and not ${short}`)
   assert.notEqual(short, Math.round(short), 'a time keeps its fractions')

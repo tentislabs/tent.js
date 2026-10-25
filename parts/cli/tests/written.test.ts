@@ -110,15 +110,15 @@ function installedFor(project: string): string {
 }
 
 test('[34-2] every plain definition of sample app 1 reads back to the same record from the text that is written of it', async (t) => {
-  const sample = join(root, 'samples', 'app-1')
-  assert.ok(existsSync(join(sample, 'tent.ts')), 'samples/app-1 is not there')
+  const sample = join(root, 'examples', 'orders')
+  assert.ok(existsSync(join(sample, 'tent.ts')), 'examples/orders is not there')
   // The copies lie under the folder of the packages, and none holds packages of its own.
   const folder = join(installedFor(sample), 'work')
   const remove = (): void => rmSync(folder, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 })
   remove()
   t.after(remove)
   const left = ['.tent', 'node_modules']
-  cpSync(sample, join(folder, 'app-1'), { recursive: true, filter: (path) => !left.some((one) => path.includes(one)) })
-  const { before, after } = await writtenAnew(join(folder, 'app-1'), join(folder, 'again'))
+  cpSync(sample, join(folder, 'orders'), { recursive: true, filter: (path) => !left.some((one) => path.includes(one)) })
+  const { before, after } = await writtenAnew(join(folder, 'orders'), join(folder, 'again'))
   assert.equal(held(after), held(before))
 })

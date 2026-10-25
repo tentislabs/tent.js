@@ -5,4 +5,4 @@ screens
   homeScreen: /, anyone
     data: greeting from greeting
 page
-  screen homeScreen: browser/screens.home.647813b06d60.js 722 bytes
+  screen homeScreen: browser/screens.home.0cbd1035970d.js 722 bytes

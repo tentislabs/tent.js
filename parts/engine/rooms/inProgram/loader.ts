@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs'
 import { registerHooks } from 'node:module'
 import { relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -33,11 +34,26 @@ export function placeOfVersion(version: RoomVersion): string {
   return place
 }
 
-/** The path inside its version of a module that a marked address names. */
+/** The real path of a place, where it lies on the disk, or the place itself where it is no folder there. */
+const real = (place: string): string => {
+  try {
+    return realpathSync(place)
+  } catch {
+    return place
+  }
+}
+
+/**
+ * The path inside its version of a module that a marked address names. The runtime answers a module of a folder by
+ * its real path, which differs from the place where the place is reached by a link, as the temporary folder of macOS is.
+ */
 function pathIn(place: string, url: URL): string {
   const plain = new URL(url.href)
   plain.search = ''
-  return relative(place, fileURLToPath(plain)).split(sep).join('/')
+  const file = fileURLToPath(plain)
+  const asPlaced = relative(place, file)
+  const inside = asPlaced !== '..' && !asPlaced.startsWith(`..${sep}`)
+  return (inside ? asPlaced : relative(real(place), file)).split(sep).join('/')
 }
 
 // A module that a marked module imports is found by the one rule of a version, and a module of the version carries

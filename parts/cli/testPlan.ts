@@ -12,8 +12,8 @@ function filled(name: string, type: unknown): string {
   const kind = isStored(type) ? type.kind : undefined
   const at = quoted(name)
   if (kind === 'boolean') return `  await page.pick(${at}, true)`
-  if (kind === 'choice' && isStored(type) && Array.isArray(type.of) && type.of.length)
-    return `  await page.pick(${at}, ${quoted(String(type.of[0]))})`
+  if (kind === 'choice' && isStored(type) && Array.isArray(type.values) && type.values.length)
+    return `  await page.pick(${at}, ${quoted(String(type.values[0]))})`
   if (kind === 'number') return `  await page.type(${at}, '1')`
   if (kind === 'text') return `  await page.type(${at}, ${quoted(`A ${name}`)})`
   if (kind === 'day') return `  await page.type(${at}, '2031-01-01')`

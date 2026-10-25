@@ -6,7 +6,7 @@
   "browser": {
     "components": {
       "PriceTag": [
-        "browser/screens.orders.PriceTag.3b6d96e79f90.js",
+        "browser/screens.orders.PriceTag.013f9a854708.js",
         "browser/orders.74dc0a3a30c5.css"
       ]
     },
@@ -39,21 +39,21 @@
     },
     "screens": {
       "labelsScreen": [
-        "browser/screens.labels.b14b9ee08912.js",
+        "browser/screens.labels.724192f0f963.js",
         "browser/orders.74dc0a3a30c5.css"
       ],
       "orderScreen": [
-        "browser/screens.order.b099a3a5355a.js",
+        "browser/screens.order.08898040d927.js",
         "browser/orders.74dc0a3a30c5.css"
       ],
       "ordersScreen": [
-        "browser/screens.orders.ordersScreen.0d47ef81a689.js",
+        "browser/screens.orders.ordersScreen.8244ef4f321c.js",
         "browser/orders.74dc0a3a30c5.css"
       ]
     },
     "shared": [
-      "browser/shared.orders.b72d1ed4d97a.js",
-      "browser/shared2.orders.b583ed0aff3d.js"
+      "browser/shared.orders.138c5d60ad03.js",
+      "browser/shared2.orders.22b0459a0ab1.js"
     ],
     "styles": [
       "browser/orders.74dc0a3a30c5.css"

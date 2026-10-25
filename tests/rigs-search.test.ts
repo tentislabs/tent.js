@@ -62,8 +62,8 @@ test('[03-18] a file that nothing imports and no list names fails the search, an
   for (const file of files) assert.ok(new RegExp(`^${file.replaceAll('.', '\\.')}\\s*$`, 'm').test(both.out), both.out)
   assert.doesNotMatch(both.out, /first\.ts|value\.ts|some-shared\.ts|list\.ts/)
   // A file of a sample app, which nothing imports, is not named: it is found by its folder.
-  assert.equal(existsSync(join(planted('18'), 'samples/app-1/tables/orders.ts')), true)
-  assert.doesNotMatch(both.out, /samples/)
+  assert.equal(existsSync(join(planted('18'), 'examples/orders/tables/orders.ts')), true)
+  assert.doesNotMatch(both.out, /examples/)
 
   for (const one of files) {
     const alone = search(

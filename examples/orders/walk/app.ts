@@ -47,7 +47,7 @@ export function textOf(value: unknown, name: string): string {
 
 /** A new empty folder outside the repository, and what takes it away again. */
 export async function tempFolder(): Promise<{ path: string; remove: () => Promise<void> }> {
-  const path = await mkdtemp(join(tmpdir(), 'tent-sample-app-1-'))
+  const path = await mkdtemp(join(tmpdir(), 'tent-orders-'))
   return { path, remove: () => rm(path, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 }) }
 }
 

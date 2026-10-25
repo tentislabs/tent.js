@@ -10,8 +10,8 @@ import { heldFiles } from './held.mjs'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const folder = process.argv[2] ?? root
 
-// The files of a sample app are found by their folders, and no import reaches them: the search leaves them out.
-const held = heldFiles(folder).filter((file) => !file.startsWith('samples/'))
+// The files of an example app are found by their folders, and no import reaches them: the search leaves them out.
+const held = heldFiles(folder).filter((file) => !file.startsWith('examples/'))
 const entries = join(folder, 'parts', 'entries.json')
 const entryFiles = existsSync(entries) ? Object.values(JSON.parse(readFileSync(entries, 'utf8'))) : []
 // What the search starts from. What one of these gives counts as used, and so does what it imports.

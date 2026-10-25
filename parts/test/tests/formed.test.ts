@@ -28,8 +28,9 @@ for (const engine of browserEngines) {
       await page.locator('#send').click()
       await page.locator('.who').waitFor()
       assert.equal(await page.locator('.who').textContent(), 'Ann ann@example.com 7 large')
-      // Half past twelve in Istanbul is half past nine by the clock of the world, and a day is the day that was picked.
-      assert.equal(await page.locator('.when').textContent(), '2026-10-08T09:30:00.000Z 2026-10-09')
+      // Half past twelve in Tokyo, the zone of the page, is half past three by the clock of the world, and not half past
+      // nine as in Istanbul, the zone of the project; a day is the day that was picked.
+      assert.equal(await page.locator('.when').textContent(), '2026-10-08T03:30:00.000Z 2026-10-09')
       assert.equal(await page.locator('.what').textContent(), 'bed+view 4250 agreed loud')
       // After a send that worked the fields are back at their start.
       assert.equal(await page.locator('#guest input').inputValue(), '')

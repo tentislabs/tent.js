@@ -5,7 +5,17 @@ import { dirname, join } from 'node:path'
 
 /** The packages that the player and the build tools carry, by their names in `package.json`. */
 export const playerPackages = ['ws', 'nodemailer']
-export const toolsPackages = ['vite', 'react', 'react-dom', 'typescript', '@types/node', '@types/react', '@types/react-dom']
+export const toolsPackages = [
+  'vite',
+  'react',
+  'react-dom',
+  'typescript',
+  '@types/node',
+  '@types/react',
+  '@types/react-dom',
+  // The types of the borrowed WebSocket part, which the type check of a project reads through the framework's own code.
+  '@types/ws',
+]
 
 /** A system as the runtime names it, split into what a package of one system states: its `os` and its `cpu`. */
 const partsOf = (system) => {

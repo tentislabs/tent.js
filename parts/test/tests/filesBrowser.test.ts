@@ -40,9 +40,15 @@ const paper =
 
 const script = '<!doctype html><html><body><script>document.title = "the script ran"</script>hello</body></html>'
 
-/** Opens an address in a page, and answers whether the browser shows it in place: false where it starts a download. */
-async function shown(page: Page, address: string): Promise<boolean> {
-  const download = page.waitForEvent('download', { timeout: 3000 }).then(
+/**
+ * Opens an address in a page, and answers whether the browser shows it in place: false where it starts a download.
+ * With `plays`, the address is a sound or a film, which a page that shows it holds as the element that plays it.
+ */
+async function shown(page: Page, address: string, plays = false): Promise<boolean> {
+  // A download leaves the page on the document before it: a look for the element that plays starts from an empty
+  // one, so the player of the look before is never read as this one's.
+  if (plays) await page.goto('about:blank')
+  const download = page.waitForEvent('download', { timeout: plays ? 15_000 : 3000 }).then(
     () => true,
     () => false,
   )
@@ -51,7 +57,22 @@ async function shown(page: Page, address: string): Promise<boolean> {
     () => true,
     () => false,
   )
-  return opened && !(await download)
+  if (!opened || !plays) return opened && !(await download)
+  // A slow computer tells of a download late: what decides is the download or the element, whichever comes first.
+  // The page itself is asked for the element: a locator of the driver does not see into the document that WebKit
+  // makes of a sound from another site.
+  const playing = (async (): Promise<boolean> => {
+    for (const until = performance.now() + 15_000; performance.now() < until; ) {
+      const found = await page.evaluate(() => document.querySelector('video, audio') !== null).catch(() => false)
+      if (found) return true
+      await new Promise((done) => setTimeout(done, 100))
+    }
+    return false
+  })()
+  return new Promise((done) => {
+    void download.then((started) => started && done(false))
+    void playing.then(done)
+  })
 }
 
 /**
@@ -117,7 +138,8 @@ test('[22-18] [22-13] in the three browser engines a sound and a film that are o
       seen[engine] = {}
       for (const [what, address] of Object.entries({ wav, webm, pdf })) {
         // The locked policy keeps no engine from showing what it shows of that kind with no policy at all.
-        const [locked, free] = [await shown(page, address), await shown(page, `${plain}/a.${what}`)]
+        const plays = what !== 'pdf'
+        const [locked, free] = [await shown(page, address, plays), await shown(page, `${plain}/a.${what}`, plays)]
         if (what !== 'pdf') assert.equal(locked, free, `${engine} shows a .${what} under the policy as it does without`)
         seen[engine][what] = locked
       }

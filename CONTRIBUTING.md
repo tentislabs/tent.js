@@ -21,7 +21,7 @@ npm ci
 | `parts/` | The framework, one folder for each part. A part's entry files, which `parts/entries.json` lists, are all that another part may import. |
 | `parts/<part>/tests/` | The tests of that part |
 | `parts/docs/pages/` | The docs that ship in the package, one Markdown file for each page |
-| `samples/` | Whole apps built with Tent.js |
+| `examples/` | Whole apps built with Tent.js, each with a README |
 | `install/` | The release: the layers of each system, the installers and the npm packages |
 | `rig/`, `scripts/`, `tests/` | What the tests stand on, the checks of the repository, and their own tests |
 
