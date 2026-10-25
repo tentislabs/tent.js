@@ -318,8 +318,9 @@ const rows = 300_000
 async function rebuilt(t: TestContext) {
   const pair = await pairOf(t, await deskBundle(t), dataPlace(t))
   const { writer, reader } = pair
+  // Beats pass until what is asked holds: as many as the computer is slow, up to a minute of them.
   const until3 = async (what: string, holds: () => boolean | Promise<boolean>): Promise<void> => {
-    for (let i = 0; i < 2000; i++) {
+    for (const ends = performance.now() + 60_000; performance.now() < ends; ) {
       if (await holds()) return
       await pair.beat()
     }
