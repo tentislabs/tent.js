@@ -8,16 +8,21 @@ import workerThreads, { threadId } from 'node:worker_threads'
 import { fingerprintOf } from '../core/internal.ts'
 import {
   calledByApp,
+  handLine,
   isAppModule,
   leavesProgram,
+  linesHanded,
   noteAllAs,
   noteLoaded,
   noteOutside,
   noteWaysOut,
   noteWordsRead,
   outsideHeld,
+  tellNotesTo,
   testUnderWay,
+  toldAsItEnds,
   writeNotes,
+  writeToldNotes,
 } from '../engine/index.ts'
 
 // Loaded into the program of each test file of an app under `tent test`, before the file itself, and into each
@@ -34,8 +39,6 @@ const engine = new URL('../engine/index.ts', import.meta.url).href
 const started = process.env.TENT_STARTED_TEST
 const folder = process.env.TENT_STARTED_FOLDER ?? process.cwd()
 const project = `${pathToFileURL(folder).href}/`
-// The channel a carried thread is asked on to write its notes before it is ended.
-const channel = `tent-notes-${process.pid}`
 // The scheme of the modules of the runtime that note each use.
 const scheme = 'tent-noted:'
 
@@ -134,6 +137,9 @@ globalThis.fetch = (asked, init) => {
 }
 
 if (started !== undefined) {
+  // A carried thread hands each note to its program as it takes it: a thread held on a lock and then ended runs no
+  // end of its own.
+  if (threadId !== 0) tellNotesTo((line) => void handLine('notes', `${line}\n`))
   noteAllAs(started)
   // Each way of the files that reads a file by its path notes a file of the project that is read: the program is
   // the test's own, whatever module reads.
@@ -159,37 +165,13 @@ if (started !== undefined) {
     if (notes) writeNotes(notes, `${process.pid}-${threadId}-started`)
   }
   process.once('exit', write)
-  // A thread that is ended where it stands runs no end of its own: it writes its notes when it is asked to, first.
-  if (threadId !== 0) {
-    const asked = new workerThreads.BroadcastChannel(channel)
-    asked.unref()
-    asked.onmessage = (message) => {
-      if (Reflect.get(Object(message.data), 'flush') !== threadId) return
-      write()
-      asked.postMessage({ flushed: threadId })
-    }
-  }
 }
 
 // A thread that the test's or the app's code starts in the work of a test carries this noting and the hold, as a
-// program of the runtime it starts does: all its work is the test's. One that is ended is asked to write its notes
-// first, and given a second.
+// program of the runtime it starts does: all its work is the test's. The notes it hands as it takes them are written
+// as it ends, beside those it writes itself as it ends by itself.
 const Started = workerThreads.Worker
-/** Asks a carried thread to write its notes, and answers once it did, or a second later. */
-function written(thread: number): Promise<void> {
-  const asking = new workerThreads.BroadcastChannel(channel)
-  return new Promise<void>((done) => {
-    const timer = setTimeout(done, 1000)
-    asking.onmessage = (message) => {
-      if (Reflect.get(Object(message.data), 'flushed') !== thread) return
-      clearTimeout(timer)
-      done()
-    }
-    asking.postMessage({ flush: thread })
-  }).finally(() => asking.close())
-}
 class Carried extends Started {
-  #carried: boolean
   constructor(file: string | URL, options: workerThreads.WorkerOptions = {}) {
     const test = testUnderWay()
     const env: unknown = options.env ?? process.env
@@ -200,26 +182,21 @@ class Carried extends Started {
       calledByApp(Carried, [import.meta.url], project)
     if (!carried) {
       super(file, options)
-      this.#carried = false
       return
     }
     const address =
       file instanceof URL ? file.href : file.startsWith('file:') ? file : pathToFileURL(resolve(file)).href
     const code = options.eval ? String(file) : `import(${JSON.stringify(address)})`
-    super(`import(${JSON.stringify(import.meta.url)}).then(() => {\n${code}\n})`, {
+    const handed = linesHanded('notes', `import(${JSON.stringify(import.meta.url)}).then(() => {\n${code}\n})`, {
       ...options,
-      eval: true,
       env: { ...Object(env), ...carry(test ?? 'held', Object(env)) },
     })
-    this.#carried = true
-    // A thread that ended by itself wrote its notes as it ended.
-    this.once('exit', () => {
-      this.#carried = false
+    super(handed.code, handed.options)
+    const notes = process.env.TENT_TOUCHED
+    const name = `${process.pid}-${this.threadId}-handed`
+    toldAsItEnds(this, handed.memory, (lines) => {
+      if (notes) writeToldNotes(notes, name, lines)
     })
-  }
-  override async terminate(): Promise<number> {
-    if (this.#carried) await written(this.threadId)
-    return super.terminate()
   }
 }
 Reflect.set(workerThreads, 'Worker', Carried)

@@ -99,10 +99,14 @@ export {
   noteWord,
   notesOf,
   outsideNoter,
+  tellNotesTo,
   testUnderWay,
   underTest,
   writeNotes,
+  writeToldNotes,
 } from './touched.ts'
+// Lines a thread hands its program through memory they share, which a thread held on a lock cannot stop.
+export { handLine, linesHanded, toldAsItEnds } from './threadLines.ts'
 // The words of the environment that the code of a test or of its app reads, noted under the test.
 export { calledByApp, isAppModule, noteWordsRead } from './envRead.ts'
 // What the cases made from the declarations hold: whatever would reach outside the program, refused where it leaves.

@@ -17,8 +17,9 @@ const launchers = { chromium, firefox, webkit }
 
 // The browser of each engine of this program, started at its first use and kept until the program's tests end: each
 // call takes a context of its own in it, a few megabytes and milliseconds where a browser takes a hundred and a
-// second, as Playwright's own runner keeps one browser for each of its programs. Firefox lets a page reach a made-up
-// device by preferences of the whole browser, so it keeps a second browser for the calls that ask for one.
+// second, as Playwright's own runner keeps one browser for each of its programs. Chromium and Firefox let a page reach a
+// made-up device by flags and preferences of the whole browser, so each keeps a second browser for the calls that ask
+// for one, and a page that asked for none reaches no device.
 const kept = new Map<string, Promise<Browser>>()
 const started: Record<BrowserEngine, number> = { chromium: 0, firefox: 0, webkit: 0 }
 
@@ -28,18 +29,23 @@ export const browsersStarted = (): Record<BrowserEngine, number> => ({ ...starte
 /**
  * The browser of an engine for this program, started where there is none or where it was lost. No browser plays
  * sound out of the speakers of the computer the tests run on: Chromium by its flag, Firefox by its preference, and
- * WebKit, which has neither, by what its pages run first. Every Chromium lets a page reach a made-up device: that is
- * a flag of the browser, and a page that asks for none is held by its context, which grants nothing.
+ * WebKit, which has neither, by what its pages run first. Only the browser kept for the calls that ask for a device
+ * carries the flags or preferences of a made-up one.
  */
 async function browserOf(engine: BrowserEngine, device: boolean): Promise<Browser> {
-  const key = engine === 'firefox' && device ? 'firefox with a device' : engine
+  const key = engine !== 'webkit' && device ? `${engine} with a device` : engine
   const held = await kept.get(key)?.catch(() => undefined)
   if (held?.isConnected()) return held
   started[engine] += 1
   const made = launchers[engine].launch({
     headless: true,
     ...(engine === 'chromium'
-      ? { args: ['--mute-audio', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] }
+      ? {
+          args: [
+            '--mute-audio',
+            ...(device ? ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] : []),
+          ],
+        }
       : {}),
     ...(engine === 'firefox'
       ? {

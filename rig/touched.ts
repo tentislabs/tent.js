@@ -11,6 +11,7 @@ import { registerHooks, syncBuiltinESMExports } from 'node:module'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import workerThreads, { threadId } from 'node:worker_threads'
+import { handLine, linesHanded, toldAsItEnds } from '../parts/engine/threadLines.ts'
 
 // The tree that runs, which `scripts/tests.mjs` names, and the test file whose program this is or started it. A
 // program that a test file's program started, and a thread of it, finds the file named by the one that started it.
@@ -53,27 +54,32 @@ function printOf(path: string): string {
 // each line alone holds a busy computer, and a thread that is ended loses the files of its last tenth of a second.
 let told: string | undefined
 let waiting: string[] = []
+/** The file of the lines this program or thread tells, made at its first line. */
+function toldAt(thread: number): string {
+  const folder = join(String(tree), 'results', 'touched')
+  mkdirSync(folder, { recursive: true })
+  return join(folder, `${process.pid}-${thread}.lines`)
+}
 /** Tells the lines noted since the last telling. */
 function flush(): void {
   if (!tree || !waiting.length) return
-  if (told === undefined) {
-    const folder = join(tree, 'results', 'touched')
-    mkdirSync(folder, { recursive: true })
-    told = join(folder, `${process.pid}-${threadId}.lines`)
-  }
+  told ??= toldAt(threadId)
   const lines = waiting.join('')
   waiting = []
   appendFileSync(told, lines)
 }
+
 /**
- * Tells one thing noted, with the others noted beside it: a word and a write of the rigs at once, since they are
- * few and a thread is often ended right after it read a word.
+ * Tells one thing noted: a thread hands it to its program at once, and a program tells it with the others noted
+ * beside it, a word and a write of the rigs at once. A thread whose memory is full tells what does not fit at once.
  */
 function tell(entry: Record<string, unknown>): void {
   if (!tree || !of) return
+  const line = `${JSON.stringify({ of, ...entry })}\n`
+  if (handLine('rig', line)) return
   if (!waiting.length) setTimeout(flush, 100).unref()
-  waiting.push(`${JSON.stringify({ of, ...entry })}\n`)
-  if (entry.file === undefined) flush()
+  waiting.push(line)
+  if (entry.file === undefined || threadId !== 0) flush()
 }
 
 // Each place noted, and whether a fingerprint is being read now: what it reads is noted already.
@@ -269,48 +275,15 @@ if (tree && of) {
       : file.startsWith('file:') || file.startsWith('data:')
         ? file
         : pathToFileURL(resolve(file)).href
-  // A thread that is ended where it stands runs no end of its own: it tells what it noted when it is asked to, first,
-  // and is given a second.
-  const channel = `tent-touched-${process.pid}`
-  if (threadId !== 0) {
-    const asked = new workerThreads.BroadcastChannel(channel)
-    asked.unref()
-    asked.onmessage = (message) => {
-      if (Reflect.get(Object(message.data), 'flush') !== threadId) return
-      flush()
-      asked.postMessage({ flushed: threadId })
-    }
-  }
-  /** Asks a thread to tell what it noted, and answers once it did, or a second later. */
-  const told = (thread: number): Promise<void> => {
-    const asking = new workerThreads.BroadcastChannel(channel)
-    return new Promise<void>((done) => {
-      const timer = setTimeout(done, 1000)
-      asking.onmessage = (message) => {
-        if (Reflect.get(Object(message.data), 'flushed') !== thread) return
-        clearTimeout(timer)
-        done()
-      }
-      asking.postMessage({ flush: thread })
-    }).finally(() => asking.close())
-  }
+  // Each note a thread takes reaches this program as it is taken, which tells it as the thread ends, held on a lock or
+  // not.
   class Noted extends Started {
-    #ended = false
     constructor(file: string | URL, options: workerThreads.WorkerOptions = {}) {
-      super(
-        options.eval
-          ? `require(${JSON.stringify(rig)});\n${String(file)}`
-          : `require(${JSON.stringify(rig)});\nimport(${JSON.stringify(addressOf(file))})`,
-        { ...options, eval: true },
-      )
-      // A thread that ended by itself told what it noted as it ended.
-      this.once('exit', () => {
-        this.#ended = true
-      })
-    }
-    override async terminate(): Promise<number> {
-      if (!this.#ended) await told(this.threadId)
-      return super.terminate()
+      const code = options.eval ? String(file) : `import(${JSON.stringify(addressOf(file))})`
+      const handed = linesHanded('rig', `require(${JSON.stringify(rig)});\n${code}`, options)
+      super(handed.code, handed.options)
+      const thread = this.threadId
+      toldAsItEnds(this, handed.memory, (lines) => appendFileSync(toldAt(thread), lines))
     }
   }
   Reflect.set(workerThreads, 'Worker', Noted)

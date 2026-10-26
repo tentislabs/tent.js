@@ -52,6 +52,8 @@ interface Kept {
   program: ChildProcess
   folder: string
   raw(method: string, params?: Params, inside?: string, within?: number): Promise<Params>
+  // Answers every command a page still waits on with its failure, at once: it holds the program no longer.
+  letGo(session: string): void
   heard: Map<string, Map<string, ((params: Params) => void)[]>>
   ended: boolean
 }
@@ -123,18 +125,38 @@ async function startedBrowser(program: string): Promise<Kept> {
   }
   process.once('exit', ending)
   const commands = commandsOver((text) => void toBrowser.write(`${text}\0`), 'The channel of the browser')
+  // What fails each command that a page waits on, by the session of the page.
+  const waits = new Map<string, Set<(error: Error) => void>>()
   const made: Kept = {
     program: browser,
     folder,
     heard: new Map(),
     ended: false,
-    raw: async (method, params = {}, inside, within) => {
-      hold(1)
-      try {
-        return await commands.send({ method, params, ...(inside ? { sessionId: inside } : {}) }, within)
-      } finally {
-        hold(-1)
-      }
+    raw: (method, params = {}, inside, within) =>
+      new Promise<Params>((done, failed) => {
+        hold(1)
+        const ofPage = inside === undefined ? undefined : (waits.get(inside) ?? new Set())
+        if (inside !== undefined && ofPage) waits.set(inside, ofPage)
+        let waiting = true
+        const settled = (): void => {
+          if (!waiting) return
+          waiting = false
+          hold(-1)
+          ofPage?.delete(fail)
+        }
+        const fail = (error: Error): void => {
+          settled()
+          failed(error)
+        }
+        ofPage?.add(fail)
+        commands.send({ method, params, ...(inside ? { sessionId: inside } : {}) }, within).then((value) => {
+          settled()
+          done(value)
+        }, fail)
+      }),
+    letGo: (session) => {
+      for (const fail of waits.get(session) ?? []) fail(new Error('The page of the browser was ended.'))
+      waits.delete(session)
     },
   }
   started.push({ pid: browser.pid ?? 0, ended: () => made.ended })
@@ -215,24 +237,17 @@ export async function driven(program: string): Promise<Driven> {
   const heard = new Map<string, ((params: Params) => void)[]>()
   browser.heard.set(session, heard)
   // A command of an ended page fails at once, as one of a browser that ended does.
-  const pages = new Set<(error: Error) => void>()
   let ended = false
   return {
-    send: (method, params) => {
-      if (ended || browser.ended) return Promise.reject(new Error('The page of the browser was ended.'))
-      return new Promise((done, failed) => {
-        pages.add(failed)
-        browser
-          .raw(method, params, session)
-          .then(done, failed)
-          .finally(() => pages.delete(failed))
-      })
-    },
+    send: (method, params) =>
+      ended || browser.ended
+        ? Promise.reject(new Error('The page of the browser was ended.'))
+        : browser.raw(method, params, session),
     on: (method, one) => heard.set(method, [...(heard.get(method) ?? []), one]),
     async end() {
       if (ended) return
       ended = true
-      for (const failed of pages) failed(new Error('The page of the browser was ended.'))
+      browser.letGo(session)
       browser.heard.delete(session)
       await close()
     },

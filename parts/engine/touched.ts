@@ -53,6 +53,16 @@ const kept = new Map<string, TestNotes>()
 // Whether a test app was opened outside the work of any test, by a hook of a file or its top: its tests share it.
 let openedApart = false
 
+// What a thread tells each new note to as it takes it, where its program handed it a way: the note is then the
+// program's, whatever becomes of the thread.
+let teller: ((line: string) => void) | undefined
+const tell = (...note: (string | null)[]): void => teller?.(JSON.stringify(note))
+
+/** Has each note taken from now on, but the facts of calls and the seed, told to `write` as a line of its own. */
+export function tellNotesTo(write: (line: string) => void): void {
+  teller = write
+}
+
 // Each file of the project that this program loaded as a module, with its fingerprint as it was loaded: the tests
 // of the program stand on all of them.
 const loaded = new Map<string, string>()
@@ -63,7 +73,15 @@ export function notesOf(test: string): TestNotes {
   if (held) return held
   const made: TestNotes = { test, touched: new Map(), outside: new Set(), unheld: new Set(), env: new Map(), calls: [] }
   kept.set(test, made)
+  tell('test', test)
   return made
+}
+
+/** Adds what of a test reached outside the program, told where it is new. */
+function addOutside(notes: TestNotes, what: string): void {
+  if (notes.outside.has(what)) return
+  notes.outside.add(what)
+  tell('outside', notes.test, what)
 }
 
 /** Has all the work of this program be the work of a test, by its name: a program that the test started is. */
@@ -82,13 +100,16 @@ export function noteTouched(kind: TouchedKind, name: string): void {
   const notes = current()
   if (!notes || name === '') return
   const names = notes.touched.get(kind) ?? new Set<string>()
+  if (names.has(name)) return
   names.add(name)
   notes.touched.set(kind, names)
+  tell('touched', notes.test, kind, name)
 }
 
 /** Notes that the work of the test under way reached outside the program, in a few words of what it reached. */
 export function noteOutside(what: string): void {
-  current()?.outside.add(what)
+  const notes = current()
+  if (notes) addOutside(notes, what)
 }
 
 /**
@@ -97,23 +118,32 @@ export function noteOutside(what: string): void {
  */
 export function outsideNoter(): (what: string) => void {
   const notes = current()
-  return (what) => notes?.outside.add(what)
+  return (what) => {
+    if (notes) addOutside(notes, what)
+  }
 }
 
 /** Notes that the work of the test under way stood outside the held clock of its app, in a few words of what. */
 export function noteUnheld(what: string): void {
-  current()?.unheld.add(what)
+  const notes = current()
+  if (!notes || notes.unheld.has(what)) return
+  notes.unheld.add(what)
+  tell('unheld', notes.test, what)
 }
 
 /** Notes a word of the environment that the work of the test under way read, with its value as the program began. */
 export function noteWord(word: string, value: string | null): void {
   const notes = current()
-  if (notes && !notes.env.has(word)) notes.env.set(word, value)
+  if (!notes || notes.env.has(word)) return
+  notes.env.set(word, value)
+  tell('env', notes.test, word, value)
 }
 
 /** Notes a file of the project that this program loaded as a module, by its path and its fingerprint as loaded. */
 export function noteLoaded(path: string, print: string): void {
-  if (!loaded.has(path)) loaded.set(path, print)
+  if (loaded.has(path)) return
+  loaded.set(path, print)
+  tell('loaded', path, print)
 }
 
 /** Keeps the facts of a call that the test under way made, as its newest: the last twenty are kept. */
@@ -132,7 +162,9 @@ export function noteSeed(seed: string): void {
 
 /** Notes that a test app was opened: outside the work of any test, its tests share its data. */
 export function noteOpened(): void {
-  if (!current()) openedApart = true
+  if (current() || openedApart) return
+  openedApart = true
+  tell('whole')
 }
 
 /**
@@ -142,11 +174,31 @@ export function noteOpened(): void {
  * the project the program loaded, with its fingerprint. A thread writes a file of its own, so no two write one file.
  */
 export function writeNotes(folder: string, name: string): void {
+  written(folder, name, kept.values(), loaded, openedApart)
+}
+
+/** What is written of the notes of one test. */
+interface Written {
+  test: string
+  touched: ReadonlyMap<string, ReadonlySet<string>>
+  outside: ReadonlySet<string>
+  unheld: ReadonlySet<string>
+  env: ReadonlyMap<string, string | null>
+}
+
+/** Writes the notes of tests, the files of the project loaded, and whether an app was opened apart, as one file. */
+function written(
+  folder: string,
+  name: string,
+  all: Iterable<Written>,
+  modules: ReadonlyMap<string, string>,
+  apart: boolean,
+): void {
   const tested: Record<
     string,
     { touched: Record<string, string[]>; outside: string[]; unheld: string[]; env: Record<string, string | null> }
   > = {}
-  for (const notes of kept.values())
+  for (const notes of all)
     tested[notes.test] = {
       touched: Object.fromEntries([...notes.touched].map(([kind, names]) => [kind, [...names].sort()])),
       outside: [...notes.outside].sort(),
@@ -156,6 +208,48 @@ export function writeNotes(folder: string, name: string): void {
   mkdirSync(folder, { recursive: true })
   writeFileSync(
     join(folder, `${name}.json`),
-    JSON.stringify({ tests: tested, loaded: Object.fromEntries(loaded), ...(openedApart ? { whole: true } : {}) }),
+    JSON.stringify({ tests: tested, loaded: Object.fromEntries(modules), ...(apart ? { whole: true } : {}) }),
   )
+}
+
+/**
+ * Takes a folder, a name, and the lines that a thread told its notes by. Writes those notes into `<name>.json` there,
+ * as `writeNotes` writes the notes of a program.
+ */
+export function writeToldNotes(folder: string, name: string, lines: string): void {
+  const told = new Map<
+    string,
+    {
+      test: string
+      touched: Map<string, Set<string>>
+      outside: Set<string>
+      unheld: Set<string>
+      env: Map<string, string | null>
+    }
+  >()
+  const modules = new Map<string, string>()
+  let apart = false
+  const of = (test: string) => {
+    const held = told.get(test) ?? { test, touched: new Map(), outside: new Set(), unheld: new Set(), env: new Map() }
+    told.set(test, held)
+    return held
+  }
+  for (const line of lines.split('\n')) {
+    if (line === '') continue
+    const note: unknown = JSON.parse(line)
+    if (!Array.isArray(note)) continue
+    const [kind, test, first, second] = note.map((one) => (typeof one === 'string' ? one : null))
+    if (kind === 'whole') apart = true
+    else if (kind === 'loaded' && test !== null && first !== null) modules.set(test, first)
+    else if (test === null) continue
+    else if (kind === 'test') of(test)
+    else if (kind === 'outside' && first !== null) of(test).outside.add(first)
+    else if (kind === 'unheld' && first !== null) of(test).unheld.add(first)
+    else if (kind === 'env' && first !== null) of(test).env.set(first, second)
+    else if (kind === 'touched' && first !== null && second !== null) {
+      const touched = of(test).touched
+      touched.set(first, (touched.get(first) ?? new Set()).add(second))
+    }
+  }
+  written(folder, name, told.values(), modules, apart)
 }
