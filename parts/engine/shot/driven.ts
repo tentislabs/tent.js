@@ -213,13 +213,22 @@ async function startedBrowser(program: string): Promise<Kept> {
   return made
 }
 
-/** The browser of the program for a program of a browser: started at its first page, and again where it was lost. */
+/**
+ * The browser of the program for a program of a browser: started at its first page, and again where it was lost.
+ * Pages asked for at once wait on the one start: the start is kept before anything is waited for.
+ */
 async function browserOf(program: string): Promise<Kept> {
-  const held = await kept.get(program)?.catch(() => undefined)
-  if (held && !held.ended) return held
-  const made = startedBrowser(program)
-  kept.set(program, made)
-  return made
+  for (;;) {
+    const held = kept.get(program)
+    if (held === undefined) {
+      const made = startedBrowser(program)
+      kept.set(program, made)
+      return made
+    }
+    const one = await held.catch(() => undefined)
+    if (one && !one.ended) return one
+    if (kept.get(program) === held) kept.delete(program)
+  }
 }
 
 /**

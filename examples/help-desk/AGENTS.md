@@ -1,6 +1,6 @@
 # This project is built with Tent.js
 
-Read this file first. Run `tent check` after every change: it reports every mistake at once, each with its fix.
+Read this file first. Run `tent check` after every change: it reports every mistake at once, each with its fix. Then run `tent test`: only the tests that your change touched run again, and a failure tells everything you need to mend it.
 
 ## The three file rules
 
@@ -120,12 +120,17 @@ export const writer = model('writer', { provider: 'anthropic', name: 'claude-son
 | Command | Does |
 |---|---|
 | `tent check` | Builds the description, carries out every rule and the type checker, and prints every finding at once |
+| `tent test` | Runs the tests of `tests/`. A test whose code and data did not change is replayed, not run; `--all` runs every test. A failure names its line, what was expected and what came, the last call with the rows it read and wrote, and the fix; `--json` holds them in `failures` |
+| `tent test --declared` | Tests made from your definitions, with none written: what each kind of caller gets of each function, flow, route, command and table, and each input at its edges. `--update` keeps a changed table of access |
+| `tent impact` | Before a publish: what a change reaches, what it breaks for callers, its changes of the data, and the tests that touch it |
 | `tent build` | Writes a bundle into `.tent/build/`, or into `--out <folder>` |
 | `tent map` | Prints the whole app as a short outline |
 | `tent docs` | With no name, opens on the first page, which walks one app from nothing, and lists the topics |
 | `tent docs <name or code>` | Prints a page of the docs: `tent docs T1003`, `tent docs query`, `tent docs topic.words`. For rows: `topic.plans` and `topic.db`. For users: `topic.users`. For a sign-in: `topic.signIn` |
 | `tent new <name>` | Makes a bare project: one screen and the query it reads |
 | `tent add <package>` | Installs an npm package into the project, with its install scripts switched off |
+
+In a test, `testApp({ clock: 'held' })` holds the app's clock until the test moves it, and its numbers come from a seed, so a test answers the same on every run: `tent docs topic.tests`.
 
 Every command takes `--json`, and then prints `{ "ok", "value", "findings" }`.
 

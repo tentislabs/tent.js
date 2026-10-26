@@ -19,8 +19,8 @@ const secrets = {
   PARTNER_KEY: 'the key of the partner',
 }
 
-async function hooked(t: TestContext): Promise<TestApp> {
-  const app = await testApp({ folder: copyOf(t, 'hooked'), secrets })
+async function hooked(t: TestContext, clock?: 'held'): Promise<TestApp> {
+  const app = await testApp({ folder: copyOf(t, 'hooked'), secrets, ...(clock ? { clock } : {}) })
   closing(t, () => app.close())
   return app
 }
@@ -118,14 +118,14 @@ test('[05-11.12] one signed call sent a thousand times at once starts one run', 
 })
 
 test('[05-11.13] a call coming in of 2 MB is T0003, and seven thousand a minute from one address are T0005', async (t) => {
-  const app = await hooked(t)
+  const app = await hooked(t, 'held')
   const big = JSON.stringify({ id: 'evt_big', pad: 'x'.repeat(2 * 1024 * 1024) })
   const tooBig = await post(app, '/hooks/stripe', big, stripeLines(big, nowIn(app)))
   assert.equal(tooBig.status, 413)
   assert.equal(await codeOf(tooBig), 'T0003')
-  // Just after the start of a minute, so that every call is counted in one.
-  const into = 60_000 - ((Date.now() + aheadOf(app)) % 60_000) + 50
-  advance(app, `${into} ms`, into)
+  // The clock of the app is held just after the start of a minute, so that every call is counted in that one minute,
+  // however long the computer takes to send them.
+  app.clock.set(Math.ceil((Date.now() + 60_000) / 60_000) * 60_000 + 50)
   const statuses: number[] = []
   for (let n = 0; n < 7000; n += 100) {
     const batch = await Promise.all(
