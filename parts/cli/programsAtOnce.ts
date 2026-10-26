@@ -1,4 +1,5 @@
-// The memory there is for the programs of a run of the framework's tests, and how many of them run at once.
+// The memory there is for programs on this computer, and how many test programs run at once: of the framework's run
+// and of `tent test` alike.
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { cpus, freemem } from 'node:os'

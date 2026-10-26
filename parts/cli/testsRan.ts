@@ -5,6 +5,7 @@ import { run } from 'node:test'
 import type { Finding } from '../core/index.ts'
 import { finding } from '../core/internal.ts'
 import { unmarked, wroteBy } from './marked.ts'
+import { concurrencyOf, coresHere, memoryNow } from './programsAtOnce.ts'
 import type { Failure } from './testFailed.ts'
 import { failureOf, failureWords } from './testFailed.ts'
 
@@ -126,6 +127,10 @@ function notRunWhy(error: unknown): string | undefined {
 }
 
 /** A pattern that fits the name of one test and no other. */
+// The most memory one test program of an app holds with the browser it drives: 305 MB the program of the test of a
+// screen of the planned project of the CLI's tests held, and a Chromium beside it.
+const programPeak = 450 * 1024 * 1024
+
 const exactly = (name: string): RegExp => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
 
 /** One test as it ended: by its file, its name and how many of that name of the file ran before it, and its time. */
@@ -199,7 +204,9 @@ export async function testsRan(
       cwd: folder,
       // The cases made from the declarations note nothing, but hold what would reach outside by the same hook.
       execArgv: ['--import', chance, '--import', names, ...(o.ai ? [] : ['--import', noting]), '--import', marks],
-      ...(o.ai ? { concurrency: 1 } : {}),
+      // The files run side by side, as many as the cores less one and the memory there is allow; those of AI
+      // behaviour one at a time.
+      concurrency: o.ai ? 1 : concurrencyOf({ cores: coresHere(), free: memoryNow(), peak: programPeak }),
       ...(o.only ? { testNamePatterns: o.only.map(exactly) } : {}),
       ...(o.but?.length ? { testSkipPatterns: o.but.map(exactly) } : {}),
     })

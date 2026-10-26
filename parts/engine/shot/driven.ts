@@ -115,22 +115,39 @@ async function startedBrowser(program: string): Promise<Kept> {
     for (const pipe of pipes) pipe[waiting > 0 ? 'ref' : 'unref']()
   }
   hold(0)
-  const ending = (): void => {
+  const running = (): boolean => browser.exitCode === null && browser.signalCode === null
+  const killed = (): void => {
     // A browser asked to end on Linux and macOS closes its windows first and writes into its folder after it was
     // taken away, outliving this program: it and its helpers are ended where they stand, as Windows ends a program.
-    if (browser.exitCode === null && browser.signalCode === null)
+    if (running())
       try {
         if (process.platform === 'win32' || browser.pid === undefined) browser.kill()
         else process.kill(-browser.pid, 'SIGKILL')
       } catch {
         browser.kill('SIGKILL')
       }
+  }
+  const removed = (): void => {
     try {
       // The browser lets its files go a moment after it was ended: the removal tries again for three seconds.
       rmSync(folder, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 })
     } catch {
       // What the browser still holds as it ends is left in the folder of passing files of the system.
     }
+  }
+  // As this program runs out of work, the browser is ended and waited for until the system has gathered its end: a
+  // program that ends at once leaves an ended browser that the system still counts, on Linux and macOS, until another
+  // program gathers it.
+  const outOfWork = (): void => {
+    if (!running()) return
+    browser.ref()
+    killed()
+  }
+  process.once('beforeExit', outOfWork)
+  // A program that is made to end runs no more work: the browser is ended where it stands.
+  const ending = (): void => {
+    killed()
+    removed()
   }
   process.once('exit', ending)
   const commands = commandsOver((text) => void toBrowser.write(`${text}\0`), 'The channel of the browser')
@@ -172,10 +189,14 @@ async function startedBrowser(program: string): Promise<Kept> {
   const lost = (): void => {
     made.ended = true
     commands.closed()
-    process.removeListener('exit', ending)
   }
   fromBrowser.on('close', lost)
-  browser.on('exit', lost)
+  browser.on('exit', () => {
+    lost()
+    process.removeListener('beforeExit', outOfWork)
+    process.removeListener('exit', ending)
+    removed()
+  })
   let pending = ''
   fromBrowser.on('data', (piece: Buffer) => {
     const parts = `${pending}${piece.toString()}`.split('\0')

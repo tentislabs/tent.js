@@ -11,7 +11,7 @@ import { once } from 'node:events'
 import { totalmem } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { concurrencyOf, coresHere, memoryNow } from '../rig/memory.ts'
+import { concurrencyOf, coresHere, memoryNow } from '../parts/cli/programsAtOnce.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const words = process.argv.slice(2)

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { concurrencyOf, memoryThere } from '../rig/memory.ts'
+import { concurrencyOf, memoryThere } from '../parts/cli/programsAtOnce.ts'
 
 const gigabyte = 1024 ** 3
 
