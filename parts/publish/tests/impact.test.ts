@@ -75,7 +75,7 @@ const live = described({
     },
   },
   screens: {
-    ordersScreen: { path: '/orders', access: signedIn, data: { orders: { what: 'openOrders' } } },
+    ordersScreen: { path: '/orders', access: signedIn, data: { orders: { query: 'openOrders' } } },
   },
   services: { shipping: { url: 'https://ship.example.com', calls: {} } },
 })
@@ -118,7 +118,7 @@ const next = described({
     },
   },
   screens: {
-    ordersScreen: { path: '/orders', access: signedIn, data: { orders: { what: 'openOrders' } } },
+    ordersScreen: { path: '/orders', access: signedIn, data: { orders: { query: 'openOrders' } } },
   },
   services: {
     shipping: { url: 'https://ship.example.com', calls: {} },
