@@ -23,7 +23,7 @@ tent impact before-orders
 
 ## Output
 
-What the change reaches, the weightiest part first, each part left out where it is empty: wider rights, breaks for callers outside with the callers of the last 30 days, data with how each table change lands and the rows it touches, work under way, what each changed definition reaches, the tests that touched each in their last run (`tent test` writes them into `.tent/touched.json`), and what now sends data out or asks a person no more. One line for each finding:
+What the change reaches, the weightiest part first, each part left out where it is empty: wider rights, breaks for callers outside with the callers of the last 30 days, data with how each table change lands and the rows it touches, work under way, what each changed definition reaches, the tests that touched each in their last run, as `tent test` keeps them in `.tent/tests.json`, a table among them where a test read or wrote it, and what now sends data out or asks a person no more. One line for each finding:
 
 ```
 orders.total (column, number -> money, hard, 1500 rows)  tables/orders.ts  reaches 4 functions, 7 screens, 2 offered to the API

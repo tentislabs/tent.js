@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import type { TestEvent } from 'node:test/reporters'
 import { type System, system } from './system.ts'
 
@@ -76,27 +76,34 @@ function gathered<T>(
 /**
  * The reporter of the runs, which the test runner of the runtime loads. Takes the events of a run and answers the
  * lines it prints. It writes `results/<system>.json`, or `results/<system>.night.json` in a night run, under the
- * folder the run was started in, and beside it `results/failed.json`: each test that failed, by its file and its name,
- * and each reason the run fails that no test is. It fails the run for a test that states the mark and passes, for a test with no id
- * in its name, for a test or a group that was skipped, for a test that stands inside another test, and for a file of
- * `results/parts/` of another form than its kind has. Throws on a system that is none of the three.
+ * folder the run was started in, and beside it `results/files.json`: the ids of the tests of each test file, by its
+ * path, each as its tests ended there, and whether the file failed the run, which `scripts/tests.mjs` keeps with what
+ * the file touched. It fails the run
+ * for a test that states the mark and passes, for a test with no id in its name, for a test or a group that was
+ * skipped, for a test that stands inside another test, and for a file of `results/parts/` of another form than its
+ * kind has. Throws on a system that is none of the three.
  */
 export default async function* report(source: AsyncIterable<TestEvent>): AsyncGenerator<string, void> {
   const tests: Record<string, State> = {}
   const wrong: string[] = []
-  // What `scripts/tests.mjs` runs a second time: each test that failed, by its file and its name.
-  const failing: { file: string; name: string }[] = []
+  // The ids of the tests of each test file, each as its tests ended there, and whether the file failed the run.
+  const files: Record<string, { ids: Record<string, State>; failed: boolean }> = {}
+  const fileOf = (file: string) => {
+    const place = relative(process.cwd(), file).replaceAll('\\', '/')
+    files[place] ??= { ids: {}, failed: false }
+    return files[place]
+  }
   // The tests that ended one level deeper than a place of a file, and whose own holder has not ended yet.
   const below = new Map<string, string[]>()
   for await (const event of source) {
     if (event.type !== 'test:pass' && event.type !== 'test:fail') continue
     const { name, todo, details, nesting } = event.data
     const skipped = event.type === 'test:pass' && event.data.skip !== undefined
-    if (event.type === 'test:fail' && event.data.file !== undefined && details.type !== 'suite')
-      failing.push({ file: event.data.file, name })
     // The runner reports what stands inside a test or a group before it reports that test or group itself.
     const inside = below.get(`${event.data.file} ${nesting + 1}`) ?? []
     below.delete(`${event.data.file} ${nesting + 1}`)
+    // A file that failed the run by what the reporter found is never replayed, as one whose test failed is not.
+    const wrongBefore = wrong.length
     if (details.type !== 'suite') {
       for (const one of inside) wrong.push(`a test that stands inside another test: ${one}`)
       below.set(`${event.data.file} ${nesting}`, [...(below.get(`${event.data.file} ${nesting}`) ?? []), name])
@@ -108,11 +115,15 @@ export default async function* report(source: AsyncIterable<TestEvent>): AsyncGe
       const beside = below.get(`${event.data.file} ${nesting}`) ?? []
       if (inside.length) below.set(`${event.data.file} ${nesting}`, [...beside, ...inside])
       if (skipped) wrong.push(`a group that was skipped: ${name}`)
+      if (event.data.file !== undefined && wrong.length > wrongBefore) fileOf(event.data.file).failed = true
       continue
     }
     // A file is reported under its own path when the run holds none of its tests, or when it cannot be loaded.
     // It is no test, and the runner itself fails the run for a file that cannot be loaded.
-    if (event.data.file !== undefined && resolve(name) === event.data.file) continue
+    if (event.data.file !== undefined && resolve(name) === event.data.file) {
+      if (event.type === 'test:fail') fileOf(event.data.file).failed = true
+      continue
+    }
     const marked = todo !== undefined && todo !== false
     const met = marked && event.type === 'test:pass' && !skipped
     const failed = met || skipped || (!marked && event.type === 'test:fail')
@@ -121,6 +132,12 @@ export default async function* report(source: AsyncIterable<TestEvent>): AsyncGe
     if (skipped) wrong.push(`a test that was skipped: ${name}`)
     const ids = [...name.matchAll(ID)].map((match) => match[1])
     if (!ids.length) wrong.push(`a test with no id in its name: ${name}`)
+    if (event.data.file !== undefined) {
+      const held = fileOf(event.data.file)
+      for (const id of ids)
+        if (held.ids[id] === undefined || worst.indexOf(state) > worst.indexOf(held.ids[id])) held.ids[id] = state
+      if (state === 'failed' || wrong.length > wrongBefore) held.failed = true
+    }
     for (const id of ids) {
       const before = tests[id]
       if (before === undefined || worst.indexOf(state) > worst.indexOf(before)) tests[id] = state
@@ -138,7 +155,10 @@ export default async function* report(source: AsyncIterable<TestEvent>): AsyncGe
   const file = join('results', `${result.system}${process.env.TENT_RUN === 'night' ? '.night' : ''}.json`)
   mkdirSync('results', { recursive: true })
   writeFileSync(file, `${JSON.stringify(result, null, 2)}\n`)
-  writeFileSync(join('results', 'failed.json'), `${JSON.stringify({ failing, wrong }, null, 2)}\n`)
+  const filesSorted = Object.fromEntries(
+    Object.entries(files).map(([place, held]) => [place, { ids: sorted(held.ids), failed: held.failed }]),
+  )
+  writeFileSync(join('results', 'files.json'), `${JSON.stringify(filesSorted, null, 2)}\n`)
 
   const count = (state: State) => Object.values(result.tests).filter((one) => one === state).length
   yield `\n${file.replaceAll('\\', '/')}: ${count('passed')} passed, ${count('failed')} failed, ${count('owed')} owed\n`

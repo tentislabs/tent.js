@@ -4,7 +4,7 @@ import { TentError } from '../core/index.ts'
 import type { Engine, Worker } from '../engine/index.ts'
 import { createEngine, makeSecretKey, storedValues } from '../engine/index.ts'
 import type { Machine, World } from './machines.ts'
-import { closeMachine, machineIn, openWriter, reachFor } from './machines.ts'
+import { closeMachine, machineIn, makersOf, openWriter, reachFor } from './machines.ts'
 import { writeOwnerOnly } from '../core/internal.ts'
 
 /** A worker of a test app, with what holds its link back, cuts it, kills it and starts its program again. */
@@ -69,7 +69,7 @@ export async function workerOf(world: World, writer: Machine, asked: WorkerAsked
   const start = async (): Promise<Worker> => {
     engine = createEngine({
       port: 0,
-      makers: { clock: () => world.clock, ...(world.room ? { room: world.room } : {}) },
+      makers: makersOf(world),
     })
     // The machine holds its engine, so that closing the test app closes the worker with it.
     machine.engine = engine

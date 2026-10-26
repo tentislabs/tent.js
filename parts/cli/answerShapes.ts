@@ -1,6 +1,7 @@
 import type { Finding } from '../core/index.ts'
 import type { Change } from '../history/index.ts'
 import type { Impact } from '../publish/index.ts'
+import type { Failure } from './testFailed.ts'
 
 /**
  * Takes what an answer holds, as it came over the admin channel or out of a kept record. Answers its fields by name,
@@ -40,6 +41,19 @@ export function isFinding(value: unknown): value is Finding {
     typeof o.name === 'string' &&
     typeof o.docs === 'string' &&
     (o.fix === undefined || typeof o.fix === 'string')
+  )
+}
+
+/** Whether a value is a failure of a test, as the report of a run keeps it in `failures`. */
+export function isTestFailure(value: unknown): value is Failure {
+  const o = fieldsOf(value)
+  return (
+    typeof o.test === 'string' &&
+    typeof o.file === 'string' &&
+    typeof o.line === 'number' &&
+    (o.call === undefined || (typeof o.call === 'object' && o.call !== null)) &&
+    (o.fix === undefined || typeof o.fix === 'string') &&
+    (o.randomSeed === undefined || typeof o.randomSeed === 'string')
   )
 }
 

@@ -1,6 +1,7 @@
 import { runCommandLine } from '../connect/index.ts'
 import type { Terminal } from '../core/index.ts'
 import type { App } from '../engine/index.ts'
+import { noteTouched } from '../engine/index.ts'
 import { adminTokenOf } from './adminToken.ts'
 
 /** What `app.cli` is handed: the caller, what the input holds, whether a person sits at it, and what that person types. */
@@ -19,6 +20,8 @@ export interface CliAsked {
 export const cli =
   (app: () => App, dataFolder: () => string) =>
   async (words: string[], o: CliAsked = {}): Promise<{ code: number; out: string; err: string }> => {
+    // Under `tent test`, the command of the app's own that the test ran.
+    if (words[0] !== undefined && Object.hasOwn(app().description.commands, words[0])) noteTouched('commands', words[0])
     const token = adminTokenOf(dataFolder())
     const [out, err]: string[][] = [[], []]
     const typed = o.person

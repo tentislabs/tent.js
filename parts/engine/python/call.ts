@@ -24,6 +24,7 @@ import { rowsFile } from './rows.ts'
 import { copyInFolder, pythonInputFor, outputOf } from './values.ts'
 import { holdsFile, textAt } from '../files.ts'
 import { placedFolder } from '../placedFolders.ts'
+import { noteOutside } from '../touched.ts'
 
 // How deep a call stands inside calls of a `python` that called it through `tent.call`.
 const depth = new AsyncLocalStorage<number>()
@@ -151,6 +152,8 @@ export async function carriedPython(
 ): Promise<unknown> {
   const cx = underWay()
   if (!cx) throw new TentError('T0013', `${name} is a python, which is carried out inside a call.`)
+  // Under `tent test`, a Python program stands outside the record and the held clock of a test: it is never replayed.
+  noteOutside(`python ${name}`)
   const deep = depth.getStore() ?? 0
   const deepest = storedLimit(o.description, 'callDepth')
   if (deep >= deepest)

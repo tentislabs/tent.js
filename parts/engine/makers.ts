@@ -81,6 +81,9 @@ export interface Makers {
   store?: (o: MakerInput) => Store
   lease?: (o: MakerInput) => Lease
   clock?: (o: MakerInput) => Clock
+  // The source of numbers of the app, from 0 up to 1, for what it draws and the ids of its rows: given by a program
+  // alone, as a test app is opened on the numbers of its random seed. Left out, the runtime's own.
+  random?: (o: MakerInput) => () => number
   files?: (o: MakerInput) => FileStore
   mailer?: (o: MakerInput) => Mailer
   textReaders?: (o: MakerInput) => TextReader[]

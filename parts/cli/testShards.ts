@@ -2,11 +2,20 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Finding } from '../core/index.ts'
 import { TentError } from '../core/index.ts'
-import { fieldsOf, isFinding } from './answerShapes.ts'
+import { fieldsOf, isTestFailure, isFinding } from './answerShapes.ts'
+import type { Failure } from './testFailed.ts'
 
 /** What a run of `tent test` reports: its value and its findings, as `--json` prints them. */
 export interface Report {
-  value: { passed: number; failed: number; notRun?: { test: string; why: string }[]; files: string[] }
+  value: {
+    passed: number
+    failed: number
+    // The tests whose result stood on nothing that changed, which were not run: never counted as passed.
+    replayed: number
+    notRun?: { test: string; why: string }[]
+    files: string[]
+    failures: Failure[]
+  }
   findings: Finding[]
 }
 
@@ -18,6 +27,9 @@ function isReport(read: unknown): read is Report {
   return (
     typeof value.passed === 'number' &&
     typeof value.failed === 'number' &&
+    typeof value.replayed === 'number' &&
+    Array.isArray(value.failures) &&
+    value.failures.every(isTestFailure) &&
     Array.isArray(value.files) &&
     value.files.every((one) => typeof one === 'string') &&
     Array.isArray(findings) &&
@@ -56,11 +68,11 @@ export function keepReport(project: string, report: Report): void {
 /**
  * `tent test --join <folders>`: takes the folders of the reports of the shares of one suite, each holding the
  * `report.json` of a run, or the folder of a project that holds one in `results/tests/`. Answers the one report of
- * them all, as one run gives it: what passed and failed added up, and the files and findings of each, in the order
- * of the folders. Throws T0001 for a folder that holds no report.
+ * them all, as one run gives it: what passed, failed and was replayed added up, each counted apart, and the files and
+ * findings of each, in the order of the folders. Throws T0001 for a folder that holds no report.
  */
 export function joined(folders: string[]): Report {
-  const all: Report = { value: { passed: 0, failed: 0, files: [] }, findings: [] }
+  const all: Report = { value: { passed: 0, failed: 0, replayed: 0, files: [], failures: [] }, findings: [] }
   const notRun: { test: string; why: string }[] = []
   for (const folder of folders) {
     const file = [join(folder, 'report.json'), reportOf(folder)].find(existsSync)
@@ -76,7 +88,9 @@ export function joined(folders: string[]): Report {
     const one = read
     all.value.passed += one.value.passed
     all.value.failed += one.value.failed
+    all.value.replayed += one.value.replayed
     all.value.files.push(...one.value.files)
+    all.value.failures.push(...one.value.failures)
     notRun.push(...(one.value.notRun ?? []))
     all.findings.push(...one.findings)
   }

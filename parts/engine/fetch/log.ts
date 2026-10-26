@@ -1,6 +1,8 @@
 import type { CallContext } from '../context.ts'
 import { addressAsked } from './address.ts'
 import { countedOutgoing, sentBytes } from '../counts/outgoing.ts'
+import { noteOutside } from '../touched.ts'
+import { standInOf } from '../services/standIns.ts'
 import { endSpan, insideSpan, openSpan } from '../trace/span.ts'
 
 /** The host of an address, with its port, and nothing else of it: the row holds no path, no question and no password. */
@@ -19,6 +21,11 @@ export function hostOf(address: string): string {
  */
 export async function logged(cx: CallContext, asked: unknown[], send: () => Promise<Response>): Promise<Response> {
   const began = cx.app.clock.now()
+  // A stand-in under the name `fetch`, as the cases of `tent test --declared` stand one in, holds every plain fetch.
+  const stand = standInOf(cx.app, 'fetch')
+  const sending = stand ? async (): Promise<Response> => Reflect.apply(Reflect.get(stand, 'fetch'), stand, asked) : send
+  // Under `tent test`, a plain fetch that leaves the program: a test that makes one is never replayed.
+  if (!stand) noteOutside(`fetch ${hostOf(addressAsked(asked))}`)
   let status: number | undefined
   // A fetch of the code's own is counted under `fetch`, with what it sent and what it read.
   const counted = { began: performance.now(), sent: sentBytes(Reflect.get(Object(asked[1]), 'body')) }
@@ -30,7 +37,7 @@ export async function logged(cx: CallContext, asked: unknown[], send: () => Prom
     facts: { host: hostOf(addressAsked(asked)), bytesOut: counted.sent },
   })
   try {
-    answer = await insideSpan(span, send)
+    answer = await insideSpan(span, sending)
     status = answer.status
     if (span) span.facts.status = status
     endSpan(span)

@@ -1,10 +1,12 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import { run } from 'node:test'
 import type { Finding } from '../core/index.ts'
 import { finding } from '../core/internal.ts'
 import { unmarked, wroteBy } from './marked.ts'
+import type { Failure } from './testFailed.ts'
+import { failureOf, failureWords } from './testFailed.ts'
 
 /** Every test file under a folder of a project, by its path from the project, written with `/`, in the order of the names. */
 export function testFiles(project: string, ai: boolean, path = 'tests'): string[] {
@@ -20,24 +22,50 @@ export function testFiles(project: string, ai: boolean, path = 'tests'): string[
     })
 }
 
-/**
- * Gathers what each test touched, as the programs of the tests noted it in a folder, into `touched.json` of the
- * engine's own folder of the project, which `tent impact` reads: each test, by its file and its name, with the
- * definitions it ran. A run of some of the tests alone keeps what the others touched before. The folder is removed.
- */
-function keepTouched(noted: string, data: string, some: boolean): void {
-  const file = join(data, 'touched.json')
-  const before: Record<string, string[]> =
-    some && existsSync(file) ? Object(JSON.parse(readFileSync(file, 'utf8'))) : {}
-  const all: Record<string, string[]> = {}
-  for (const name of readdirSync(noted))
-    for (const [test, names] of Object.entries(Object(JSON.parse(readFileSync(join(noted, name), 'utf8')))))
-      all[test] = [...new Set([...(all[test] ?? []), ...(Array.isArray(names) ? names.map(String) : [])])].sort()
-  rmSync(noted, { recursive: true, force: true })
-  mkdirSync(data, { recursive: true })
-  const sorted = Object.fromEntries(Object.entries({ ...before, ...all }).sort(([a], [b]) => (a < b ? -1 : 1)))
-  writeFileSync(file, `${JSON.stringify(sorted, null, 2)}\n`)
+/** What the programs of the tests noted of one test: each kind of thing it touched, and what reached outside. */
+interface Noted {
+  touched: Record<string, string[]>
+  outside: string[]
 }
+
+/** The texts of a list, and nothing of what is no text. */
+const stringsOf = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : [])
+
+/**
+ * Gathers what the programs of the tests and their threads noted in a folder, each in a file of its own, and removes
+ * the folder. Answers what each test touched, by `[file, name, nth]` as text, every program's notes of one test
+ * taken together, and the files of the tests whose app was opened outside the work of any test.
+ */
+function gathered(folder: string): { noted: Map<string, Noted>; whole: Set<string> } {
+  const noted = new Map<string, Noted>()
+  const whole = new Set<string>()
+  for (const name of readdirSync(folder)) {
+    const read: unknown = JSON.parse(readFileSync(join(folder, name), 'utf8'))
+    const tests: Record<string, unknown> = Object(Reflect.get(Object(read), 'tests'))
+    for (const [test, one] of Object.entries(tests)) {
+      const held = noted.get(test) ?? { touched: {}, outside: [] }
+      const touched: Record<string, unknown> = Object(Reflect.get(Object(one), 'touched'))
+      for (const [kind, names] of Object.entries(touched))
+        held.touched[kind] = [...new Set([...(held.touched[kind] ?? []), ...stringsOf(names)])].sort()
+      held.outside = [...new Set([...held.outside, ...stringsOf(Reflect.get(Object(one), 'outside'))])].sort()
+      noted.set(test, held)
+      if (Reflect.get(Object(read), 'whole') === true) whole.add(String(JSON.parse(test)[0]))
+    }
+  }
+  rmSync(folder, { recursive: true, force: true })
+  return { noted, whole }
+}
+
+/** Two runs of tests as one. */
+export const joinedRan = (one: Ran, other: Ran): Ran => ({
+  passed: one.passed + other.passed,
+  findings: [...one.findings, ...other.findings],
+  notRun: [...one.notRun, ...other.notRun],
+  ended: [...one.ended, ...other.ended],
+  noted: new Map([...one.noted, ...other.noted]),
+  whole: new Set([...one.whole, ...other.whole]),
+  failures: [...one.failures, ...other.failures],
+})
 
 /** The lines of the stack of an error that lie in the project, each as its place from the folder of the project. */
 function placesIn(stack: unknown, folder: string): string[] {
@@ -80,38 +108,76 @@ function notRunWhy(error: unknown): string | undefined {
 /** A pattern that fits the name of one test and no other. */
 const exactly = (name: string): RegExp => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)
 
-/** What a run of tests gave: how many passed, each failure as a finding, the tests not run, and each test as it ended. */
+/** One test as it ended: by its file, its name and how many of that name of the file ran before it, and its time. */
+interface Ended {
+  test: string
+  file: string
+  name: string
+  nth: number
+  passed: boolean
+  ms: number
+}
+
+/**
+ * What a run of tests gave: how many passed, each failure as a finding, the tests not run, each test as it ended,
+ * what each test touched by `[file, name, nth]` as text, and the files whose tests share an app opened outside them.
+ */
 export interface Ran {
   passed: number
   findings: Finding[]
   notRun: { test: string; why: string }[]
-  ended: { test: string; passed: boolean }[]
+  ended: Ended[]
+  noted: Map<string, Noted>
+  whole: Set<string>
+  // The facts of each failure, as `--json` holds them.
+  failures: Failure[]
 }
 
 /**
  * Runs test files of a project by the test runner of the runtime, each as a program of its own in the folder of the
  * project, where `testApp()` gives it a fresh temporary copy of the app. `only` runs those tests alone, by their
  * names, and `but` every test but those. A test that failed is a finding that holds its whole failure: what it threw
- * and where, and what that test wrote out. Of a run that is not of AI behaviour, what each test touched is kept in
- * `.tent/touched.json`. `ended` is told each test as it ends, by its file and its name.
+ * and where, and what that test wrote out. Of a run that is not of AI behaviour, what each test touched is noted
+ * where its work was done, in its program and on its threads. `ended` is told each test as it ends, by its file and
+ * its name.
  */
 export async function testsRan(
   folder: string,
   files: string[],
-  o: { ai?: boolean; only?: string[]; but?: string[]; ended?(test: string, passed: boolean): void } = {},
+  o: {
+    ai?: boolean
+    only?: string[]
+    but?: string[]
+    ended?(test: string, passed: boolean): void
+    // The name the tests stand under, for a program of the framework's own that runs in the folder of the project:
+    // what it touches is no test's of the project, and is not noted.
+    as?: string
+  } = {},
 ): Promise<Ran> {
-  const made: Ran = { passed: 0, findings: [], notRun: [], ended: [] }
+  const made: Ran = {
+    passed: 0,
+    findings: [],
+    notRun: [],
+    ended: [],
+    noted: new Map(),
+    whole: new Set(),
+    failures: [],
+  }
   if (!files.length) return made
-  // Each test program notes what its tests touched in a file of its own here, which is gathered when they end.
-  const noted = o.ai ? undefined : mkdtempSync(join(tmpdir(), 'tent-touched-'))
+  // Each test program, and each of its threads, notes what its tests touched in a file of its own here, which is
+  // gathered when they end.
+  const noted = o.ai || o.as !== undefined ? undefined : mkdtempSync(join(tmpdir(), 'tent-touched-'))
   if (noted) process.env.TENT_TOUCHED = noted
   try {
+    // The clock and the source of a test app are stood in first, before any module of the engine loads.
+    const chance = new URL('./testChance.ts', import.meta.url).href
     const names = new URL('./names.ts', import.meta.url).href
+    const noting = new URL('./testNoting.ts', import.meta.url).href
     const marks = new URL('./marks.ts', import.meta.url).href
     const events = run({
-      files: files.map((file) => join(folder, file)),
+      files: files.map((file) => (isAbsolute(file) ? file : join(folder, file))),
       cwd: folder,
-      execArgv: ['--import', names, '--import', marks],
+      execArgv: ['--import', chance, '--import', names, ...(noted ? ['--import', noting] : []), '--import', marks],
       ...(o.ai ? { concurrency: 1 } : {}),
       ...(o.only ? { testNamePatterns: o.only.map(exactly) } : {}),
       ...(o.but?.length ? { testSkipPatterns: o.but.map(exactly) } : {}),
@@ -133,13 +199,14 @@ export async function testsRan(
       const key = `${event.data.file} ${event.data.name}`
       const nth = ended.get(key) ?? 0
       ended.set(key, nth + 1)
-      const file = (event.data.file ?? '').slice(folder.length + 1).replaceAll('\\', '/')
+      const file = o.as ?? (event.data.file ?? '').slice(folder.length + 1).replaceAll('\\', '/')
       const test = `${file}: ${event.data.name}`
+      const one = { test, file, name: event.data.name, nth, ms: event.data.details.duration_ms }
       // A file whose every test was left out is told as one that passed: it is no test.
       if (event.type === 'test:pass' && event.data.name === event.data.file) continue
       if (event.type === 'test:pass') {
         made.passed++
-        made.ended.push({ test, passed: true })
+        made.ended.push({ ...one, passed: true })
         o.ended?.(test, true)
         continue
       }
@@ -149,7 +216,7 @@ export async function testsRan(
         made.notRun.push({ test, why })
         continue
       }
-      made.ended.push({ test, passed: false })
+      made.ended.push({ ...one, passed: false })
       o.ended?.(test, false)
       const held = event.data.file === undefined ? undefined : wrote.get(event.data.file)
       // A file that failed before a test of it began wrote what it wrote with no mark: all of it is shown.
@@ -160,17 +227,27 @@ export async function testsRan(
           ? unmarked(held.out) + unmarked(held.err)
           : wroteBy(held.out, event.data.name, nth) + wroteBy(held.err, event.data.name, nth)
       const whole = wholeFailure(event.data.details.error, folder, written)
+      const error: unknown = event.data.details.error
+      const thrown: unknown = Reflect.get(Object(error), 'cause') ?? error
+      const places = placesIn(Reflect.get(Object(thrown), 'stack'), folder)
+      const failure = failureOf(error, event.data.name, file, event.data.line ?? 1, places)
+      made.failures.push(failure)
       made.findings.push(
-        finding('T0009', `The test "${event.data.name}" failed: ${whole}`, {
-          fix: 'Mend the test or what it tests, and run `tent test` again: what a test writes with `console.log` is shown with its failure.',
-          ...(event.data.file ? { where: { file, line: event.data.line ?? 1 } } : {}),
+        finding('T0009', `The test "${event.data.name}" failed: ${[whole, failureWords(failure)].join('\n')}`, {
+          // The fix of the code that refused the test's last call, where it was refused, and else what mends a test.
+          fix:
+            failure.fix ??
+            'Mend the test or what it tests, and run `tent test` again: what a test writes with `console.log` is shown with its failure.',
+          ...(event.data.file ? { where: { file, line: failure.line } } : {}),
         }),
       )
     }
   } finally {
     if (noted) {
       delete process.env.TENT_TOUCHED
-      keepTouched(noted, join(folder, '.tent'), o.only !== undefined || o.but !== undefined)
+      const { noted: touched, whole } = gathered(noted)
+      made.noted = touched
+      made.whole = whole
     }
   }
   return made

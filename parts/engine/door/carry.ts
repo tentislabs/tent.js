@@ -23,6 +23,7 @@ import { said } from '../flows/said.ts'
 import { fileRead } from '../ai/runFiles.ts'
 import { dbSpan } from '../trace/db.ts'
 import { pageFileRead } from '../pages/fileReads.ts'
+import { factRead, factWrote } from '../called.ts'
 
 /** The user that code is handed: nothing for the system, for nobody and for a key that was made for no user. */
 const userOf = (caller: Caller): User | undefined => (caller.kind === 'system' ? undefined : caller.user)
@@ -129,12 +130,15 @@ function dbOf(
   const noting = cx.noting
   const read = (plan: Plan, answer: unknown, file?: FileName): void => {
     noting?.(plan, answer, file)
+    // Under a call of a test, what it read, which a failure of the test shows.
+    factRead(String(plan.from), answer)
     if (run && file) fileRead(o, run, file)
     pageFileRead(String(plan.from), file)
   }
   return createDb(cx.writing ?? cx.tx ?? o.files ?? o.store, o.description, cx.caller, mode, o.rules, {
     system: full,
     now: () => o.clock.now(),
+    ids: o.ids,
     limits: { time: Math.max(0, cx.work.ends - performance.now()), ...(rows === undefined ? {} : { rows }) },
     noted: (told) => noted(o, cx, told),
     read,
@@ -143,6 +147,7 @@ function dbOf(
       ? {
           wrote(w) {
             holds?.(w)
+            factWrote(w)
             written.rows.push({ table: w.table, id: String(w.row.id), kind: w.kind })
             // A row is counted under the change that wrote it once its write is committed.
             const { name } = cx.work

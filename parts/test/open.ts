@@ -1,7 +1,7 @@
 import { TentError } from '../core/index.ts'
 import { limitDefaults } from '../core/internal.ts'
 import type { App, BrowserEngine } from '../engine/index.ts'
-import { browsed, drivenSession } from '../engine/index.ts'
+import { browsed, drivenSession, noteTouched } from '../engine/index.ts'
 import type { TestCaller } from './as.ts'
 import type { TestClock } from './clock.ts'
 import { aheadOf, onMoved } from './clock.ts'
@@ -32,6 +32,8 @@ export interface Pages {
   open: Set<Page>
   clock: TestClock
   folder: string
+  // The source of numbers of the test app, which hands each page a seed of its own.
+  random?: () => number
 }
 
 /** The longest that a step of a page may take, in milliseconds: `limits.testStep` of the project. */
@@ -81,6 +83,8 @@ export const opener =
     const app = appNow()
     const path = addressOf(target, o.props)
     const [width, height] = o.size ?? [1280, 800]
+    // Under `tent test`, the engine of the browser the test drove, whose build is part of what its result stands on.
+    noteTouched('browsers', o.engine ?? 'chromium')
     // A session of a browser that the program drives: it ends no session of the user's own, and ends with the page.
     const session = o.as === undefined || o.as === 'nobody' ? undefined : drivenSession(app, o.as)
     const cookie = session?.cookie
@@ -90,7 +94,7 @@ export const opener =
       size: { width, height },
       dark: o.dark === true,
       ...(o.language === undefined ? {} : { language: o.language }),
-      preload: preloadText(aheadOf(pages.clock)),
+      preload: preloadText(aheadOf(pages.clock), pages.random ? String(pages.random()) : undefined),
       ...(cookie === undefined ? {} : { cookie: { name: cookie.slice(0, split), value: cookie.slice(split + 1) } }),
     }).catch(async (error: unknown) => {
       await session?.end()

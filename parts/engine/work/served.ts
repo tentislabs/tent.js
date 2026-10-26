@@ -1,6 +1,6 @@
 import { TentError } from '../../core/index.ts'
 import type { Clock } from '../../core/internal.ts'
-import { sqliteStore } from '../../data/index.ts'
+import { idMaker, sqliteStore } from '../../data/index.ts'
 import { loadCode } from '../code.ts'
 import { versionFolder } from '../copy/versions.ts'
 import { descriptionOf } from '../format.ts'
@@ -43,6 +43,7 @@ export async function servedOn(
     description,
     store: sqliteStore(),
     clock,
+    ids: idMaker(() => clock.now()),
     log: {
       write: () => undefined,
       writeAll: () => undefined,

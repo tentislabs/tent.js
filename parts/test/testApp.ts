@@ -7,6 +7,7 @@ import { buildProject } from '../build/index.ts'
 import type { Caller } from '../core/index.ts'
 import { TentError } from '../core/index.ts'
 import type { App, Unsent } from '../engine/index.ts'
+import { noteOpened } from '../engine/index.ts'
 import { keysOfProject, testSecrets } from './secrets.ts'
 import type { Asked, TestCaller } from './as.ts'
 import { as } from './as.ts'
@@ -14,6 +15,7 @@ import type { BrowserOptions, TestBrowser } from './browser.ts'
 import { browser } from './browser.ts'
 import type { TestClock } from './clock.ts'
 import { testClock } from './clock.ts'
+import { chanceOf } from './chance.ts'
 import { settledOf } from './settled.ts'
 import type { Alone, OpenOptions, Pages } from './open.ts'
 import { opener } from './open.ts'
@@ -65,6 +67,16 @@ export interface TestOptions {
   real?: string[]
   /** Where the code of the app runs: `tenant`, the test room, which crosses every call; the room of the program where it is left out, unless the run states `TENT_ROOM=apart`. */
   room?: TestRoom
+  /**
+   * `'held'`: the clock of the app stands until the test moves it, with `app.clock.advance` and `app.clock.set`, as
+   * the fake timers of the strongest test runners stand. Left out, it runs on with the time of the system.
+   */
+  clock?: 'held'
+  /**
+   * The seed of every number the app draws: `random()`, `token()`, `step.random()`, its row ids and `Math.random()`
+   * in its code. Left out, it is the name of the test that runs, so the same test draws the same numbers everywhere.
+   */
+  randomSeed?: string
 }
 
 /**
@@ -189,6 +201,7 @@ function faceOf(
     open: new Set(),
     clock: moves,
     folder: options.folder ? resolve(options.folder) : process.cwd(),
+    ...(world.random ? { random: world.random } : {}),
   }
   const closePages = async (): Promise<void> => {
     for (const page of [...pages.open]) await closePage(page).catch(() => undefined)
@@ -210,6 +223,7 @@ function faceOf(
     page: (path, o) => whileAlive(machine, app().page(path, o)),
     session: (user) => app().session(user),
     standIn: (name, stand) => app().standIn(name, stand),
+    called: (work) => app().called(work),
     request: (request, o) => whileAlive(machine, app().request(request, o)),
     live: (request) => app().live(request),
     add: (bundleFolder) => whileAlive(machine, app().add(bundleFolder)),
@@ -356,8 +370,11 @@ function faceOf(
  */
 export async function testApp(options: TestOptions = {}): Promise<TestApp> {
   const project = resolve(options.folder ?? process.cwd())
+  // Under `tent test`, an app opened by a hook of a whole file is shared by its tests, which then run whole.
+  noteOpened()
   const home = mkdtempSync(join(tmpdir(), 'tent-test-'))
-  const { clock, moves } = testClock()
+  const { clock, moves } = testClock({ held: options.clock === 'held' })
+  const { random } = chanceOf(options.randomSeed)
   let world: World | undefined
   let closed: Promise<void> | undefined
   const close = (): Promise<void> => {
@@ -385,6 +402,7 @@ export async function testApp(options: TestOptions = {}): Promise<TestApp> {
       })
     }
     world = worldOf(home, built.bundleFolder, clock)
+    world.random = random
     const room = roomMaker(options.room)
     if (room) world.room = room
     const writer = machineIn(world, 'data')

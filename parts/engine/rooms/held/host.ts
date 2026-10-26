@@ -16,6 +16,7 @@ import type { Entry } from '../room.ts'
 import type { Message } from './channel.ts'
 import { channelOf } from './channel.ts'
 import { refusalOf } from './refused.ts'
+import { bytesFrom, seededSource } from '../../seeded.ts'
 
 const refused = (what: string): Error =>
   Object.assign(new Error(`${what} is not handed to the code of a held app.`), { code: 'ERR_ACCESS_DENIED' })
@@ -55,6 +56,9 @@ interface Drawn {
   now: number
   zone: string
   valueSize: number
+  // The seed of the app's own source for this call, where it has one, and the source made from it.
+  seed?: string
+  source?: () => number
 }
 const calls = new AsyncLocalStorage<number>()
 const drawnOf = new Map<number, Drawn>()
@@ -145,14 +149,17 @@ function drawn(call: number, word: unknown, args: unknown[]): { value: unknown }
   if (word === 'zone') return { value: of.zone }
   if (word === 'valueSize') return { value: of.valueSize }
   if (word === 'mayWait') return { value: true }
-  if (word === 'random') return { value: randomInt(0, 2 ** 48) / 2 ** 48 }
+  if (of.seed !== undefined) of.source ??= seededSource(of.seed)
+  const source = of.source
+  if (word === 'random') return { value: source ? source() : randomInt(0, 2 ** 48) / 2 ** 48 }
   if (word === 'token') {
     const digits: unknown = Reflect.get(Object(args[0]), 'digits')
+    const digit = (): number => (source ? Math.floor(source() * 10) : randomInt(10))
     return {
       value:
         typeof digits === 'number'
-          ? Array.from({ length: digits }, () => randomInt(10)).join('')
-          : randomBytes(32).toString('base64url'),
+          ? Array.from({ length: digits }, digit).join('')
+          : Buffer.from(source ? bytesFrom(source, 32) : randomBytes(32)).toString('base64url'),
     }
   }
   return undefined

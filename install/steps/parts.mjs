@@ -31,9 +31,13 @@ const byOwnFile = ['data/dbFace.ts', 'data/fileName.ts']
 const apart = [
   'check/rulesWorker.ts',
   'cli/askFirst.ts',
+  'cli/declaredTests.ts',
   'cli/knownLook.ts',
   'cli/marks.ts',
   'cli/names.ts',
+  'cli/testChance.ts',
+  'cli/testFace.ts',
+  'cli/testNoting.ts',
   'engine/files/thread.ts',
   'engine/pictures/thread.ts',
   'engine/python/rowsWriter.ts',

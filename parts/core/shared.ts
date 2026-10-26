@@ -1,5 +1,6 @@
 import type { Caller } from './caller.ts'
 import type { Finding } from './errors.ts'
+import type { TestsTouched } from './tested.ts'
 import type { Type } from './type.ts'
 
 /** A function that takes nothing: it takes back what a clock was asked for. */
@@ -15,6 +16,8 @@ export interface Clock {
 export interface Facts {
   tableFindings: Finding[]
   waitingStepNames: Record<string, string[]>
+  // What each test touched in its last run, where the tests of the project ran: with none, nothing is known of it.
+  touched?: TestsTouched
 }
 
 /** A tool that is no definition, as its source tells it. */

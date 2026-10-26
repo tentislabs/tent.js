@@ -29,7 +29,7 @@ const shape: Type = object({
   out: list(finding),
 })
 
-test('[44-2] tent test writes what each test touched into .tent/touched.json, and tent impact names the changes against a point with their tests, as text and with --json alike', async (t) => {
+test('[44-2] tent test writes what each test touched into .tent/tests.json, and tent impact names the changes against a point with their tests, as text and with --json alike', async (t) => {
   const project = copied(t, 'impact')
   const temp = join(project, '..', 'temp')
   mkdirSync(temp)
@@ -45,7 +45,15 @@ test('[44-2] tent test writes what each test touched into .tent/touched.json, an
   // Each test of the app, by its file and its name, with every definition it ran.
   const tested = typedApart(project, 'test', '--json')
   assert.equal(tested.ended, 0, tested.printed)
-  const touched: Record<string, string[]> = JSON.parse(readFileSync(join(project, '.tent', 'touched.json'), 'utf8'))
+  const record: { tests: Record<string, Record<string, { touched: { functions?: string[] } }[]>> } = JSON.parse(
+    readFileSync(join(project, '.tent', 'tests.json'), 'utf8'),
+  )
+  const touched: Record<string, string[]> = Object.fromEntries(
+    Object.entries(record.tests['tests/orders.test.ts'] ?? {}).map(([name, runs]) => [
+      `tests/orders.test.ts: ${name}`,
+      runs.flatMap((one) => one.touched.functions ?? []),
+    ]),
+  )
   assert.deepEqual(Object.keys(touched).sort(), [
     'tests/orders.test.ts: a customer cannot mark an order paid',
     'tests/orders.test.ts: the staff may',

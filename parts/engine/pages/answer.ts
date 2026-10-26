@@ -184,6 +184,8 @@ async function answerOfPage(
 ): Promise<PageAnswer> {
   const { shaped, above = false, asked, part } = more
   const began = performance.now()
+  // Under `tent test`, the address the test asked, also one that nothing answers: a screen added there is its concern.
+  noteTouched('asked', url.pathname)
   // A good token of the inspect mode: the tool's origin may frame this one answer, and the page loads the part.
   let inspected = part === undefined ? inspectAsked(o, url) : undefined
   const picture = more.picture ?? ((src: { asset: string } | { file: string }) => pictureFor(o, caller, src))
@@ -285,7 +287,7 @@ async function answerOfPage(
     // The shared part of a kept screen is drawn for the request that needed it, which is the row of the log.
     if (more.frame) return
     nameDraw(named === path ? 'notFound' : named)
-    if (named !== path) noteTouched(named)
+    if (named !== path) noteTouched(more.alone ? 'components' : 'screens', named)
     void logCall(o, { name: named, kind: 'screen', caller, began, ...(error === undefined ? {} : { error }) })
     countScreen(o, named, caller, began, error)
   }
@@ -480,6 +482,7 @@ async function answerOfPage(
       ? signIn(refusal('T0006', `The screen ${found.name} needs a signed-in caller.`))
       : notFound(refusal('T3101', `The rule of the screen ${found.name} does not let the caller in.`))
   const { uses, load } = loadOf(found.name, screen, more.alone !== undefined)
+  for (const one of uses) noteTouched('components', one)
   // The plans by which the page shows a change of the screen before the engine answers it.
   const plans = plansOf(description, [screen, ...uses.map((name) => description.components[name])])
   const forViewer = page(found.name, {

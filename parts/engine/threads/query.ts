@@ -1,9 +1,9 @@
-import { parentPort, workerData } from 'node:worker_threads'
+import { parentPort, threadId, workerData } from 'node:worker_threads'
 import { TentError } from '../../core/index.ts'
 import type { Clock } from '../../core/internal.ts'
 import { setRuntime } from '../../core/internal.ts'
 import type { Files, Store } from '../../data/index.ts'
-import { NotReady, sqliteStore } from '../../data/index.ts'
+import { idMaker, NotReady, sqliteStore } from '../../data/index.ts'
 import type { App } from '../app.ts'
 import { loadCode, needsCode } from '../code.ts'
 import { loneMachine } from '../lone.ts'
@@ -20,6 +20,7 @@ import type { Job, Start, ThreadTold } from './messages.ts'
 import { threadMs } from '../counts/cpu.ts'
 import { countsGoTo, gather, writeCounts } from '../counts/gather.ts'
 import { crossed } from '../rooms/crossing.ts'
+import { notesOf, underTest, writeNotes } from '../touched.ts'
 
 // The program of one query thread. It holds a store of its own, opened to read alone, and carries out one query at
 // a time, through every step of the door from 5 to 10. What it writes into the log crosses to the main thread.
@@ -67,6 +68,7 @@ const app: App = {
   page: async () => noWeb(),
   session: () => noWeb(),
   standIn: () => noWeb(),
+  called: async () => noWeb(),
   read: async () => noWeb(),
   write: async () => noWeb(),
   logs: async () => noWeb(),
@@ -114,6 +116,7 @@ const o: Opened = {
   store,
   ...(files ? { files } : {}),
   clock,
+  ids: idMaker(() => clock.now()),
   // A thread writes its rows through the main thread, which alone holds the log, and reads none.
   log: {
     write: (table, row) => tell({ log: { table, row } }),
@@ -180,7 +183,8 @@ port.on('message', async (job: Job) => {
     }
     // A read that was handed over again goes on in the time it had left.
     const ends = job.left === undefined ? {} : { ends: began + job.left }
-    const { answer, reads } = reading(() => called(o, job.name, job.input, { caller: job.caller, ...ends }))
+    const call = (): unknown => called(o, job.name, job.input, { caller: job.caller, ...ends })
+    const { answer, reads } = reading(() => (job.test === undefined ? call() : underTest(notesOf(job.test), call)))
     tell({ id: job.id, value: answer, ...(job.reads ? { reads: sentReads(reads) } : {}) })
   } catch (error) {
     if (error instanceof NotReady)
@@ -192,6 +196,9 @@ port.on('message', async (job: Job) => {
     // The processor time of the read is read by the clock of this thread, which does one read at a time.
     gather(o, job.name, { cpuMs: threadMs() - cpu }, { caller: job.caller })
     writeCounts(o)
+    // The thread keeps a record of its own of what each test touched here, written after each call of a test.
+    const noted = process.env.TENT_TOUCHED
+    if (job.test !== undefined && noted) writeNotes(noted, `${process.pid}-${threadId}`)
   }
 })
 tell({ ready: true })

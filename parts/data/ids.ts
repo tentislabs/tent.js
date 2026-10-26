@@ -40,11 +40,12 @@ export interface IdMaker {
 }
 
 /**
- * Takes a clock. Answers a maker of row ids: a version-7 unique id, 48 bits of time and then random bits, written
- * in 26 characters with two zero bits in front. Each id is larger than the one before it, also within one
- * millisecond and when the clock steps back, so the order of the ids is the order in which they were made.
+ * Takes a clock, and a source of random numbers from 0 up to 1 where the random source of the runtime is not the
+ * one: the clock and the source of an app. Answers a maker of row ids: a version-7 unique id, 48 bits of time and then
+ * random bits, written in 26 characters with two zero bits in front. Each id is larger than the one before it, also
+ * within one millisecond and when the clock steps back, so the order of the ids is the order in which they were made.
  */
-export function idMaker(now: () => number = () => Date.now()): IdMaker {
+export function idMaker(now: () => number = () => Date.now(), random?: () => number): IdMaker {
   // The last id: its time, and its 74 random bits as the upper 34 and the lower 40.
   let time = 0
   let high = 0
@@ -54,11 +55,16 @@ export function idMaker(now: () => number = () => Date.now()): IdMaker {
 
   /** Answers a random number of so many bytes, five at most. */
   const draw = (bytes: number): number => {
+    let n = 0
+    // A source of the app's own is drawn from as each id needs it, so that its numbers follow one order.
+    if (random) {
+      for (let i = 0; i < bytes; i++) n = n * 256 + Math.floor(random() * 256)
+      return n
+    }
     if (used + bytes > drawn.length) {
       randomFillSync(drawn)
       used = 0
     }
-    let n = 0
     for (let i = 0; i < bytes; i++) n = n * 256 + drawn[used++]
     return n
   }
@@ -102,5 +108,5 @@ export function idMaker(now: () => number = () => Date.now()): IdMaker {
   }
 }
 
-// The one maker of the program: an id is its own in the whole app, whichever data file its row lives in.
+// The maker of the program, of what no app's own maker makes: an app makes the ids of its rows with its own.
 export const rowIds = idMaker()

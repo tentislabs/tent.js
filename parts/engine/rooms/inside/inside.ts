@@ -5,6 +5,7 @@ import { setRuntime } from '../../../core/internal.ts'
 import type { Bounds } from '../callables.ts'
 import { intoOf, outOf } from '../callables.ts'
 import { pure } from '../pure.ts'
+import { chanceIn } from './chance.ts'
 import type { Entry, Kind } from '../room.ts'
 import { fetchOver } from './fetch.ts'
 import type { InsideWays } from './handed.ts'
@@ -72,7 +73,9 @@ const notHeld = (what: string): TentError =>
  */
 export function insideOf(o: InsideInput): Inside {
   const free: Bounds = o.bounds ?? { depth: 64, size: 1_000_000 }
-  setRuntime(runtimeOver(o.ways, o.carry, free))
+  const runtime = runtimeOver(o.ways, o.carry, free)
+  setRuntime(runtime)
+  chanceIn(o.carry, runtime)
   Reflect.set(globalThis, 'fetch', fetchOver(o.ways, o.carry, free))
   const versions = new Map<string, { told: VersionTold; modules: Map<string, Record<string, unknown>> }>()
   const entries: ((...args: unknown[]) => unknown)[] = []

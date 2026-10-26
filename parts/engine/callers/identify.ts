@@ -35,6 +35,7 @@ async function asked(o: Opened, arrow: (...handed: unknown[]) => unknown, reques
   const db = createDb(o.files ?? o.store, o.description, system, 'async', o.rules, {
     system: true,
     now: () => o.clock.now(),
+    ids: o.ids,
     ...sealed(o),
   })
   const handed = {

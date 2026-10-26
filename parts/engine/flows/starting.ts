@@ -179,7 +179,7 @@ export async function startRunner(o: Opened, how: { later?: true } = {}): Promis
     told: (what) => {
       runTold(o, what)
       // Under `tent test`, the test that runs touched the flow whose run works.
-      if (what.kind === 'run' && what.state === 'running') noteTouched(runner.read(what.run)?.flow ?? '')
+      if (what.kind === 'run' && what.state === 'running') noteTouched('flows', runner.read(what.run)?.flow ?? '')
       tenants?.told(what)
       runCounted(o, runner, what, causer)
       // The text of a round is gone from memory in the write that saves the round, and the pages that follow it are told.
@@ -374,6 +374,8 @@ export async function startRunner(o: Opened, how: { later?: true } = {}): Promis
     start: (cx, flow, input) =>
       startFlow(o, runner, agreedOr(cx, flow, flowHeld(cx.app.description, flow)), flow, input),
     emit: (cx, event, data) => {
+      // Under `tent test`, the event a test raised: a flow that listens for it later is its concern.
+      noteTouched('events', event)
       const open = openOf(cx)
       if (!open) return
       const fired = { event, data, ...(open.file ? { file: open.file } : {}) }

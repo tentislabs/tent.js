@@ -8,6 +8,7 @@ import { readerCarries } from '../onlyReads.ts'
 import { appModelCall } from '../ai/appCall.ts'
 import { servedBy, versionGone } from '../versions.ts'
 import { releasedFor } from '../gradual/served.ts'
+import { shownFailure } from '../failed/failure.ts'
 
 /**
  * `app.call`: a function called through steps 5 to 10 of the door, with no web request. An error that is no
@@ -37,8 +38,11 @@ export const member =
       )
     } catch (error) {
       if (error instanceof TentError) throw error
+      // In development and in a test, the definition and the line of its source, as the overlay names them.
+      const place = o.mode === 'live' ? undefined : shownFailure(o, named, error).where
       const failed = new TentError('T0009', error instanceof Error ? error.message : String(error), {
         fix: 'The code of the app failed: the log holds the error with its trace.',
+        ...(place ? { where: { file: place.file, line: place.line, definition: named } } : {}),
       })
       failed.cause = error
       throw failed

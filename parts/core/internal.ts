@@ -67,6 +67,8 @@ export { checkOfJob } from './checkOfJob.ts'
 export type { MemberName } from './agentTypes.ts'
 export { memberNames, memberTypes, startTypes } from './agentTypes.ts'
 export type { Cancel, Clock, Facts, ToolSource, ToolSpec } from './shared.ts'
+export type { TestsTouched } from './tested.ts'
+export { testsTouching, touchedOf, untestedOf } from './tested.ts'
 export type { Loaded } from './stored/shared.ts'
 export type { StateEntry } from './stored/states.ts'
 export {

@@ -3,20 +3,26 @@ import { join } from 'node:path'
 import { TentError } from '../core/index.ts'
 import type { Description } from '../core/internal.ts'
 import { isStored } from '../core/internal.ts'
+import { sampleOf } from '../test/index.ts'
 
 /** A text as a test file writes it: in single quotes. */
 const quoted = (text: string): string => `'${text.replaceAll('\\', '\\\\').replaceAll("'", "\\'")}'`
 
-/** A step of the test that puts a value of its type into a field, or a comment where the type has no plain value. */
+/**
+ * A step of the test that puts a sample of its type into a field, as `sampleOf` makes it, the values of a choice read
+ * where the description keeps them, or a comment where the type has no plain value.
+ */
 function filled(name: string, type: unknown): string {
   const kind = isStored(type) ? type.kind : undefined
   const at = quoted(name)
-  if (kind === 'boolean') return `  await page.pick(${at}, true)`
-  if (kind === 'choice' && isStored(type) && Array.isArray(type.values) && type.values.length)
-    return `  await page.pick(${at}, ${quoted(String(type.values[0]))})`
-  if (kind === 'number') return `  await page.type(${at}, '1')`
-  if (kind === 'text') return `  await page.type(${at}, ${quoted(`A ${name}`)})`
-  if (kind === 'day') return `  await page.type(${at}, '2031-01-01')`
+  const sample =
+    isStored(type) && ['boolean', 'choice', 'number', 'text', 'day'].includes(String(kind))
+      ? sampleOf(type, name)
+      : undefined
+  if (kind === 'boolean' || (kind === 'choice' && sample !== undefined))
+    return `  await page.pick(${at}, ${typeof sample === 'string' ? quoted(sample) : String(sample)})`
+  if (kind === 'number' || kind === 'text' || kind === 'day')
+    return `  await page.type(${at}, ${quoted(String(sample))})`
   return `  // ${at}: a field of the kind ${String(kind)}, which the test gives a value to`
 }
 

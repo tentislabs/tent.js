@@ -70,8 +70,45 @@ jobs:
       - name: The search for what nothing uses
         if: matrix.shard == 1
         run: node scripts/search.mjs
+      # A pull request runs what its change touched, by the records of main, which each machine of main kept for
+      # its share: every machine reads them all, since a share of what runs is not a share of what main ran.
+      - name: The record of the tests of main, of its share 1
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: results/kept/1.json
+          key: tests-kept-${{ matrix.system }}-1-
+          restore-keys: tests-kept-${{ matrix.system }}-1-
+      - name: The record of the tests of main, of its share 2
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: results/kept/2.json
+          key: tests-kept-${{ matrix.system }}-2-
+          restore-keys: tests-kept-${{ matrix.system }}-2-
+      - name: The record of the tests of main, of its share 3
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: results/kept/3.json
+          key: tests-kept-${{ matrix.system }}-3-
+          restore-keys: tests-kept-${{ matrix.system }}-3-
+      - name: The record of the tests of main, of its share 4
+        if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: results/kept/4.json
+          key: tests-kept-${{ matrix.system }}-4-
+          restore-keys: tests-kept-${{ matrix.system }}-4-
       - name: The tests
-        run: npm test -- --shard=${{ matrix.shard }}/4
+        run: npm test -- --shard=${{ matrix.shard }}/4 ${{ github.event_name == 'push' && '--all' || '' }}
+      # A push to main runs every test, and keeps the record of its share for the pull requests that follow.
+      - name: Keep the record of the tests
+        if: github.event_name == 'push' && !cancelled()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: results/kept/${{ matrix.shard }}.json
+          key: tests-kept-${{ matrix.system }}-${{ matrix.shard }}-${{ github.sha }}
       - name: Keep the result file and the new pictures
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

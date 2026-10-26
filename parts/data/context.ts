@@ -7,6 +7,7 @@ import type { Files } from './files.ts'
 import type { Plan } from '../core/internal.ts'
 import type { Hidden } from './columnRules.ts'
 import type { TableModel } from './model.ts'
+import type { IdMaker } from './ids.ts'
 import type { Row, StorePlan, Tx } from './store.ts'
 
 /** What seals the value of a `sealed` column before it reaches the store, and opens it after. `bound` names the table, the column and the row. */
@@ -60,6 +61,8 @@ export interface DbOptions {
   ranker?: Ranker
   // Carries each read and each write of the db out, so that what made the db sees how long each took, and on what.
   traced?: <Answer>(what: Traced, work: () => Answer) => Answer
+  // The maker of the ids of the rows it adds: the app's own, by its clock and its source.
+  ids?: IdMaker
 }
 
 /** What one read or write of a db is, as `traced` is told it: a read of a table, or a write of one row. */

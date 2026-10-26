@@ -27,6 +27,8 @@ error T1008  functions/orders.ts:14  markPaid
 
 The project is held against its data too: a table change that the rows of the data folder do not bear is `code.T2001` to `code.T2004`, at the place of its table. An engine that runs on the data folder is asked for that, and where none runs the check reads the data itself, to read alone. It needs no bundle and starts no engine, so a project with an error is still held against its data.
 
+Where the tests of the project ran, the check reads what each touched in its last run, as `tent test` keeps it in `.tent/tests.json`, and warns of each function, flow, screen, table and route that no test touched, `code.T9004`, with the fix that names `tent test`. A project whose tests never ran is told nothing of them.
+
 A finding has its level, its code, its file and line, its definition, a sentence, the fix, and the command that explains its code. Under the findings stands each definition with its form, `plain` or `code`, and for a code one what made it so.
 
 ## Output
@@ -41,4 +43,4 @@ It ends with 0 when no finding is an error, and with 1 when one is. A warning an
 
 ## See also
 
-`topic.check`, `command.build`, `topic.commands`
+`topic.check`, `command.build`, `topic.commands`, `command.test`, `code.T9004`

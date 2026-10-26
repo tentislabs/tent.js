@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { relative } from 'node:path'
 import { describeProject, watchProject } from '../build/index.ts'
 import type { Description } from '../core/internal.ts'
+import { testsTouching, touchedOf } from '../core/internal.ts'
+import { groundOf, keepRan, keptTests } from './testsKept.ts'
 import type { Ran } from './testsRan.ts'
-import { testFiles, testsRan } from './testsRan.ts'
+import { joinedRan, testFiles, testsRan } from './testsRan.ts'
 
 // The kinds of definition of a description, each a record of definitions by their names.
 const kinds = [
@@ -35,15 +36,22 @@ function changedBetween(before: Map<string, string>, after: Map<string, string>)
   return [...names].filter((name) => before.get(name) !== after.get(name)).sort()
 }
 
-/** The tests that touched one of these definitions in their last run, by their files and names, as `touched.json` keeps them. */
+/** The tests that touched one of these definitions in their last run, by their files and names, as the record of the tests keeps them. */
 function touching(folder: string, changed: string[]): string[] {
-  const file = join(folder, '.tent', 'touched.json')
-  if (!existsSync(file)) return []
-  const touched: Record<string, unknown> = Object(JSON.parse(readFileSync(file, 'utf8')))
-  return Object.entries(touched)
-    .filter(([, names]) => Array.isArray(names) && names.some((one) => changed.includes(String(one))))
-    .map(([test]) => test)
-    .sort()
+  const touched = touchedOf(keptTests(folder))
+  return [...new Set(changed.flatMap((name) => testsTouching(touched, name)))].sort()
+}
+
+/**
+ * Takes the folder of a project, and one round of its tests, which ran every file whole. Keeps what each test
+ * touched and how it ended in the record of the tests, by the project as it stood when the round began.
+ */
+async function keptRound(folder: string, files: string[], round: () => Promise<Ran>): Promise<Ran> {
+  const ground = await groundOf(folder, files)
+  const kept = keptTests(folder)
+  const ran = await round()
+  keepRan(folder, { kept, ground, ran, replays: new Map(), whole: files, files, all: false })
+  return ran
 }
 
 /** The line that ends a round: how many tests ran, passed and failed. */
@@ -55,7 +63,7 @@ const roundLine = (ran: Ran[]): string => {
 
 /**
  * `tent test --watch`: runs every test of the project, and then on each save runs first the tests that touched the
- * definitions the save changed, as `.tent/touched.json` names them, and then the rest. What it prints is told to
+ * definitions the save changed, as the record of the tests names them, and then the rest. What it prints is told to
  * `out`, a line at a time: each test as it ends, `passed <file>: <name>` or `failed <file>: <name>`, and a line that
  * ends each round. It runs until `stopped` comes, and saves are taken one round at a time, in their order.
  */
@@ -68,7 +76,8 @@ export async function watchTests(
   let held = await described()
   // The first round runs every test. The folder is watched from before it, so that a save during it is taken next.
   let round: Promise<void> = (async () => {
-    o.out(roundLine([await testsRan(folder, testFiles(folder, false), { ended: told })]))
+    const files = testFiles(folder, false)
+    o.out(roundLine([await keptRound(folder, files, () => testsRan(folder, files, { ended: told }))]))
   })()
   let due: NodeJS.Timeout | undefined
   const again = async (): Promise<void> => {
@@ -78,16 +87,16 @@ export async function watchTests(
     if (!changed.length) return
     const first = touching(folder, changed)
     const files = testFiles(folder, false)
-    const ran: Ran[] = []
-    if (first.length) {
+    const ran = await keptRound(folder, files, async () => {
+      if (!first.length) return testsRan(folder, files, { ended: told })
       o.out(`first, the tests that touched ${changed.join(', ')}:`)
       const firstFiles = [...new Set(first.map((test) => test.split(': ')[0]))].filter((file) => files.includes(file))
       const names = first.map((test) => test.slice(test.indexOf(': ') + 2))
-      ran.push(await testsRan(folder, firstFiles, { only: names, ended: told }))
+      const touchedFirst = await testsRan(folder, firstFiles, { only: names, ended: told })
       o.out('then the rest:')
-      ran.push(await testsRan(folder, files, { but: names, ended: told }))
-    } else ran.push(await testsRan(folder, files, { ended: told }))
-    o.out(roundLine(ran))
+      return joinedRan(touchedFirst, await testsRan(folder, files, { but: names, ended: told }))
+    })
+    o.out(roundLine([ran]))
   }
   const watcher = await watchProject(folder, (file) => {
     const path = relative(folder, file).replaceAll('\\', '/')

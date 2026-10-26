@@ -352,6 +352,13 @@ export function pageOf(made: Made): {
     picture: evidenced(steps.picture),
   }
   inner.set(page, { engine: browsed.engine, close })
+  sends.set(page, async (call, values) => {
+    await landed()
+    const script = `(${String(formSent)})(${JSON.stringify(call)}, ${JSON.stringify(values)})`
+    if ((await browsed.evaluate(`Promise.resolve(${script})`)) !== true)
+      throw new TentError('T0001', `No form of the page calls ${call}.`)
+    await landed()
+  })
   /** Moves the time of the page with the clock of the app: of the document it shows, and of every one it loads next. */
   const moved = (ahead: number): void => {
     moving = moving
@@ -361,6 +368,43 @@ export function pageOf(made: Made): {
   }
   landings.set(page, landed)
   return { page, landed, moved }
+}
+
+/**
+ * Takes the name of what a form calls and the value of each of its fields by its name. Puts each value into its
+ * field as the browser itself would, so that the view hears it, and sends the form as a press of it does. Answers
+ * whether the page held such a form. It is sent to the browser as its text: it names nothing outside itself.
+ */
+function formSent(call: string, values: Record<string, string>): boolean {
+  const form = [...document.querySelectorAll('form')].find((one) =>
+    (one.getAttribute('action') ?? '').endsWith(`/_t/form/${encodeURIComponent(call)}`),
+  )
+  if (!form) return false
+  for (const [name, value] of Object.entries(values)) {
+    const field = form.elements.namedItem(name)
+    if (
+      !(field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement)
+    )
+      continue
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value')?.set?.call(field, value)
+    field.dispatchEvent(new Event('input', { bubbles: true }))
+    field.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+  form.requestSubmit()
+  return true
+}
+
+// What sends a form of each page of a test, by what it calls, with the values of its fields.
+const sends = new WeakMap<Page, (call: string, values: Record<string, string>) => Promise<void>>()
+
+/**
+ * Takes a page of a test, what one of its forms calls, and the value of each field by its name. Fills the form and
+ * sends it, as a person does, and answers once what it set off has landed. Throws T0001 where no form calls that.
+ */
+export function sendForm(page: Page, call: string, values: Record<string, string>): Promise<void> {
+  const send = sends.get(page)
+  if (!send) throw new TentError('T0013', 'This page was not opened by `app.open`.')
+  return send(call, values)
 }
 
 // What waits for each page of a test to land: the steps of every other caller of the app wait for it too.

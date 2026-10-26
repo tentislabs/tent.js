@@ -16,6 +16,7 @@ import { isShown, logCall, logName, statusOf } from './failure.ts'
 import { releaseCounted } from '../gradual/release.ts'
 import { endSpan, insideSpan, openSpan } from '../trace/span.ts'
 import { noteTouched } from '../touched.ts'
+import { factTrace } from '../called.ts'
 import { readsInFill } from '../fill/refused.ts'
 import { agreedOr, madeOnce } from '../flows/leave.ts'
 import { answerMember, memberOf } from '../ai/members.ts'
@@ -215,8 +216,10 @@ function calledHere(o: Opened, name: string, given: unknown, asked: Asked): unkn
  */
 function calledOnce(o: Opened, name: string, given: unknown, asked: Asked): unknown {
   // Under `tent test`, the test that runs touched the definition.
-  if (Object.hasOwn(o.description.functions, name) || Object.hasOwn(o.description.flows, name)) noteTouched(name)
+  if (Object.hasOwn(o.description.functions, name)) noteTouched('functions', name)
+  else if (Object.hasOwn(o.description.flows, name)) noteTouched('flows', name)
   const span = openSpan(o, { name: logName(o, name), kind: 'call', facts: { caller: asked.caller.kind } })
+  if (span) factTrace(span.trace)
   const failed = (error: unknown): never => {
     endSpan(span, error instanceof NotReady ? undefined : error)
     throw error

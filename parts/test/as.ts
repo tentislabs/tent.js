@@ -1,6 +1,7 @@
 import type { Caller, Functions } from '../core/index.ts'
 import { needsUsers, userCaller } from '../core/internal.ts'
 import type { App } from '../engine/index.ts'
+import { toldCall } from './told.ts'
 
 /** Whom a test names as a caller: a caller, the id of a user, or one of the two that have a word. */
 export type TestCaller = Caller | string
@@ -37,10 +38,20 @@ export const as =
     function call<Name extends FunctionName>(fn: Name, input?: unknown): Promise<AnswerOf<Functions[Name]>>
     function call(fn: Fn, input?: unknown): Promise<unknown>
     async function call(fn: Fn, input: unknown = {}): Promise<unknown> {
-      const answered = await app.call(fn, input, { as: await callerOf(app, caller) })
+      // Where the test made the call, while its code is still on the stack: a refusal is made far from it.
+      const madeAt = new Error().stack?.split('\n').slice(1).join('\n') ?? ''
+      const as = await callerOf(app, caller)
+      const done = await app.called(() => app.call(fn, input, { as }))
+      const told = toldCall(typeof fn === 'string' ? fn : fn.definition, as, input, done)
+      // A refusal carries the facts of its call, as fields of its own, beside its code, and the place of the call.
+      if ('error' in done) {
+        const refused = Object.assign(Object(done.error), { trace: done.trace, call: told })
+        if (typeof refused.stack === 'string') refused.stack = `${refused.stack}\n${madeAt}`
+        throw refused
+      }
       // The call answers once the pages that the test opened hold what it wrote.
       await landed()
-      return answered
+      return done.value
     }
     return { call, page: async (path) => app.page(path, { as: await callerOf(app, caller) }) }
   }
