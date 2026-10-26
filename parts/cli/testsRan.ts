@@ -22,11 +22,24 @@ export function testFiles(project: string, ai: boolean, path = 'tests'): string[
     })
 }
 
-/** What the programs of the tests noted of one test: each kind of thing it touched, and what reached outside. */
+/**
+ * What the programs of the tests noted of one test: each kind of thing it touched, what reached outside, what stood
+ * outside the held clock of its app, each word of the environment it read with its value, and each file of the
+ * project its program loaded with its fingerprint as loaded.
+ */
 interface Noted {
   touched: Record<string, string[]>
   outside: string[]
+  unheld: string[]
+  env: Record<string, string | null>
+  loaded: Record<string, string>
 }
+
+/** A record of texts, or of texts and nothing, as a program wrote it. */
+const textsOf = (value: unknown): Record<string, string | null> =>
+  Object.fromEntries(
+    Object.entries(Object(value)).map(([key, one]) => [key, typeof one === 'string' ? one : null] as const),
+  )
 
 /** The texts of a list, and nothing of what is no text. */
 const stringsOf = (value: unknown): string[] => (Array.isArray(value) ? value.map(String) : [])
@@ -42,12 +55,19 @@ function gathered(folder: string): { noted: Map<string, Noted>; whole: Set<strin
   for (const name of readdirSync(folder)) {
     const read: unknown = JSON.parse(readFileSync(join(folder, name), 'utf8'))
     const tests: Record<string, unknown> = Object(Reflect.get(Object(read), 'tests'))
+    // The tests of a program stand on every file of the project it loaded.
+    const loaded = Object.entries(textsOf(Reflect.get(Object(read), 'loaded'))).flatMap(([path, print]) =>
+      print === null ? [] : [[path, print] as const],
+    )
     for (const [test, one] of Object.entries(tests)) {
-      const held = noted.get(test) ?? { touched: {}, outside: [] }
+      const held = noted.get(test) ?? { touched: {}, outside: [], unheld: [], env: {}, loaded: {} }
       const touched: Record<string, unknown> = Object(Reflect.get(Object(one), 'touched'))
       for (const [kind, names] of Object.entries(touched))
         held.touched[kind] = [...new Set([...(held.touched[kind] ?? []), ...stringsOf(names)])].sort()
       held.outside = [...new Set([...held.outside, ...stringsOf(Reflect.get(Object(one), 'outside'))])].sort()
+      held.unheld = [...new Set([...held.unheld, ...stringsOf(Reflect.get(Object(one), 'unheld'))])].sort()
+      Object.assign(held.env, textsOf(Reflect.get(Object(one), 'env')))
+      Object.assign(held.loaded, Object.fromEntries(loaded))
       noted.set(test, held)
       if (Reflect.get(Object(read), 'whole') === true) whole.add(String(JSON.parse(test)[0]))
     }
@@ -177,7 +197,8 @@ export async function testsRan(
     const events = run({
       files: files.map((file) => (isAbsolute(file) ? file : join(folder, file))),
       cwd: folder,
-      execArgv: ['--import', chance, '--import', names, ...(noted ? ['--import', noting] : []), '--import', marks],
+      // The cases made from the declarations note nothing, but hold what would reach outside by the same hook.
+      execArgv: ['--import', chance, '--import', names, ...(o.ai ? [] : ['--import', noting]), '--import', marks],
       ...(o.ai ? { concurrency: 1 } : {}),
       ...(o.only ? { testNamePatterns: o.only.map(exactly) } : {}),
       ...(o.but?.length ? { testSkipPatterns: o.but.map(exactly) } : {}),

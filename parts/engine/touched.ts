@@ -26,6 +26,10 @@ export interface TestNotes {
   touched: Map<TouchedKind, Set<string>>
   // What of it reached outside the program, in a few words each.
   outside: Set<string>
+  // What of it stood outside the held clock of its app, in a few words each.
+  unheld: Set<string>
+  // Each word of the environment it read, with its value as the program began.
+  env: Map<string, string | null>
   // The facts of the last calls it made, the newest last, which a failure of it tells.
   calls: unknown[]
   // The random seed of the test app it opened, which a failure of it prints.
@@ -45,11 +49,15 @@ const kept = new Map<string, TestNotes>()
 // Whether a test app was opened outside the work of any test, by a hook of a file or its top: its tests share it.
 let openedApart = false
 
+// Each file of the project that this program loaded as a module, with its fingerprint as it was loaded: the tests
+// of the program stand on all of them.
+const loaded = new Map<string, string>()
+
 /** The notes of a test in this program, by its name, made at the first ask. */
 export function notesOf(test: string): TestNotes {
   const held = kept.get(test)
   if (held) return held
-  const made: TestNotes = { test, touched: new Map(), outside: new Set(), calls: [] }
+  const made: TestNotes = { test, touched: new Map(), outside: new Set(), unheld: new Set(), env: new Map(), calls: [] }
   kept.set(test, made)
   return made
 }
@@ -74,6 +82,31 @@ export function noteOutside(what: string): void {
   tests.getStore()?.outside.add(what)
 }
 
+/**
+ * Answers what notes that the test whose work is under way now reached outside, to be called where that work is no
+ * longer under way, as when a browser asks: outside a test it does nothing.
+ */
+export function outsideNoter(): (what: string) => void {
+  const notes = tests.getStore()
+  return (what) => notes?.outside.add(what)
+}
+
+/** Notes that the work of the test under way stood outside the held clock of its app, in a few words of what. */
+export function noteUnheld(what: string): void {
+  tests.getStore()?.unheld.add(what)
+}
+
+/** Notes a word of the environment that the work of the test under way read, with its value as the program began. */
+export function noteWord(word: string, value: string | null): void {
+  const notes = tests.getStore()
+  if (notes && !notes.env.has(word)) notes.env.set(word, value)
+}
+
+/** Notes a file of the project that this program loaded as a module, by its path and its fingerprint as loaded. */
+export function noteLoaded(path: string, print: string): void {
+  if (!loaded.has(path)) loaded.set(path, print)
+}
+
 /** Keeps the facts of a call that the test under way made, as its newest: the last twenty are kept. */
 export function noteCalled(facts: unknown): void {
   const notes = tests.getStore()
@@ -95,19 +128,25 @@ export function noteOpened(): void {
 
 /**
  * Takes a folder and a name. Writes the notes of every test of this program into `<name>.json` there: each test by
- * its name, with each kind it touched as a sorted list and what reached outside, and whether a test app was opened
- * outside the work of any test. A thread writes a file of its own, so no two write one file.
+ * its name, with each kind it touched as a sorted list, what reached outside, what stood outside its held clock and
+ * the words of the environment it read; whether a test app was opened outside the work of any test; and each file of
+ * the project the program loaded, with its fingerprint. A thread writes a file of its own, so no two write one file.
  */
 export function writeNotes(folder: string, name: string): void {
-  const tested: Record<string, { touched: Record<string, string[]>; outside: string[] }> = {}
+  const tested: Record<
+    string,
+    { touched: Record<string, string[]>; outside: string[]; unheld: string[]; env: Record<string, string | null> }
+  > = {}
   for (const notes of kept.values())
     tested[notes.test] = {
       touched: Object.fromEntries([...notes.touched].map(([kind, names]) => [kind, [...names].sort()])),
       outside: [...notes.outside].sort(),
+      unheld: [...notes.unheld].sort(),
+      env: Object.fromEntries([...notes.env].sort(([a], [b]) => (a < b ? -1 : 1))),
     }
   mkdirSync(folder, { recursive: true })
   writeFileSync(
     join(folder, `${name}.json`),
-    JSON.stringify({ tests: tested, ...(openedApart ? { whole: true } : {}) }),
+    JSON.stringify({ tests: tested, loaded: Object.fromEntries(loaded), ...(openedApart ? { whole: true } : {}) }),
   )
 }

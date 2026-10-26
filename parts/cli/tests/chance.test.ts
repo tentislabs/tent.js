@@ -21,10 +21,15 @@ const failuresOf = (value: unknown): { test: string; got?: unknown; randomSeed?:
 
 test('[53-17] in a test, random(), token(), step.random(), a row id and Math.random() called by the app own code give the same values on two runs of the same test with the same random seed, and other values with another', (t) => {
   const project = chancedCopy(t, 'chance-17')
-  // The test compares three test apps, two of one seed and one of another, in the room of the program and in the test room.
+  // The test compares three test apps, two of one seed and one of another, in the room of the program and in the test
+  // room; and what one seed drew is held against what it draws in a run of another program.
   for (const room of ['program', 'apart']) {
-    const ran = tested(project, 'tests/seeded.test.ts', '--room', room, '--all')
-    assert.equal(ran.ended, 0, `${room}: ${ran.printed}`)
+    const drawn = [1, 2].map(() => {
+      const ran = tested(project, 'tests/seeded.test.ts', '--room', room, '--all')
+      assert.equal(ran.ended, 0, `${room}: ${ran.printed}`)
+      return JSON.parse(readFileSync(join(project, 'drawn.json'), 'utf8'))
+    })
+    assert.deepEqual(drawn[1], drawn[0], room)
   }
 })
 
@@ -39,6 +44,16 @@ test('[53-18] with clock held the app clock stands until moved; Date.now() in th
   writeFileSync(file, readFileSync(file, 'utf8').replace("{ title: 'Chanced' }", "{ title: 'Chanced', hold: true }"))
   const held = tested(project, 'tests/held.test.ts', '--all')
   assert.equal(held.ended, 0, `held: ${held.printed}`)
+})
+
+test('[53-18] a test on a held clock that opened a page is named as reaching outside the held clock', (t) => {
+  const project = chancedCopy(t, 'chance-18-page')
+  const ran = tested(project, 'tests/paged.test.ts', '--all')
+  assert.equal(ran.ended, 0, ran.printed)
+  assert.match(
+    ran.printed,
+    /^reached outside the held clock tests\/paged\.test\.ts: a page opened on a held clock: the browser's own timing$/m,
+  )
 })
 
 test('[53-19] a failing test prints its random seed, and a run with that seed fails the same way', (t) => {

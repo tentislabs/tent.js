@@ -1,4 +1,5 @@
 import type { Runtime } from '../../../core/internal.ts'
+import { standChance } from '../../../core/internal.ts'
 import type { Carry } from './runtime.ts'
 
 /**
@@ -9,20 +10,16 @@ import type { Carry } from './runtime.ts'
  */
 export function chanceIn(carry: Carry, runtime: Runtime): void {
   const OwnDate = globalThis.Date
-  const ownRandom = Math.random
   const drawn = (word: 'now' | 'random'): unknown =>
     carry.current() === undefined ? undefined : runtime.draw(word, [])?.value
-  const now = (): number => {
-    const at = drawn('now')
-    return at instanceof OwnDate ? at.getTime() : typeof at === 'number' ? at : OwnDate.now()
-  }
-  globalThis.Date = new Proxy(OwnDate, {
-    construct: (made, given, target) => Reflect.construct(made, given.length ? given : [now()], target),
-    apply: () => new OwnDate(now()).toString(),
-    get: (made, key, receiver) => (key === 'now' ? now : Reflect.get(made, key, receiver)),
-  })
-  Math.random = () => {
-    const number = drawn('random')
-    return typeof number === 'number' ? number : ownRandom()
-  }
+  standChance(
+    () => {
+      const at = drawn('now')
+      return at instanceof OwnDate ? at.getTime() : typeof at === 'number' ? at : undefined
+    },
+    () => {
+      const number = drawn('random')
+      return typeof number === 'number' ? number : undefined
+    },
+  )
 }

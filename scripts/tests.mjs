@@ -58,7 +58,9 @@ const print = (bytes) => createHash('sha256').update(bytes).digest('hex')
 function printOf(path) {
   const lies = join(folder, path)
   if (!existsSync(lies)) return 'none'
-  return statSync(lies).isDirectory() ? print(readdirSync(lies).sort().join('\n')) : print(readFileSync(lies))
+  const kind = statSync(lies)
+  if (kind.isDirectory()) return print(readdirSync(lies).sort().join('\n'))
+  return kind.isFile() ? print(readFileSync(lies)) : 'none'
 }
 /** What every result of the tree stands on beside the files a test touched: the runtime, the system, and settings. */
 const ground = [
@@ -70,8 +72,26 @@ const ground = [
     (path) => `${path} ${print(readFileSync(join(root, path)))}`,
   ),
 ].join('\n')
-/** The key of a test file: what the run stands on, and each file and folder its programs touched, as they stand. */
-const keyOf = (touched) => print([ground, ...touched.map((path) => `${path} ${printOf(path)}`)].join('\n'))
+// What the runner and each test program are handed of the environment, which a word a test read is held to.
+const handed = { ...env, TENT_RUN: night ? 'night' : 'day', TENT_TOUCHED_TREE: folder }
+/**
+ * The key of a test file: what the run stands on, each file and folder its programs touched with its fingerprint,
+ * and each word of the environment its program read with its value.
+ */
+const keyOf = (prints, words) =>
+  print(
+    [
+      ground,
+      ...Object.entries(prints).map(([path, one]) => `${path} ${one}`),
+      ...Object.entries(words).map(([word, value]) => `env ${word} ${JSON.stringify(value)}`),
+    ].join('\n'),
+  )
+/** The key of a kept file by the files and the words it stood on, as they stand now. */
+const keyNow = (record) =>
+  keyOf(
+    Object.fromEntries(record.touched.map((path) => [path, printOf(path)])),
+    Object.fromEntries(Object.keys(record.env ?? {}).map((word) => [word, handed[word] ?? null])),
+  )
 
 // A file whose tests passed and whose key is what it was is replayed: but a night test, a measure and a file whose
 // rigs wrote what the run gathers, which always run.
@@ -81,7 +101,7 @@ const replayed = new Set(
     : Object.entries(kept)
         .filter(
           ([file, record]) =>
-            !record.failed && !record.rigs && !measures.includes(file) && record.key === keyOf(record.touched),
+            !record.failed && !record.rigs && !measures.includes(file) && record.key === keyNow(record),
         )
         .map(([file]) => file),
 )
@@ -130,7 +150,7 @@ function runOf(set, more, shared) {
       '--test-reporter-destination=stdout',
       ...set,
     ],
-    { cwd: folder, stdio: 'inherit', env: { ...env, TENT_RUN: night ? 'night' : 'day', TENT_TOUCHED_TREE: folder } },
+    { cwd: folder, stdio: 'inherit', env: handed },
   )
   if (ended.error) throw ended.error
   return ended.status ?? 1
@@ -139,17 +159,28 @@ function runOf(set, more, shared) {
 /** What each test file the run carried out stood as, with the ids of its tests, as the reporter wrote it. */
 const filesRan = () => (existsSync(join(results, 'files.json')) ? readJson(join(results, 'files.json')) : {})
 
-/** What each test file's programs touched, every program of one file taken together, and the files whose rigs wrote. */
+/**
+ * What each test file's programs touched, every program of one file taken together: each path with its fingerprint
+ * as a program first read it, the words of the environment it read, whether its rigs wrote, and whether a path it
+ * read changed while it ran, as two programs saw it otherwise or as it stands now.
+ */
 function touchedOf() {
   const noted = join(results, 'touched')
   const touched = {}
-  const rigs = new Set()
   for (const name of existsSync(noted) ? readdirSync(noted) : []) {
     const read = readJson(join(noted, name))
-    touched[read.of] = [...new Set([...(touched[read.of] ?? []), ...read.files])].sort()
-    if (read.rigs) rigs.add(read.of)
+    const held = touched[read.of] ?? { prints: {}, env: {}, rigs: false, changed: false }
+    for (const [path, one] of Object.entries(read.files)) {
+      if (held.prints[path] !== undefined && held.prints[path] !== one) held.changed = true
+      held.prints[path] = one
+    }
+    Object.assign(held.env, read.env)
+    held.rigs ||= read.rigs
+    touched[read.of] = held
   }
-  return { touched, rigs }
+  for (const held of Object.values(touched))
+    held.changed ||= Object.entries(held.prints).some(([path, one]) => printOf(path) !== one)
+  return touched
 }
 
 // The runner given no file runs every file it finds by its own patterns, so a set with none is not run.
@@ -201,16 +232,23 @@ if (existsSync(shares) && readdirSync(shares).length) {
 // The record of the light run: each file that ran, with what it touched, its key and how it stood, and each replayed
 // file as it was kept. A file that is no test file of the tree any more is gone.
 if (!night) {
-  const { touched, rigs } = touchedOf()
+  const touched = touchedOf()
   const record = {}
-  for (const [file, stood] of Object.entries(ran))
+  for (const [file, stood] of Object.entries(ran)) {
+    const held = touched[file] ?? { prints: {}, env: {}, rigs: false, changed: false }
+    // A file whose test read a path that changed while it ran keeps no record: the run did not test what stands.
+    if (held.changed) continue
+    const prints = Object.fromEntries(Object.entries(held.prints).sort(([a], [b]) => (a < b ? -1 : 1)))
+    const words = Object.fromEntries(Object.entries(held.env).sort(([a], [b]) => (a < b ? -1 : 1)))
     record[file] = {
-      key: keyOf(touched[file] ?? []),
-      touched: touched[file] ?? [],
+      key: keyOf(prints, words),
+      touched: Object.keys(prints),
+      env: words,
       ids: stood.ids,
       failed: stood.failed,
-      ...(rigs.has(file) ? { rigs: true } : {}),
+      ...(held.rigs ? { rigs: true } : {}),
     }
+  }
   for (const file of replayed) record[file] = kept[file]
   mkdirSync(keptFolder, { recursive: true })
   for (const name of readdirSync(keptFolder)) rmSync(join(keptFolder, name))

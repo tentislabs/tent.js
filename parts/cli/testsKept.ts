@@ -14,6 +14,9 @@ interface KeptRun {
   // What the result stands on: what it touched, as the project gave it when the test ran.
   key: string
   touched: Record<string, string[]>
+  // The files of the project its program loaded, and the words of the environment it read with their values.
+  files?: string[]
+  env?: Record<string, string | null>
   outside?: string[]
   // The test shares an app with the tests of its file, opened outside the work of any of them.
   whole?: true
@@ -136,13 +139,26 @@ function bytesPrint(folder: string, path: string): string {
   return existsSync(lies) ? fingerprintOf(readFileSync(lies)) : 'none'
 }
 
+/** What a test stood on beside what it touched: each file its program loaded and each word it read, with its value. */
+interface StoodOn {
+  loaded: Record<string, string>
+  env: Record<string, string | null>
+}
+
 /**
- * Takes the folder of a project, what the keys of its tests are made from, a test file and what one of its tests
- * touched. Answers the key of that test: the fingerprint of each definition it touched and of each that reacts to it,
- * of its test file with what it reaches, of the files every test stands on, the messages and assets, the packages,
- * the framework, the runtime, the system and the room, the engines of the browsers it drove and the pictures it held.
+ * Takes the folder of a project, what the keys of its tests are made from, a test file, what one of its tests
+ * touched and what else it stood on. Answers the key of that test: the fingerprint of each definition it touched and
+ * of each that reacts to it, of its test file with what it reaches and of each file its program loaded, of the files
+ * every test stands on, the messages and assets, the packages, the framework, the runtime, the system and the room,
+ * each word of the environment it read with its value, the engines of the browsers it drove and the pictures it held.
  */
-function keyOf(folder: string, ground: Ground, file: string, touched: Record<string, string[]>): string {
+function keyOf(
+  folder: string,
+  ground: Ground,
+  file: string,
+  touched: Record<string, string[]>,
+  stood: StoodOn,
+): string {
   const { prints } = ground
   const { description } = prints
   const named = [
@@ -160,11 +176,19 @@ function keyOf(folder: string, ground: Ground, file: string, touched: Record<str
     `messages ${JSON.stringify(description.messages)}`,
     `assets ${JSON.stringify(description.assets)}`,
     ...named.sort().map((name) => `definition ${name} ${prints.definitions[name] ?? 'none'}`),
+    ...Object.entries(stood.loaded).map(([path, print]) => `loaded ${path} ${print}`),
+    ...Object.entries(stood.env).map(([word, value]) => `env ${word} ${JSON.stringify(value)}`),
     `browsers ${(touched.browsers ?? []).join(' ')}`,
     ...(touched.pictures ?? []).map((path) => `picture ${path} ${bytesPrint(folder, path)}`),
   ]
   return fingerprintOf(new TextEncoder().encode(lines.join('\n')))
 }
+
+/** What a kept run stood on beside what it touched, as it stands now: each file by its bytes, each word by its value. */
+const stoodNow = (folder: string, run: KeptRun): StoodOn => ({
+  loaded: Object.fromEntries((run.files ?? []).map((path) => [path, bytesPrint(folder, path)])),
+  env: Object.fromEntries(Object.keys(run.env ?? {}).map((word) => [word, process.env[word] ?? null])),
+})
 
 /**
  * Takes the folder of a project, its record, what the keys are made from, and the test files a run covers. Answers
@@ -182,7 +206,7 @@ export function replaysOf(folder: string, kept: Kept, ground: Ground, files: str
             run.result === 'passed' &&
             !run.outside?.length &&
             run.whole !== true &&
-            run.key === keyOf(folder, ground, file, run.touched),
+            run.key === keyOf(folder, ground, file, run.touched, stoodNow(folder, run)),
         ),
       )
       .map(([name]) => name)
@@ -221,12 +245,17 @@ export function keepRan(
   const fresh = new Map<string, KeptRun[]>()
   for (const ended of o.ran.ended) {
     const noted = o.ran.noted.get(JSON.stringify([ended.file, ended.name, ended.nth]))
-    const touched = Object.fromEntries(Object.entries(noted?.touched ?? {}).sort(([a], [b]) => (a < b ? -1 : 1)))
+    const byName = ([a]: [string, unknown], [b]: [string, unknown]): number => (a < b ? -1 : 1)
+    const touched = Object.fromEntries(Object.entries(noted?.touched ?? {}).sort(byName))
+    const loaded = Object.fromEntries(Object.entries(noted?.loaded ?? {}).sort(byName))
+    const env = Object.fromEntries(Object.entries(noted?.env ?? {}).sort(byName))
     const run: KeptRun = {
       result: ended.passed ? 'passed' : 'failed',
       ms: Math.round(ended.ms),
-      key: keyOf(folder, o.ground, ended.file, touched),
+      key: keyOf(folder, o.ground, ended.file, touched, { loaded, env }),
       touched,
+      ...(Object.keys(loaded).length ? { files: Object.keys(loaded) } : {}),
+      ...(Object.keys(env).length ? { env } : {}),
       ...(noted?.outside.length ? { outside: noted.outside } : {}),
       ...(o.ran.whole.has(ended.file) ? { whole: true as const } : {}),
     }

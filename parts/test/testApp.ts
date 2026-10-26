@@ -7,7 +7,7 @@ import { buildProject } from '../build/index.ts'
 import type { Caller } from '../core/index.ts'
 import { TentError } from '../core/index.ts'
 import type { App, Unsent } from '../engine/index.ts'
-import { noteOpened } from '../engine/index.ts'
+import { noteOpened, noteUnheld } from '../engine/index.ts'
 import { keysOfProject, testSecrets } from './secrets.ts'
 import type { Asked, TestCaller } from './as.ts'
 import { as } from './as.ts'
@@ -207,6 +207,7 @@ function faceOf(
     for (const page of [...pages.open]) await closePage(page).catch(() => undefined)
   }
   world.pageEnds.push(closePages)
+  const open = opener(app, pages)
   const face: App & { readonly mailbox: Unsent[] } = {
     // The mail of the test app, as the engines of its machines keep it.
     get mailbox() {
@@ -300,7 +301,11 @@ function faceOf(
     grant: grant(app),
     as: as(face, () => pagesLanded(pages.open)),
     browser: browser(face, app),
-    open: opener(app, pages),
+    // A page runs on the browser's own timing, which no held clock reaches: a test that opens one is told so.
+    open: (target: string | Alone, o?: OpenOptions) => {
+      if (options.clock === 'held') noteUnheld("the browser's own timing")
+      return open(target, o)
+    },
     rows: rows(face),
     ...marks(face, join(world.home, `marks-${machine.address.replace(/\W+/g, '-')}`)),
     clock: moves,

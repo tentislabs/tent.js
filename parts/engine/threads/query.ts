@@ -21,6 +21,7 @@ import { threadMs } from '../counts/cpu.ts'
 import { countsGoTo, gather, writeCounts } from '../counts/gather.ts'
 import { crossed } from '../rooms/crossing.ts'
 import { notesOf, underTest, writeNotes } from '../touched.ts'
+import { noteWordsRead } from '../envRead.ts'
 
 // The program of one query thread. It holds a store of its own, opened to read alone, and carries out one query at
 // a time, through every step of the door from 5 to 10. What it writes into the log crosses to the main thread.
@@ -31,6 +32,9 @@ const isStart = (given: unknown): given is Start =>
 const start: unknown = workerData
 const port = parentPort
 if (!port || !isStart(start)) throw new TentError('T0009', 'A query thread was started with nothing to work on.')
+
+// Under `tent test` a query of a test notes the words of the environment its code reads, as the program does.
+if (process.env.TENT_TOUCHED) noteWordsRead()
 
 const tell = (told: ThreadTold): void => port.postMessage(told)
 const noWeb = (): never => {

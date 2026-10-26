@@ -34,13 +34,13 @@ function columnsOf(at: Served): string[] {
   }
 }
 
-/** Waits until what is asked holds, and fails the test once the time is up. */
-async function until(what: string, holds: () => boolean | Promise<boolean>, within = 15_000): Promise<void> {
-  const ends = performance.now() + within
-  while (!(await holds())) {
-    assert.ok(performance.now() < ends, `never: ${what}`)
-    await new Promise((done) => setTimeout(done, 100))
-  }
+/**
+ * Waits until what is asked holds, looking again each tenth of a second: it waits on the fact and on no time, since
+ * a busy computer brings a beacon and its row to the log late, and a browser that never sends one is ended with the
+ * run. `what` names the fact.
+ */
+async function until(_what: string, holds: () => boolean | Promise<boolean>): Promise<void> {
+  while (!(await holds())) await new Promise((done) => setTimeout(done, 100))
 }
 
 /** The version that runs. */

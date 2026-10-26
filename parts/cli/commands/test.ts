@@ -291,6 +291,11 @@ async function recorded(
       const outside = ran.noted.get(JSON.stringify([one.file, one.name, one.nth]))?.outside ?? []
       return outside.length ? [`reached outside ${one.test}: ${outside.join(', ')}`] : []
     }),
+    // A test whose app's clock was held, and that reached what runs on a time of its own.
+    ...ran.ended.flatMap((one) => {
+      const unheld = ran.noted.get(JSON.stringify([one.file, one.name, one.nth]))?.unheld ?? []
+      return unheld.length ? [`reached outside the held clock ${one.test}: ${unheld.join(', ')}`] : []
+    }),
     `${passed} passed, ${findings.length} failed, ${replayed.length} replayed`,
   ]
   return { value: withText(value, lines.join('\n')), findings }

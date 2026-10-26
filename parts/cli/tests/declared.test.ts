@@ -85,6 +85,22 @@ test('[53-11] tent test --declared on a project with a function of each rule kin
   assert.equal(tested(project, '--declared').ended, 0)
 })
 
+test('[53-11] a table that names a tenant is read, changed and removed in the tenant of its row and in another, and an agent offered to a caller gets the cases of a flow', (t) => {
+  const project = declaredCopy(t, 'declared-11-tenants', 'declaredTenants')
+  const ran = tested(project, '--declared')
+  assert.equal(ran.ended, 0, ran.printed)
+  const access = accessOf(project)
+  for (const what of ['read', 'change', 'remove'])
+    assert.equal(access[`teamNotes - ${what}: as the system, in the tenant of the row`], 'taken', what)
+  // In another tenant the row is not there: a read of it finds nothing, and a change or a removal of it is refused.
+  assert.equal(access['teamNotes - read: as the system, in another tenant'], 'found nothing')
+  for (const what of ['change', 'remove'])
+    assert.equal(access[`teamNotes - ${what}: as the system, in another tenant`], 'refused T2103', what)
+  // Who may start the agent is held as who may call a function.
+  assert.equal(access['helper - access: as nobody'], 'refused T0006', JSON.stringify(access, null, 1))
+  assert.ok(access['helper - access: as a user with no role'] !== undefined, JSON.stringify(access, null, 1))
+})
+
 test('[53-12] the edges of an input whose code throws at its max fail as internal, with the smallest failing input printed; an edge the code takes passes', (t) => {
   const project = declaredCopy(t, 'declared-12', 'declaredEdges')
   const ran = tested(project, '--declared', '--json')
@@ -137,11 +153,108 @@ test('[53-14] [16-2@12] no generated case reaches outside: a service, a model, a
   )
 })
 
+// The cases of the project `declared`, in their order, as every computer makes them: the three systems hold their
+// run to this one list.
+const declaredLines = [
+  'addOrder - access: signedIn: as nobody, refused T0006 (needs a signed-in caller)',
+  'addOrder - access: signedIn: as a user with no role, taken',
+  'addOrder - access: signedIn: as a user of the role staff, taken',
+  'addOrder - access: signedIn: as the system, taken',
+  "addOrder.title - text({ min: 1, max: 40 }): 'a', taken",
+  "addOrder.title - text({ min: 1, max: 40 }): 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', taken",
+  'addOrder.total - number({ min: 0, max: 1000 }): 0, taken',
+  'addOrder.total - number({ min: 0, max: 1000 }): 1000, taken',
+  'addOrder - form on /ordering: empty, not sent',
+  'addOrder - form on /ordering: sample, taken',
+  "addOrder - form on /ordering: title 'a' (an edge), taken",
+  "addOrder - form on /ordering: title 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' (an edge), taken",
+  'addOrder - form on /ordering: total 0 (an edge), taken',
+  'addOrder - form on /ordering: total 1000 (an edge), taken',
+  'feed - access: signedIn: as nobody, refused T0006 (needs a signed-in caller)',
+  'feed - access: signedIn: as a user with no role, taken',
+  'feed - access: signedIn: as a user of the role staff, taken',
+  "greet - access: role('staff'): as a user with no role, refused T3101 (needs role 'staff')",
+  "greet - access: role('staff'): as a user of the role staff, taken",
+  "greet - access: role('staff'): as the system, taken",
+  'hidden - access: nobody: as nobody, refused T0006 (lets nobody in)',
+  'hidden - access: nobody: as a user with no role, refused T3101 (lets nobody in)',
+  'hidden - access: nobody: as a user of the role staff, refused T3101 (lets nobody in)',
+  'hidden - access: nobody: as the system, taken',
+  'listOrders - access: signedIn: as nobody, refused T0006 (needs a signed-in caller)',
+  'listOrders - access: signedIn: as a user with no role, taken',
+  'listOrders - access: signedIn: as a user of the role staff, taken',
+  'listOrders - access: signedIn: as the system, taken',
+  'openNow - access: anyone: as nobody, taken',
+  'openNow - access: anyone: as a user with no role, taken',
+  'openNow - access: anyone: as a user of the role staff, taken',
+  'openNow - access: anyone: as the system, taken',
+  'orders - read: owner: as nobody, taken',
+  'orders - read: owner: as a user with no role, taken',
+  'orders - read: owner: as a user of the role staff, taken',
+  'orders - read: owner: as the system, taken',
+  'orders - read: owner: as the owner, taken',
+  'orders - read: owner: as another user, found nothing',
+  'orders - add: signedIn: as nobody, refused T3101 (needs a signed-in caller)',
+  'orders - add: signedIn: as a user with no role, taken',
+  'orders - add: signedIn: as a user of the role staff, taken',
+  'orders - add: signedIn: as the system, taken',
+  "orders - change: role('staff'): as nobody, refused T2103 (needs role 'staff')",
+  "orders - change: role('staff'): as a user with no role, refused T2103 (needs role 'staff')",
+  "orders - change: role('staff'): as a user of the role staff, taken",
+  "orders - change: role('staff'): as the system, taken",
+  "orders - change: role('staff'): as the owner, refused T3101 (needs role 'staff')",
+  "orders - change: role('staff'): as another user, refused T2103 (needs role 'staff')",
+  'orders - remove: no rule: as nobody, refused T2103',
+  'orders - remove: no rule: as a user with no role, refused T2103',
+  'orders - remove: no rule: as a user of the role staff, refused T2103',
+  'orders - remove: no rule: as the system, taken',
+  'orders - remove: no rule: as the owner, refused T3101',
+  'orders - remove: no rule: as another user, refused T2103',
+  'pick - access: signedIn: as nobody, refused T0006 (needs a signed-in caller)',
+  'pick - access: signedIn: as a user with no role, taken',
+  'pick - access: signedIn: as a user of the role staff, taken',
+  'pick - access: signedIn: as the system, taken',
+  "pick.note - text({ optional: true }): '', taken",
+  'pick.note - text({ optional: true }): left out, taken',
+  "pick.size - choice('small', 'large'): 'small', taken",
+  "pick.size - choice('small', 'large'): 'large', taken",
+  'pick - form on /ordering: empty, not sent',
+  'pick - form on /ordering: sample, taken',
+  "pick - form on /ordering: note '' (an edge), taken",
+  "pick - form on /ordering: size 'small' (an edge), taken",
+  "pick - form on /ordering: size 'large' (an edge), taken",
+  "refundOrder - access: role('staff'): as nobody, refused T0006 (needs role 'staff')",
+  "refundOrder - access: role('staff'): as a user with no role, refused T3101 (needs role 'staff')",
+  "refundOrder - access: role('staff'): as a user of the role staff, taken",
+  "refundOrder - access: role('staff'): as the system, taken",
+  "refundOrder.order - link('orders'): a row of orders that exists, taken",
+  'staffDesk - access: a rule written as code: as nobody, refused T0006',
+  'staffDesk - access: a rule written as code: as a user with no role, refused T3101',
+  'staffDesk - access: a rule written as code: as a user of the role staff, taken',
+  'staffDesk - access: a rule written as code: as the system, taken',
+  'users - read: signedIn: as nobody, taken',
+  'users - read: signedIn: as a user with no role, taken',
+  'users - read: signedIn: as a user of the role staff, taken',
+  'users - read: signedIn: as the system, taken',
+  'users - add: no rule: as nobody, refused T3101',
+  'users - add: no rule: as a user with no role, refused T3101',
+  'users - add: no rule: as a user of the role staff, refused T3101',
+  'users - add: no rule: as the system, taken',
+  'users - change: no rule: as nobody, refused T2103',
+  'users - change: no rule: as a user with no role, refused T3101',
+  'users - change: no rule: as a user of the role staff, refused T3101',
+  'users - change: no rule: as the system, taken',
+  'users - remove: no rule: as nobody, refused T2103',
+  'users - remove: no rule: as a user with no role, refused T3101',
+  'users - remove: no rule: as a user of the role staff, refused T3101',
+  'users - remove: no rule: as the system, taken',
+]
+
 test('[53-15] the same description gives the same cases in the same order, the order of the names of the definitions', (t) => {
   const project = declaredCopy(t, 'declared-15')
   const [first, second] = [tested(project, '--declared'), tested(project, '--declared')]
   const [one, two] = [casesOf(first.printed), casesOf(second.printed)].map((cases) => cases.map((it) => it.line))
-  assert.ok(one.length > 20, first.printed)
+  assert.deepEqual(one, declaredLines, first.printed)
   assert.deepEqual(two, one, second.printed)
   const names = one.map((line) => line.split(/[ .]/)[0])
   assert.deepEqual(

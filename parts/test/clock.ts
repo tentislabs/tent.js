@@ -1,5 +1,6 @@
 import { later, TentError } from '../core/index.ts'
 import type { Clock } from '../core/internal.ts'
+import { systemNow } from '../core/internal.ts'
 
 /** The clock of a test app, as a test holds it. */
 export interface TestClock {
@@ -19,7 +20,7 @@ export interface TestClock {
 
 // The time of the system, read where no swap of `Date` reaches: a query swaps it for one that fails, and under
 // `tent test` the code of a call reads the clock of its app through it, this clock among them.
-const realNow = (): number => Math.floor(performance.timeOrigin + performance.now())
+const realNow = systemNow
 
 // How far each clock of a test stands ahead of the time of the system, in milliseconds, which the pages of a test follow.
 const aheads = new WeakMap<TestClock, () => number>()

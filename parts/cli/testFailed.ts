@@ -75,8 +75,11 @@ export function failureWords(failure: Failure): string {
     const where: Record<string, unknown> = Object(error.where)
     if (typeof where.file === 'string')
       lines.push(`  ${String(where.definition ?? String(call.name))} at ${where.file}:${String(where.line)}`)
-    for (const read of Array.isArray(call.read) ? call.read.filter(isStored) : [])
-      lines.push(`  read ${String(read.table)}: ${Array.isArray(read.rows) ? read.rows.length : 0} rows`)
+    // Each row it read, as the facts of the call keep them: fifty of a table at most.
+    for (const read of Array.isArray(call.read) ? call.read.filter(isStored) : []) {
+      const rows: unknown[] = Array.isArray(read.rows) ? read.rows : []
+      lines.push(`  read ${String(read.table)}: ${rows.length} rows`, ...rows.map((row) => `    ${shown(row)}`))
+    }
     for (const row of Array.isArray(call.wrote) ? call.wrote.filter(isStored) : [])
       lines.push(
         `  ${String(row.kind)} ${String(row.table)} ${String(row.id)}: ${shown(row.before ?? null)} -> ${shown(row.after ?? null)}`,

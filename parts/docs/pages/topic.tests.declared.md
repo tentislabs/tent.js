@@ -4,7 +4,7 @@
 
 ## Who gets what
 
-Each function, each offered flow, and each table read, added to, changed and removed, is called with a sample input as every kind of caller: nobody, a user with no role, a user of each role that a rule of the project names, the system, and a key and a grant where the definition is offered to the API or to MCP. A table that names an owner is held to its owner and to another user too. What each gets - taken, or refused with which code - forms one table, kept in `tests/declared/access.json`:
+Each function, each offered flow, each agent that states `access`, and each table read, added to, changed and removed, is called with a sample input as every kind of caller: nobody, a user with no role, a user of each role that a rule of the project names, the system, and a key and a grant where the definition is offered to the API or to MCP. A table that names an owner is held to its owner and to another user too, and one that names a tenant is read, changed and removed by the system in the tenant of its row and in another: a read of one row that the caller does not reach finds nothing. What each gets - taken, or refused with which code - forms one table, kept in `tests/declared/access.json`:
 
 ```json
 {
@@ -32,7 +32,7 @@ Each form of each screen whose address names no value is sent from a page of the
 
 ## Nothing reaches outside
 
-Every service and every model is stood in by one that refuses with `code.T7132`, every plain `fetch` is held, mail goes to the mailbox, and a run that asks a person is answered no. The runs are settled after each case, and each case starts from one mark of the data.
+Every service and every model is stood in by one that refuses with `code.T7132`, and so is every plain `fetch`, every request of a page to another host, and every connection of the app's code through `node:http`, `node:https` or `node:net`. A Python program, which the engine cannot hold, is named in the line of its case as reaching outside. Mail goes to the mailbox, and a run that asks a person is answered no. The runs are settled after each case, and each case starts from one mark of the data.
 
 ## One order, one sample
 

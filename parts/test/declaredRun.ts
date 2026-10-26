@@ -4,7 +4,9 @@ import test from 'node:test'
 import type { Caller } from '../core/index.ts'
 import { TentError } from '../core/index.ts'
 import { codes, isStored } from '../core/internal.ts'
+import { heldRefusal, holdOutside, notesOf, underTest } from '../engine/index.ts'
 import type { AccessCase, CaseCaller, EdgeCase, FormCase } from './declared.ts'
+import type { Mark } from './marks.ts'
 import { declaredCases, refusalWords, rolesOf, ruleWords, typeWords, valueWords } from './declared.ts'
 import { closePage, sendForm } from './page.ts'
 import { sampleOf } from './sample.ts'
@@ -23,11 +25,6 @@ interface Ran {
 /** What came of a call: taken, or refused with a code, with the error where it was refused. */
 type Outcome = { said: string; error?: unknown }
 
-const refusal = (what: string): TentError =>
-  new TentError('T7132', `${what} was called in a case made from the declarations, which reaches nothing outside.`, {
-    fix: 'A test of what the definition does with a real answer is written by hand, with `app.fake`.',
-  })
-
 /** Whether a refusal is a failure of a case: an internal error, or an engine code at status 500 or past it. */
 function internal(error: unknown): boolean {
   const code = String(Reflect.get(Object(error), 'code') ?? 'T0009')
@@ -36,11 +33,12 @@ function internal(error: unknown): boolean {
   return code === 'T0009' || (typeof status === 'number' && status >= 500)
 }
 
-/** What came of a piece of work: taken, or refused with the code of its error. */
-async function outcomeOf(work: () => Promise<unknown>): Promise<Outcome> {
+/** What came of a piece of work: taken, or found nothing where a read answered no row, or refused with the code of its error. */
+async function outcomeOf(work: () => Promise<unknown>, read = false): Promise<Outcome> {
   try {
-    await work()
-    return { said: 'taken' }
+    const got = await work()
+    const none = got === null || got === undefined || (Array.isArray(got) && got.length === 0)
+    return { said: read && none ? 'found nothing' : 'taken' }
   } catch (error) {
     const code = String(Reflect.get(Object(error), 'code') ?? 'T0009')
     return { said: internal(error) ? `internal ${code}` : `refused ${code}`, error }
@@ -58,7 +56,7 @@ function standInAll(app: TestApp): void {
           get: (_, call) =>
             call === 'then' || typeof call === 'symbol'
               ? undefined
-              : () => Promise.reject(refusal(`The service ${name}, as ${String(call)},`)),
+              : () => Promise.reject(heldRefusal(`The service ${name}, as ${String(call)},`)),
         },
       ),
     )
@@ -66,11 +64,11 @@ function standInAll(app: TestApp): void {
     app.standIn(name, {
       async *reply() {
         yield* []
-        throw refusal(`The model ${name}`)
+        throw heldRefusal(`The model ${name}`)
       },
-      call: async () => Promise.reject(refusal(`The model ${name}`)),
+      call: async () => Promise.reject(heldRefusal(`The model ${name}`)),
     })
-  app.standIn('fetch', { fetch: async () => Promise.reject(refusal('A plain `fetch`')) })
+  app.standIn('fetch', { fetch: async () => Promise.reject(heldRefusal('A plain `fetch`')) })
 }
 
 /** The values of a new row of `users`: a sample of each column it needs, and the roles. */
@@ -157,18 +155,18 @@ async function commandRan(app: TestApp, name: string, as: Caller): Promise<void>
 }
 
 /** What came of one case of access, as the line of the table names it and as it ran. */
-async function accessRun(app: TestApp, one: AccessCase): Promise<{ key: string; said: string; asked: boolean }> {
+async function accessRun(app: TestApp, one: AccessCase): Promise<{ key: string; said: string }> {
   const description = app.description
   const key = `${one.definition} - ${one.what}: as ${one.caller.words}`
   // A caller that the app cannot make, with no table of users, has no case.
   if (!Object.hasOwn(description.tables, 'users') && !['nobody', 'system'].includes(one.caller.kind))
-    return { key, said: 'no users', asked: false }
+    return { key, said: 'no users' }
   if (one.of === 'route' || one.of === 'command') {
     const as = await callerFor(app, one.caller)
     const { said } = await outcomeOf(() =>
       one.of === 'route' ? routeAsked(app, one.definition, as) : commandRan(app, one.definition, as),
     )
-    return { key, said, asked: await answeredNo(app) }
+    return { key, said }
   }
   if (one.of === 'call') {
     const record: unknown = Object.hasOwn(description.functions, one.definition)
@@ -177,7 +175,7 @@ async function accessRun(app: TestApp, one: AccessCase): Promise<{ key: string; 
     const input = await sampleInput(app, Reflect.get(Object(record), 'input'))
     const as = await callerFor(app, one.caller)
     const { said } = await outcomeOf(() => app.call(one.definition, input, { as }))
-    return { key, said, asked: await answeredNo(app) }
+    return { key, said }
   }
   const table: Stored = Object(description.tables[one.definition])
   const columns: Stored = isStored(table.columns) ? table.columns : {}
@@ -185,26 +183,41 @@ async function accessRun(app: TestApp, one: AccessCase): Promise<{ key: string; 
   const ownerUser = owner ? await app.user(userValues(app, [])) : undefined
   const [row] = await app.make(one.definition, 1, () => (owner && ownerUser ? { [owner]: ownerUser.user?.id } : {}))
   const id = String(row?.id)
+  const kind = one.caller.kind
   const as =
-    one.caller.kind === 'owner' && ownerUser
+    kind === 'owner' && ownerUser
       ? ownerUser
-      : await callerFor(app, { ...one.caller, kind: one.caller.kind === 'other' ? 'user' : one.caller.kind })
+      : kind === 'tenant' || kind === 'otherTenant'
+        ? { kind: 'system' as const }
+        : await callerFor(app, { ...one.caller, kind: kind === 'other' ? 'user' : kind })
+  const tenant = typeof table.tenant === 'string' ? table.tenant : undefined
   const values = await sampleInput(app, Object.fromEntries(Object.entries(columns).filter(([name]) => name !== owner)))
-  const [first] = Object.entries(values).filter(([, value]) => typeof value !== 'object')
+  const [first] = Object.entries(values).filter(([name, value]) => typeof value !== 'object' && name !== tenant)
+  // The tenant a row of a tenant table is reached in: its own, or another made for the case.
+  const linksTo: unknown = tenant === undefined ? undefined : Reflect.get(Object(columns[tenant]), 'table')
+  const of =
+    tenant === undefined
+      ? {}
+      : kind === 'otherTenant' && typeof linksTo === 'string'
+        ? { of: await linkedIn(app)(linksTo) }
+        : { of: String(one.what === 'add' ? values[tenant] : row?.[tenant]) }
   const asked = {
     read: () =>
       app.read(
-        ['owner', 'other'].includes(one.caller.kind)
-          ? { from: one.definition, one: 'get', id }
-          : { from: one.definition },
+        ['owner', 'other', 'tenant', 'otherTenant'].includes(kind)
+          ? { from: one.definition, ...of, one: 'get', id }
+          : { from: one.definition, ...of },
         { as },
       ),
-    add: () => app.write([{ add: one.definition, values }], { as }),
-    change: () => app.write([{ change: one.definition, id, values: first ? { [first[0]]: first[1] } : {} }], { as }),
-    remove: () => app.write([{ remove: one.definition, id }], { as }),
+    add: () => app.write([{ add: one.definition, ...of, values }], { as }),
+    change: () =>
+      app.write([{ change: one.definition, ...of, id, values: first ? { [first[0]]: first[1] } : {} }], { as }),
+    remove: () => app.write([{ remove: one.definition, ...of, id }], { as }),
   }
-  const { said } = await outcomeOf(asked[one.what === 'access' ? 'read' : one.what])
-  return { key, said, asked: false }
+  // A read of one row that the caller may not reach, or that stands in another tenant, finds nothing.
+  const reached = ['owner', 'other', 'tenant', 'otherTenant'].includes(kind) && one.what === 'read'
+  const { said } = await outcomeOf(asked[one.what === 'access' ? 'read' : one.what], reached)
+  return { key, said }
 }
 
 /**
@@ -316,14 +329,36 @@ function callsOf(logs: Record<string, unknown>, name: string, since: number): { 
 }
 
 /**
+ * Takes the app and a case. Carries the case out from the mark of the data, as the work of a test of its own, so
+ * that what of it reached outside is told, a Python program among it, which the engine cannot hold; then settles the
+ * runs it started and answers no to each that asks a person. Answers what the case answered, and the words its line
+ * ends with for what it reached and what it asked.
+ */
+async function caseRun<Answer>(
+  app: TestApp,
+  mark: Mark,
+  k: number,
+  work: () => Promise<Answer>,
+): Promise<{ answer: Answer; more: string }> {
+  await app.back(mark)
+  const notes = notesOf(`declared ${k}`)
+  const answer = await underTest(notes, work)
+  const asked = await underTest(notes, () => answeredNo(app))
+  const outside = [...notes.outside].sort()
+  const more = `${outside.length ? `; reached outside: ${outside.join(', ')}` : ''}${asked ? '; a person was asked, and answered no' : ''}`
+  return { answer, more }
+}
+
+/**
  * Runs the cases made from the declarations of the project in the folder the program was started in, as `tent test
- * --declared` starts it, each from one mark of its data, with every service and model stood in for and every plain
- * fetch held: what each caller gets of each definition, kept in `tests/declared/access.json` and held to it as a
+ * --declared` starts it, each from one mark of its data, with every service and model stood in for, and every plain
+ * fetch, request of a page to another host and connection of the app's code held: what each caller gets of each definition, kept in `tests/declared/access.json` and held to it as a
  * picture is, each edge of each input, and each form. Each case is a test of the runner, by its line, in the order of
  * the names of the definitions. With `update`, the table of access is kept anew.
  */
 export async function declared(o: { update?: boolean } = {}): Promise<void> {
   const folder = resolve(process.cwd())
+  holdOutside()
   const app = await testApp({ folder })
   standInAll(app)
   const mark = await app.mark()
@@ -332,25 +367,25 @@ export async function declared(o: { update?: boolean } = {}): Promise<void> {
   const file = join(folder, 'tests', 'declared', 'access.json')
   const kept: Stored = existsSync(file) ? Object(JSON.parse(readFileSync(file, 'utf8'))) : {}
   const table: Record<string, string> = {}
+  let k = 0
   for (const one of cases.access) {
-    await app.back(mark)
-    const { key, said, asked } = await accessRun(app, one)
+    const { answer, more } = await caseRun(app, mark, k++, () => accessRun(app, one))
+    const { key, said } = answer
     if (said === 'no users') continue
     table[key] = said
     // A refusal of the rule says why; any other is the code's own.
     const why = ['refused T3101', 'refused T0006', 'refused T2103'].includes(said) ? refusalWords(one.rule) : ''
-    const line = `${one.definition} - ${one.what}: ${ruleWords(one.rule)}: as ${one.caller.words}, ${said}${why}${asked ? '; a person was asked, and answered no' : ''}`
+    const line = `${one.definition} - ${one.what}: ${ruleWords(one.rule)}: as ${one.caller.words}, ${said}${why}${more}`
     const was = kept[key]
     const changed = !o.update && typeof was === 'string' && was !== said
     ran.push({ definition: one.definition, line, ...(changed ? { failure: `${key}: was ${was}, now ${said}` } : {}) })
   }
-  for (const one of cases.edges) {
-    await app.back(mark)
-    ran.push({ definition: one.definition, ...(await edgeRun(app, one)) })
-  }
-  for (const one of cases.forms) {
-    await app.back(mark)
-    ran.push({ definition: one.definition, ...(await formRun(app, one)) })
+  for (const one of [...cases.edges, ...cases.forms]) {
+    const { answer, more } = await caseRun(app, mark, k++, () =>
+      'screen' in one ? formRun(app, one) : edgeRun(app, one),
+    )
+    const failure = answer.failure?.replace(answer.line, `${answer.line}${more}`)
+    ran.push({ definition: one.definition, line: `${answer.line}${more}`, ...(failure ? { failure } : {}) })
   }
   if (o.update || !existsSync(file)) {
     mkdirSync(join(folder, 'tests', 'declared'), { recursive: true })

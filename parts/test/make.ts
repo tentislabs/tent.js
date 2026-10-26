@@ -41,7 +41,9 @@ export const make =
           continue
         row[column] = await sampleOf(type, column, { n: seen.n, linked })
       }
-      const written = await app.write([{ add: table, values: row }], { as: 'system' })
+      // A row of a tenant table is added in the file of its tenant.
+      const of = typeof stated.tenant === 'string' ? { of: String(row[stated.tenant]) } : {}
+      const written = await app.write([{ add: table, ...of, values: row }], { as: 'system' })
       const one: unknown = Array.isArray(written) ? written[0] : written
       rows.push(isStored(one) ? one : {})
     }

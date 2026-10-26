@@ -1,5 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { testApp } from 'tentjs/test'
 import { drawn } from '../functions/drawn'
 
@@ -20,4 +22,6 @@ test('one random seed draws the same, and another draws otherwise', async () => 
     assert.ok(one[name] !== undefined, name)
     assert.notDeepEqual(other[name], one[name], name)
   }
+  // What one random seed drew, which the run of another program holds against its own.
+  writeFileSync(join(import.meta.dirname, '..', 'drawn.json'), JSON.stringify(one))
 })

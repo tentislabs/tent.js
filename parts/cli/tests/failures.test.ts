@@ -84,7 +84,7 @@ test('[53-9] a failing test that called a change prints its caller, input, the r
   // A test that failed on what it held, after a change that wrote.
   const open = failures.find((one) => one.test === 'the order stays open')
   assert.ok(open, JSON.stringify(failures))
-  assert.deepEqual([open.file, open.line, open.expected, open.got], [failing, 14, false, true])
+  assert.deepEqual([open.file, open.line, open.expected, open.got], [failing, 15, false, true])
   assert.equal(open.call?.name, 'markPaid')
   assert.equal(open.call?.caller.kind, 'user')
   assert.deepEqual(open.call?.caller.user?.roles, ['staff'])
@@ -98,7 +98,7 @@ test('[53-9] a failing test that called a change prints its caller, input, the r
   // A test whose change was refused: the code, and the fix of that code.
   const refused = failures.find((one) => one.test === 'a customer marks the order paid')
   assert.ok(refused)
-  assert.deepEqual([refused.file, refused.line, refused.call?.name], [failing, 22, 'markPaid'])
+  assert.deepEqual([refused.file, refused.line, refused.call?.name], [failing, 23, 'markPaid'])
   assert.equal(refused.call?.error?.code, 'T3101')
   assert.ok(refused.fix && refused.fix === refused.call?.error?.fix, JSON.stringify(refused))
   assert.deepEqual(refused.call?.wrote, [])
@@ -107,7 +107,7 @@ test('[53-9] a failing test that called a change prints its caller, input, the r
   const findingOf = (name: string) => (ran.answer.findings ?? []).find((one) => one.message.includes(`"${name}"`))
   const words = String(findingOf('the order stays open')?.message)
   for (const piece of [
-    `${failing}:14`,
+    `${failing}:15`,
     'markPaid',
     String(open.call?.caller.user?.id),
     String(open.call?.input.order),
@@ -116,8 +116,15 @@ test('[53-9] a failing test that called a change prints its caller, input, the r
     `tent logs --trace ${open.call?.trace}`,
   ])
     assert.ok(words.includes(piece), `${piece} in ${words}`)
+  // A test whose last call read rows: each row it read stands in the words, as the facts hold it.
+  const listed = failures.find((one) => one.test === 'no order is open')
+  const read = (listed?.call?.read ?? []).flatMap((one) => one.rows)
+  assert.ok(read.length > 0, JSON.stringify(listed))
+  const listedWords = String(findingOf('no order is open')?.message)
+  for (const row of read)
+    assert.ok(listedWords.includes(JSON.stringify(row).slice(0, 200)), `${JSON.stringify(row)} in ${listedWords}`)
   assert.equal(findingOf('a customer marks the order paid')?.fix, refused.fix)
-  assert.equal(findingOf('a customer marks the order paid')?.where?.line, 22)
+  assert.equal(findingOf('a customer marks the order paid')?.where?.line, 23)
   // As text, the same.
   const typed = tested(project, failing, '--all')
   assert.equal(typed.ended, 1)
@@ -142,7 +149,7 @@ test('[15-6@12] the value of tent test --json holds the tests replayed and the f
   const project = recordedCopy(t, 'failures-3', 'recordedFailing')
   const failed = tested(project, failing, '--json')
   assert.deepEqual(checkValue(shape, failed.answer.value), [])
-  assert.equal(failuresOf(failed.answer.value).length, 3)
+  assert.equal(failuresOf(failed.answer.value).length, 4)
   const passed = tested(project, 'tests/listed.test.ts', '--json')
   assert.equal(passed.ended, 0, passed.printed)
   assert.deepEqual(checkValue(shape, passed.answer.value), [])

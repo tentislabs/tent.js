@@ -6,7 +6,7 @@ type Stored = Record<string, unknown>
 /** A caller of the cases, by the words a line names it with: a user carries the roles it is made with. */
 export interface CaseCaller {
   words: string
-  kind: 'nobody' | 'system' | 'user' | 'key' | 'grant' | 'owner' | 'other'
+  kind: 'nobody' | 'system' | 'user' | 'key' | 'grant' | 'owner' | 'other' | 'tenant' | 'otherTenant'
   roles?: string[]
 }
 
@@ -105,20 +105,28 @@ const plainPath = (path: unknown): path is string =>
  * definitions: what each caller gets of each function and each offered flow, of each route whose address names no
  * value, asked by each caller a request can be, of each command of the app's own, run by each caller but nobody, and
  * of reading, adding to, changing and removing each table, with the owner and another user where the table names an
- * owner; each field of the input
+ * owner, and the system in the tenant of the row and in another tenant where it names a tenant; each field of the input
  * of each function at the values its type takes at its edges; and each form of each screen whose address names no
  * value, sent empty, with a sample and with each field of a text, a number or a choice at its edges.
  */
 export function declaredCases(description: Description): Cases {
   const roles = rolesOf(description)
   const access: AccessCase[] = []
-  const callable: [string, Stored][] = [
-    ...Object.entries(description.functions),
-    ...Object.entries(description.flows).filter(([, flow]) => flow.access !== undefined && !isStored(flow.agent)),
+  // A flow is called where it states who may call it, and an agent, a flow too, by its own `access`.
+  const ruleOfFlow = (flow: Stored): unknown => flow.access ?? (isStored(flow.agent) ? flow.agent.access : undefined)
+  const callable: [string, Stored, unknown][] = [
+    ...Object.entries(description.functions).map(([name, record]): [string, Stored, unknown] => [
+      name,
+      record,
+      record.access,
+    ]),
+    ...Object.entries(description.flows).flatMap(([name, flow]): [string, Stored, unknown][] =>
+      ruleOfFlow(flow) === undefined ? [] : [[name, flow, ruleOfFlow(flow)]],
+    ),
   ].sort(([a], [b]) => byName(a, b))
-  for (const [name, record] of callable)
+  for (const [name, record, rule] of callable)
     for (const caller of callersOf(roles, record.offer))
-      access.push({ definition: name, of: 'call', what: 'access', rule: record.access, caller })
+      access.push({ definition: name, of: 'call', what: 'access', rule, caller })
   for (const [name, record] of Object.entries(description.routes).sort(([a], [b]) => byName(a, b)))
     if (plainPath(record.path))
       for (const caller of callersOf(roles, undefined).filter((one) => one.kind !== 'system'))
@@ -132,6 +140,12 @@ export function declaredCases(description: Description): Cases {
       const callers = callersOf(roles, undefined)
       if (typeof table.owner === 'string' && what !== 'add')
         callers.push({ words: 'the owner', kind: 'owner' }, { words: 'another user', kind: 'other' })
+      // A row of one tenant is reached in its tenant alone, whoever asks: the system asks, past every rule.
+      if (typeof table.tenant === 'string' && what !== 'add')
+        callers.push(
+          { words: 'the system, in the tenant of the row', kind: 'tenant' },
+          { words: 'the system, in another tenant', kind: 'otherTenant' },
+        )
       for (const caller of callers) access.push({ definition: name, of: 'table', what, rule: rules[what], caller })
     }
   }

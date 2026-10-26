@@ -7,7 +7,7 @@ import { seededSource } from '../engine/index.ts'
  * `test` gives it what a test reads, and a page of the engine's own, which holds no page code, gives nothing once it
  * has loaded. The time of the page runs as the clock of the app does, so that `app.clock.advance` moves the pages
  * too, and where a seed is handed, `Math.random` and the random values of `crypto`, which the ids of its calls are
- * made of, are drawn from it. The function is sent to the browser as its text: it names nothing outside itself.
+ * made of, are drawn from it and the number of the document. The function is sent to the browser as its text: it names nothing outside itself.
  */
 function preloaded(ahead: number, seed?: string, source?: (seed: string) => () => number): void {
   const name = Symbol.for('tent.test')
@@ -22,8 +22,17 @@ function preloaded(ahead: number, seed?: string, source?: (seed: string) => () =
     get: (made, key) => (key === 'now' ? now : Reflect.get(made, key)),
   })
   Reflect.set(globalThis, 'Date', Moved)
-  if (seed !== undefined && source) {
-    const random = source(seed)
+  // Each document of the page draws from a seed of its own, by its number among the documents the page loaded: a
+  // reload, a page it went on to and a frame each make the ids of their calls anew, and never one an earlier made.
+  let nth = 0
+  try {
+    nth = Number(sessionStorage.getItem('tent.documents') ?? 0) + 1
+    sessionStorage.setItem('tent.documents', String(nth))
+  } catch {
+    // A document of no origin keeps nothing, and draws as the browser does.
+  }
+  if (seed !== undefined && source && nth > 0) {
+    const random = source(`${seed} ${nth}`)
     Math.random = random
     if (globalThis.crypto)
       Reflect.defineProperty(globalThis.crypto, 'getRandomValues', {

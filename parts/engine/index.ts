@@ -89,15 +89,23 @@ export { makeSecretKey, newSecretKey, secretsNamed, storedValues } from './value
 export type { TestNotes, TouchedKind } from './touched.ts'
 export {
   noteCalled,
+  noteLoaded,
   noteOpened,
   noteOutside,
   noteSeed,
   noteTouched,
+  noteUnheld,
+  noteWord,
   notesOf,
+  outsideNoter,
   testUnderWay,
   underTest,
   writeNotes,
 } from './touched.ts'
+// The words of the environment that the code of a test or of its app reads, noted under the test.
+export { isAppModule, noteWordsRead } from './envRead.ts'
+// What the cases made from the declarations hold: whatever would reach outside the program, refused where it leaves.
+export { heldRefusal, holdOutside, outsideHeld } from './outsideHeld.ts'
 // The source of numbers from a random seed, by which a test app draws the same numbers on every computer.
 export { seededSource } from './seeded.ts'
 // Whether an address fits the pattern of a screen or a route, as the engine finds one.
