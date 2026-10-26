@@ -95,7 +95,8 @@ async function startedBrowser(program: string): Promise<Kept> {
       ...(sandboxRefused(program) ? ['--no-sandbox'] : []),
       'about:blank',
     ],
-    { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'] },
+    // On Linux and macOS the browser leads a group of its own, with the programs it starts: the group ends as one.
+    { stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' },
   )
   const [, , , toBrowser, fromBrowser] = browser.stdio
   if (!(toBrowser instanceof Writable) || !(fromBrowser instanceof Readable)) {
@@ -115,7 +116,15 @@ async function startedBrowser(program: string): Promise<Kept> {
   }
   hold(0)
   const ending = (): void => {
-    if (browser.exitCode === null && browser.signalCode === null) browser.kill()
+    // A browser asked to end on Linux and macOS closes its windows first and writes into its folder after it was
+    // taken away, outliving this program: it and its helpers are ended where they stand, as Windows ends a program.
+    if (browser.exitCode === null && browser.signalCode === null)
+      try {
+        if (process.platform === 'win32' || browser.pid === undefined) browser.kill()
+        else process.kill(-browser.pid, 'SIGKILL')
+      } catch {
+        browser.kill('SIGKILL')
+      }
     try {
       // The browser lets its files go a moment after it was ended: the removal tries again for three seconds.
       rmSync(folder, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 })
@@ -221,6 +230,18 @@ async function browserOf(program: string): Promise<Kept> {
  */
 export async function driven(program: string): Promise<Driven> {
   const browser = await browserOf(program)
+  try {
+    return await pageIn(browser)
+  } catch (error) {
+    // A browser that was ending as the page was opened, as one that was sent a signal to end on Linux and macOS and
+    // still answers while it closes, is started again for the page, once.
+    if (!browser.ended) throw error
+    return pageIn(await browserOf(program))
+  }
+}
+
+/** Opens one page in a browser of the program, as `driven` says. */
+async function pageIn(browser: Kept): Promise<Driven> {
   const context = String((await browser.raw('Target.createBrowserContext', { disposeOnDetach: true })).browserContextId)
   const close = (): Promise<unknown> =>
     browser

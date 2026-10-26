@@ -12,6 +12,7 @@ import {
   isAppModule,
   leavesProgram,
   linesHanded,
+  linesTold,
   noteAllAs,
   noteLoaded,
   noteOutside,
@@ -20,7 +21,6 @@ import {
   outsideHeld,
   tellNotesTo,
   testUnderWay,
-  toldAsItEnds,
   writeNotes,
   writeToldNotes,
 } from '../engine/index.ts'
@@ -168,8 +168,12 @@ if (started !== undefined) {
 }
 
 // A thread that the test's or the app's code starts in the work of a test carries this noting and the hold, as a
-// program of the runtime it starts does: all its work is the test's. The notes it hands as it takes them are written
-// as it ends, beside those it writes itself as it ends by itself.
+// program of the runtime it starts does: all its work is the test's, and so is every thread it starts. The notes that
+// each hands as it takes them, at any depth, this program writes as it ends, beside those a thread writes itself as
+// it ends by itself.
+const notesFolder = process.env.TENT_TOUCHED
+if (threadId === 0 && notesFolder)
+  linesTold('notes', (lines) => writeToldNotes(notesFolder, `${process.pid}-handed`, lines))
 const Started = workerThreads.Worker
 class Carried extends Started {
   constructor(file: string | URL, options: workerThreads.WorkerOptions = {}) {
@@ -179,7 +183,7 @@ class Carried extends Started {
       (test !== undefined || outsideHeld()) &&
       typeof env === 'object' &&
       env !== null &&
-      calledByApp(Carried, [import.meta.url], project)
+      ((threadId !== 0 && started !== undefined) || calledByApp(Carried, [import.meta.url], project))
     if (!carried) {
       super(file, options)
       return
@@ -192,11 +196,6 @@ class Carried extends Started {
       env: { ...Object(env), ...carry(test ?? 'held', Object(env)) },
     })
     super(handed.code, handed.options)
-    const notes = process.env.TENT_TOUCHED
-    const name = `${process.pid}-${this.threadId}-handed`
-    toldAsItEnds(this, handed.memory, (lines) => {
-      if (notes) writeToldNotes(notes, name, lines)
-    })
   }
 }
 Reflect.set(workerThreads, 'Worker', Carried)

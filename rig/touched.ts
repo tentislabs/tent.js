@@ -11,7 +11,7 @@ import { registerHooks, syncBuiltinESMExports } from 'node:module'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import workerThreads, { threadId } from 'node:worker_threads'
-import { handLine, linesHanded, toldAsItEnds } from '../parts/engine/threadLines.ts'
+import { handLine, linesHanded, linesTold } from '../parts/engine/threadLines.ts'
 
 // The tree that runs, which `scripts/tests.mjs` names, and the test file whose program this is or started it. A
 // program that a test file's program started, and a thread of it, finds the file named by the one that started it.
@@ -54,11 +54,11 @@ function printOf(path: string): string {
 // each line alone holds a busy computer, and a thread that is ended loses the files of its last tenth of a second.
 let told: string | undefined
 let waiting: string[] = []
-/** The file of the lines this program or thread tells, made at its first line. */
-function toldAt(thread: number): string {
+/** The file of the lines that this program, one of its threads, or its threads together tell. */
+function toldAt(of: number | 'threads'): string {
   const folder = join(String(tree), 'results', 'touched')
   mkdirSync(folder, { recursive: true })
-  return join(folder, `${process.pid}-${thread}.lines`)
+  return join(folder, `${process.pid}-${of}.lines`)
 }
 /** Tells the lines noted since the last telling. */
 function flush(): void {
@@ -275,15 +275,13 @@ if (tree && of) {
       : file.startsWith('file:') || file.startsWith('data:')
         ? file
         : pathToFileURL(resolve(file)).href
-  // Each note a thread takes reaches this program as it is taken, which tells it as the thread ends, held on a lock or
-  // not.
+  // Each note a thread of any depth takes reaches this program as it is taken, which tells them all as it ends.
+  if (threadId === 0) linesTold('rig', (lines) => appendFileSync(toldAt('threads'), lines))
   class Noted extends Started {
     constructor(file: string | URL, options: workerThreads.WorkerOptions = {}) {
       const code = options.eval ? String(file) : `import(${JSON.stringify(addressOf(file))})`
       const handed = linesHanded('rig', `require(${JSON.stringify(rig)});\n${code}`, options)
       super(handed.code, handed.options)
-      const thread = this.threadId
-      toldAsItEnds(this, handed.memory, (lines) => appendFileSync(toldAt(thread), lines))
     }
   }
   Reflect.set(workerThreads, 'Worker', Noted)
