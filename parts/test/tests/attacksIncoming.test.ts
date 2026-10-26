@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
-import { createHmac } from 'node:crypto'
+import crypto, { createHash, createHmac } from 'node:crypto'
+import { syncBuiltinESMExports } from 'node:module'
 import type { TestContext } from 'node:test'
 import test from 'node:test'
 import type { TestApp } from '../index.ts'
@@ -144,24 +145,38 @@ test('[05-11.14] a signature that differs in its last character takes the time o
   const right = hmac(secrets.GITHUB_HOOK, body, 'hex')
   const flip = (text: string, at: number): string =>
     text.slice(0, at) + (text[at] === '0' ? '1' : '0') + text.slice(at + 1)
-  const timed = async (signature: string): Promise<number> => {
-    const began = performance.now()
-    for (let n = 0; n < 300; n++)
-      await post(app, '/hooks/github', body, {
-        'content-type': 'application/json',
-        'x-hub-signature-256': `sha256=${signature}`,
-        'x-github-delivery': `d-${n}`,
-      })
-    return performance.now() - began
+  // The time a compare takes is held by what it is, which no other work on the computer moves: each signature is
+  // compared by the constant-time compare of the runtime, over two fingerprints of one length. A compare that
+  // stops at the first character that differs calls none, and fails here.
+  const compared: [Buffer, Buffer][] = []
+  const real = crypto.timingSafeEqual
+  t.mock.method(crypto, 'timingSafeEqual', (a: NodeJS.ArrayBufferView, b: NodeJS.ArrayBufferView) => {
+    compared.push([
+      Buffer.from(a.buffer, a.byteOffset, a.byteLength),
+      Buffer.from(b.buffer, b.byteOffset, b.byteLength),
+    ])
+    return real(a, b)
+  })
+  syncBuiltinESMExports()
+  t.after(() => syncBuiltinESMExports())
+  // The fingerprint that a signature is compared by: of the text of its bytes.
+  const printOf = (hex: string): Buffer =>
+    createHash('sha256').update(Buffer.from(hex, 'hex').toString('base64'), 'utf8').digest()
+  for (const [n, sent] of [flip(right, 0), flip(right, right.length - 1)].entries()) {
+    compared.length = 0
+    const answer = await post(app, '/hooks/github', body, {
+      'content-type': 'application/json',
+      'x-hub-signature-256': `sha256=${sent}`,
+      'x-github-delivery': `d-${n}`,
+    })
+    assert.equal(answer.status, 401)
+    const pair = compared.find(([a, b]) => a.equals(printOf(sent)) || b.equals(printOf(sent)))
+    assert.ok(pair, `the signature wrong in its ${n === 0 ? 'first' : 'last'} character was compared in constant time`)
+    assert.deepEqual(
+      [pair[0].length, pair[1].length, pair[0].equals(printOf(right)) || pair[1].equals(printOf(right))],
+      [32, 32, true],
+    )
   }
-  await timed(flip(right, 0))
-  // The two are taken in turn three times and each is held by its quickest: other work only ever adds time.
-  let [first, last] = [Infinity, Infinity]
-  for (let round = 0; round < 3; round++) {
-    first = Math.min(first, await timed(flip(right, 0)))
-    last = Math.min(last, await timed(flip(right, right.length - 1)))
-  }
-  assert.ok(Math.max(first, last) / Math.min(first, last) < 2, `the first took ${first} ms and the last ${last} ms`)
   assert.equal(await settled(app, 'githubReceived', 0), 0)
 })
 

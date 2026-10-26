@@ -32,7 +32,7 @@ Each form of each screen whose address names no value is sent from a page of the
 
 ## Nothing reaches outside
 
-Every service and every model is stood in by one that refuses with `code.T7132`, and so is every plain `fetch`, every request of a page to another host, and every connection of the app's code through `node:http`, `node:https` or `node:net`. A Python program, which the engine cannot hold, is named in the line of its case as reaching outside. Mail goes to the mailbox, and a run that asks a person is answered no. The runs are settled after each case, and each case starts from one mark of the data.
+Every service and every model is stood in by one that refuses with `code.T7132`, and so is every request of a page to another host and every connection of the app's code to another host by any way the runtime gives, a plain `fetch`, `WebSocket`, `node:http`, `node:http2`, `node:net`, `node:tls` or `node:dgram`, held where its socket connects; so is a lookup of a name, but for a name of this computer, and a pipe or a local socket that another program serves. A thread the app's code starts holds it too, and so does a program of the runtime it starts, a package's among them. Every program the app starts and a Python program are named in the line of the case as reaching outside. Mail goes to the mailbox, and a run that asks a person is answered no. The runs are settled after each case, and each case starts from one mark of the data.
 
 ## One order, one sample
 

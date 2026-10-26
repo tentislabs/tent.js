@@ -1,5 +1,6 @@
 // The one file that names the driver of a real browser. A test of a part imports it, and no file that is shipped.
-import type { Page } from 'playwright-core'
+import { after } from 'node:test'
+import type { Browser, Page } from 'playwright-core'
 import { chromium, firefox, webkit } from 'playwright-core'
 import { silenced } from './silence.ts'
 import { secondFamily, testFamily, testFontRules } from './testFont.ts'
@@ -14,6 +15,51 @@ export const browserEngines: readonly BrowserEngine[] = ['chromium', 'firefox', 
 
 const launchers = { chromium, firefox, webkit }
 
+// The browser of each engine of this program, started at its first use and kept until the program's tests end: each
+// call takes a context of its own in it, a few megabytes and milliseconds where a browser takes a hundred and a
+// second, as Playwright's own runner keeps one browser for each of its programs. Firefox lets a page reach a made-up
+// device by preferences of the whole browser, so it keeps a second browser for the calls that ask for one.
+const kept = new Map<string, Promise<Browser>>()
+const started: Record<BrowserEngine, number> = { chromium: 0, firefox: 0, webkit: 0 }
+
+/** How many browsers of each engine this program started. */
+export const browsersStarted = (): Record<BrowserEngine, number> => ({ ...started })
+
+/**
+ * The browser of an engine for this program, started where there is none or where it was lost. No browser plays
+ * sound out of the speakers of the computer the tests run on: Chromium by its flag, Firefox by its preference, and
+ * WebKit, which has neither, by what its pages run first. Every Chromium lets a page reach a made-up device: that is
+ * a flag of the browser, and a page that asks for none is held by its context, which grants nothing.
+ */
+async function browserOf(engine: BrowserEngine, device: boolean): Promise<Browser> {
+  const key = engine === 'firefox' && device ? 'firefox with a device' : engine
+  const held = await kept.get(key)?.catch(() => undefined)
+  if (held?.isConnected()) return held
+  started[engine] += 1
+  const made = launchers[engine].launch({
+    headless: true,
+    ...(engine === 'chromium'
+      ? { args: ['--mute-audio', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] }
+      : {}),
+    ...(engine === 'firefox'
+      ? {
+          firefoxUserPrefs: {
+            'media.volume_scale': '0.0',
+            ...(device ? { 'media.navigator.streams.fake': true, 'media.navigator.permission.disabled': true } : {}),
+          },
+        }
+      : {}),
+  })
+  kept.set(key, made)
+  return made
+}
+
+// The browsers end when the tests of the program have: none is left behind it, and none holds it open.
+after(async () => {
+  for (const one of kept.values()) await (await one.catch(() => undefined))?.close()
+  kept.clear()
+})
+
 /** Whether an address is one of this computer, or one that reaches no network at all. */
 function isHere(address: string): boolean {
   const { protocol, hostname } = new URL(address)
@@ -26,45 +72,26 @@ function isHere(address: string): boolean {
  * page reaches this computer alone: a request for any other address is cut off. With `device` the browser lets a
  * page use the place, the camera and the microphone of the device with no question, each a made-up one where the
  * engine has such: so a test sees what the page's own policy closes, and not what a person was never asked. No
- * engine plays sound, and what a page reads of a playing element and of a voice stays as the page set it. The
- * browser is ended when the work is done, also where it fails. Answers what the work answered.
+ * engine plays sound, and what a page reads of a playing element and of a voice stays as the page set it. The page
+ * is of a context of its own in the browser of the program, which is closed when the work is done, also where it
+ * fails: the browser stays for the next call. Answers what the work answered.
  */
 export async function inBrowser<Answer>(
   engine: BrowserEngine,
   work: (page: Page) => Promise<Answer>,
   o: { width?: number; height?: number; scripts?: boolean; device?: boolean } = {},
 ): Promise<Answer> {
-  // No browser plays sound out of the speakers of the computer the tests run on: Chromium by its flag, Firefox by
-  // its preference, and WebKit, which has neither, by what its pages run first.
-  const browser = await launchers[engine].launch({
-    headless: true,
-    ...(engine === 'chromium'
-      ? {
-          args: [
-            '--mute-audio',
-            ...(o.device ? ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] : []),
-          ],
-        }
-      : {}),
-    ...(engine === 'firefox'
-      ? {
-          firefoxUserPrefs: {
-            'media.volume_scale': '0.0',
-            ...(o.device ? { 'media.navigator.streams.fake': true, 'media.navigator.permission.disabled': true } : {}),
-          },
-        }
-      : {}),
+  const browser = await browserOf(engine, o.device === true)
+  const context = await browser.newContext({
+    // One zone on every computer, nine hours ahead of UTC all year and the zone of no project of the tests, so a
+    // page's own zone is never the zone of the project by chance, as UTC is on a machine of the automatic runs.
+    timezoneId: 'Asia/Tokyo',
+    viewport: { width: o.width ?? 800, height: o.height ?? 600 },
+    deviceScaleFactor: 1,
+    javaScriptEnabled: o.scripts !== false,
+    ...(o.device ? { permissions: ['geolocation'], geolocation: { latitude: 38.42, longitude: 27.14 } } : {}),
   })
   try {
-    const context = await browser.newContext({
-      // One zone on every computer, nine hours ahead of UTC all year and the zone of no project of the tests, so a
-      // page's own zone is never the zone of the project by chance, as UTC is on a machine of the automatic runs.
-      timezoneId: 'Asia/Tokyo',
-      viewport: { width: o.width ?? 800, height: o.height ?? 600 },
-      deviceScaleFactor: 1,
-      javaScriptEnabled: o.scripts !== false,
-      ...(o.device ? { permissions: ['geolocation'], geolocation: { latitude: 38.42, longitude: 27.14 } } : {}),
-    })
     if (engine === 'webkit') await context.addInitScript(silenced)
     await context.route(
       (url) => !isHere(url.href),
@@ -72,7 +99,8 @@ export async function inBrowser<Answer>(
     )
     return await work(await context.newPage())
   } finally {
-    await browser.close()
+    // A context whose browser was lost is closed already.
+    await context.close().catch(() => undefined)
   }
 }
 
@@ -84,7 +112,7 @@ export async function inBrowser<Answer>(
  * the taking fails otherwise: so no picture is drawn with a font of this computer. With `focus`, the first element
  * that the selector finds is given the focus before the picture is taken, as the keyboard gives it, and where it
  * finds none nothing is. Each step of a taking has two minutes, so that a computer under load takes its pictures
- * too. The browser is ended when the work is done, also where it fails. Answers what the work answered.
+ * too. The context is closed when the work is done, also where it fails. Answers what the work answered.
  */
 export function picturesIn<Answer>(
   engine: BrowserEngine,

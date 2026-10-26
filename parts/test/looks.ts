@@ -86,6 +86,8 @@ export function expect(page: Page): Held {
     async heard(name) {
       const kept = join(folder, 'tests', 'heard', engineOf(page), `${nameHeld(name)}.txt`)
       const fresh = kept.replace(/\.txt$/, '.new.txt')
+      // The kept text is what the result stands on, as a kept picture is.
+      noteTouched('heard', relative(folder, kept).split(sep).join('/'))
       const said = await page.reader()
       if (!existsSync(kept)) {
         written(fresh, said)

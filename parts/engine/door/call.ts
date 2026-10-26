@@ -265,7 +265,12 @@ function passedOnce(o: Opened, name: string, given: unknown, asked: Asked): unkn
     // A call through the door counts for the version that served it while a release goes: a failure that is not the
     // caller's is the version's.
     if (kind && !asked.parent)
-      releaseCounted(o, ms, error !== undefined && (!isShown(error) || (statusOf(error.code) ?? 0) >= 500))
+      releaseCounted(
+        o,
+        // The time as measured, and not the whole milliseconds of the log: a call of under one would count as none.
+        performance.now() - began,
+        error !== undefined && (!isShown(error) || (statusOf(error.code) ?? 0) >= 500),
+      )
     // A name that reaches no function is the door's, which counts the request; the run of an action carries
     // the action out itself, whose call was counted where it was made.
     const units = { calls: 1, ms: performance.now() - began, ...(error === undefined ? {} : { failed: 1 }) }

@@ -312,7 +312,7 @@ project(name: string, o: ProjectOptions) // The project.
   publish?: { health?: string | Marker; within?: string } // What a new version must pass before it goes live.
   python?: Python // The Python of the project, and what its lock is made with.
   redirects?: readonly { from: string; to: string; permanent?: boolean }[] // Addresses that send a visitor on to another.
-  release?: { gradual?: boolean; steps?: readonly number[]; every?: string; watch?: { failures?: number; slower?: number; calls?: number } } // How a new version reaches the visitors.
+  release?: { gradual?: boolean; steps?: readonly number[]; every?: string; watch?: { failures?: number; slower?: number; slowerBy?: string; calls?: number } } // How a new version reaches the visitors.
   removed?: readonly string[] // The tables that were removed on purpose.
   roots?: readonly string[] // Folders outside the project that its files may be named from.
   settings?: Record<string, { type: Type; public?: boolean }> // Typed values that are set apart for test and for live.

@@ -1,12 +1,14 @@
 import { TentError } from '../core/index.ts'
 
 // Whether this program holds whatever would reach outside it: the cases made from the declarations of an app reach
-// nothing, and what the engine cannot stand in for by a name is refused where it would leave.
-let held = false
+// nothing. A thread and a program that it starts hold it too, told by a word of the environment they are handed.
+const word = 'TENT_HELD_OUTSIDE'
+let held = process.env[word] === '1'
 
-/** Holds from now on whatever would reach outside this program: a request of a page, a connection of the app's code. */
+/** Holds from now on whatever would reach outside this program, its threads and the programs it starts. */
 export function holdOutside(): void {
   held = true
+  process.env[word] = '1'
 }
 
 /** Whether this program holds whatever would reach outside it. */

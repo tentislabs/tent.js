@@ -3,12 +3,28 @@ import type { Caller } from '../../core/index.ts'
 import type { Opened } from '../opened.ts'
 import { callerText } from '../../data/index.ts'
 
-/** How a release is held to its watch: the share of failures more, the share of time more, and the calls each needs. */
+/**
+ * How a release is held to its watch: the share of failures more, the share of time more and the milliseconds more
+ * that together make it slower, and the calls each version needs.
+ */
 export interface ReleaseWatch {
   failures: number
   slower: number
+  slowerBy: number
   calls: number
 }
+
+// What a watch holds where it states nothing: a share of time alone is no reason, as Kayenta and Argo Rollouts judge a
+// canary by a share and an absolute line together, so a call of a millisecond that takes one and a half is not slower.
+const watchDefault: ReleaseWatch = { failures: 0.01, slower: 0.2, slowerBy: 5, calls: 200 }
+
+/** Takes what a watch was asked with, each part where it was given. Answers the watch, its default for the rest. */
+export const watchOf = (asked: Partial<ReleaseWatch>): ReleaseWatch => ({
+  failures: asked.failures ?? watchDefault.failures,
+  slower: asked.slower ?? watchDefault.slower,
+  slowerBy: asked.slowerBy ?? watchDefault.slowerBy,
+  calls: asked.calls ?? watchDefault.calls,
+})
 
 /** What a gradual release is asked with: its steps, the time at each, its watch, and what is told when it ends. */
 export interface Gradual {
@@ -100,8 +116,9 @@ function takenBack(o: Opened, held: Release, why: string): void {
 /**
  * Takes the app a call was served by, how long the call took, and whether it failed for no fault of its caller.
  * While a release goes, it counts the call for its version, and takes the release back where the new version fails
- * more than the old one by `watch.failures`, or is slower at the 95th share by `watch.slower`, once each has had
- * `watch.calls` calls in the step under way.
+ * more than the old one by `watch.failures`, or is slower at the 95th share by both `watch.slower` and
+ * `watch.slowerBy`, once each has had `watch.calls` calls in the step under way. The time is the call's as measured,
+ * and the reason names both times to a tenth of a millisecond.
  */
 export function releaseCounted(o: Opened, ms: number, failed: boolean): void {
   const held = releases.get(o.handles)
@@ -123,11 +140,11 @@ export function releaseCounted(o: Opened, ms: number, failed: boolean): void {
     return
   }
   const [slow, fast] = [p95(now.times), p95(old.times)]
-  if (slow > fast * (1 + held.watch.slower))
+  if (slow > fast * (1 + held.watch.slower) && slow - fast > held.watch.slowerBy)
     takenBack(
       o,
       held,
-      `the new version answered in ${Math.round(slow)} ms at the 95th share of ${now.calls} calls, against ${Math.round(fast)} ms of ${old.calls} for the old one`,
+      `the new version answered in ${slow.toFixed(1)} ms at the 95th share of ${now.calls} calls, against ${fast.toFixed(1)} ms of ${old.calls} for the old one`,
     )
 }
 
@@ -232,7 +249,7 @@ export function followRelease(o: Opened, told: { version: string; running: boole
     share,
     state: share === 0 ? 'back' : 'going',
     every: 0,
-    watch: { failures: 0, slower: 0, calls: 0 },
+    watch: { failures: 0, slower: 0, slowerBy: 0, calls: 0 },
     seen: new Map(),
   })
 }

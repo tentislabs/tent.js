@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join, relative, sep } from 'node:path'
 import type { Prints } from '../build/index.ts'
 import { projectPrints } from '../build/index.ts'
 import type { Description, TestsTouched } from '../core/internal.ts'
@@ -27,11 +27,18 @@ export interface Kept {
   tests: Record<string, Record<string, KeptRun[]>>
 }
 
-/** What the key of each test is made from beside what it touched: the project as it stands, and the room of the run. */
+/**
+ * What the key of each test is made from beside what it touched: the project as it stands, the room of the run, and
+ * each kept picture and kept text of the project by its fingerprint, all read before the tests run.
+ */
 export interface Ground {
   prints: Prints & { description: Description }
   room: string
+  kept: Record<string, string>
 }
+
+// The folders of what a test holds a page to: the pictures it keeps, and the texts of what a reader of the screen heard.
+const keptFolders = ['tests/looks', 'tests/heard']
 
 /** The files of a project, beside its test files, whose change any test may stand on. */
 const groundFiles = ['tent.ts', 'seed.ts', 'engine.ts']
@@ -42,7 +49,16 @@ const groundFiles = ['tent.ts', 'seed.ts', 'engine.ts']
  */
 export async function groundOf(folder: string, files: string[]): Promise<Ground> {
   const room = process.env.TENT_ROOM === 'apart' ? 'apart' : 'program'
-  return { prints: await projectPrints(folder, [...files, ...groundFiles]), room }
+  const kept: Record<string, string> = {}
+  for (const under of keptFolders) {
+    if (!existsSync(join(folder, under))) continue
+    for (const one of readdirSync(join(folder, under), { recursive: true, withFileTypes: true }))
+      if (one.isFile()) {
+        const path = relative(folder, join(one.parentPath, one.name)).split(sep).join('/')
+        kept[path] = bytesPrint(folder, path)
+      }
+  }
+  return { prints: await projectPrints(folder, [...files, ...groundFiles]), room, kept }
 }
 
 const fileOf = (folder: string): string => join(folder, '.tent', 'tests.json')
@@ -146,19 +162,14 @@ interface StoodOn {
 }
 
 /**
- * Takes the folder of a project, what the keys of its tests are made from, a test file, what one of its tests
- * touched and what else it stood on. Answers the key of that test: the fingerprint of each definition it touched and
+ * Takes what the keys of the tests of a project are made from, a test file, what one of its tests touched and what
+ * else it stood on. Answers the key of that test: the fingerprint of each definition it touched and
  * of each that reacts to it, of its test file with what it reaches and of each file its program loaded, of the files
  * every test stands on, the messages and assets, the packages, the framework, the runtime, the system and the room,
- * each word of the environment it read with its value, the engines of the browsers it drove and the pictures it held.
+ * each word of the environment it read with its value, the engines of the browsers it drove, and the pictures and
+ * texts of what was heard it held a page to.
  */
-function keyOf(
-  folder: string,
-  ground: Ground,
-  file: string,
-  touched: Record<string, string[]>,
-  stood: StoodOn,
-): string {
+function keyOf(ground: Ground, file: string, touched: Record<string, string[]>, stood: StoodOn): string {
   const { prints } = ground
   const { description } = prints
   const named = [
@@ -179,7 +190,10 @@ function keyOf(
     ...Object.entries(stood.loaded).map(([path, print]) => `loaded ${path} ${print}`),
     ...Object.entries(stood.env).map(([word, value]) => `env ${word} ${JSON.stringify(value)}`),
     `browsers ${(touched.browsers ?? []).join(' ')}`,
-    ...(touched.pictures ?? []).map((path) => `picture ${path} ${bytesPrint(folder, path)}`),
+    // A kept picture and a kept text as they stood before the tests ran: one kept anew while they ran is no other.
+    ...[...(touched.pictures ?? []), ...(touched.heard ?? [])].map(
+      (path) => `kept ${path} ${ground.kept[path] ?? 'none'}`,
+    ),
   ]
   return fingerprintOf(new TextEncoder().encode(lines.join('\n')))
 }
@@ -187,7 +201,12 @@ function keyOf(
 /** What a kept run stood on beside what it touched, as it stands now: each file by its bytes, each word by its value. */
 const stoodNow = (folder: string, run: KeptRun): StoodOn => ({
   loaded: Object.fromEntries((run.files ?? []).map((path) => [path, bytesPrint(folder, path)])),
-  env: Object.fromEntries(Object.keys(run.env ?? {}).map((word) => [word, process.env[word] ?? null])),
+  env: Object.fromEntries(
+    Object.keys(run.env ?? {}).map((word) => {
+      const value = process.env[word]
+      return [word, value === undefined ? null : fingerprintOf(value)]
+    }),
+  ),
 })
 
 /**
@@ -206,7 +225,7 @@ export function replaysOf(folder: string, kept: Kept, ground: Ground, files: str
             run.result === 'passed' &&
             !run.outside?.length &&
             run.whole !== true &&
-            run.key === keyOf(folder, ground, file, run.touched, stoodNow(folder, run)),
+            run.key === keyOf(ground, file, run.touched, stoodNow(folder, run)),
         ),
       )
       .map(([name]) => name)
@@ -252,7 +271,7 @@ export function keepRan(
     const run: KeptRun = {
       result: ended.passed ? 'passed' : 'failed',
       ms: Math.round(ended.ms),
-      key: keyOf(folder, o.ground, ended.file, touched, { loaded, env }),
+      key: keyOf(o.ground, ended.file, touched, { loaded, env }),
       touched,
       ...(Object.keys(loaded).length ? { files: Object.keys(loaded) } : {}),
       ...(Object.keys(env).length ? { env } : {}),

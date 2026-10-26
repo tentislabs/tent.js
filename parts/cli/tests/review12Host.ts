@@ -8,18 +8,30 @@ import { recordedCopy } from './recordedProject.ts'
 import { shell } from './typed.ts'
 
 /** A server of this computer that stands for another host, and the paths that were asked of it. */
-export async function anotherHost(t: TestContext): Promise<{ at: string; asked: string[] }> {
+export async function anotherHost(t: TestContext): Promise<{ at: string; asked: string[]; says: { text?: string } }> {
   const asked: string[] = []
+  // What the host answers as text, where a test sets it, in place of a picture.
+  const says: { text?: string } = {}
   const server = createServer((request, answer) => {
     asked.push(String(request.url))
+    if (says.text !== undefined) {
+      answer.writeHead(200, { 'content-type': 'text/plain' })
+      answer.end(says.text)
+      return
+    }
     answer.writeHead(200, { 'content-type': 'image/svg+xml' })
     answer.end('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>')
+  })
+  // A connection that asks to be a WebSocket is told apart from a request, and is asked all the same.
+  server.on('upgrade', (request, socket) => {
+    asked.push(String(request.url))
+    socket.destroy()
   })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
   t.after(() => server.close())
   const address: AddressInfo | string | null = server.address()
   const port = typeof address === 'object' && address !== null ? address.port : 0
-  return { at: `http://127.0.0.1:${String(port)}`, asked }
+  return { at: `http://127.0.0.1:${String(port)}`, asked, says }
 }
 
 /** The project `recorded` with the folder `review12/outside` over it, and the other host named where the app may reach it. */

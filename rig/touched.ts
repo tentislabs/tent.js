@@ -1,20 +1,20 @@
-// Loaded into every test program of the framework's own runs by `scripts/tests.mjs`, and through `NODE_OPTIONS` into
-// every program a test starts: notes each source file the program loads and each file and folder it reads, copies,
-// opens or lists under the tree that runs, each with its fingerprint as it stood when it was first noted, and the
-// words of the environment the test file's own program read, and writes them, as the program ends, where
-// `scripts/tests.mjs` keeps them for the next run.
+// Loaded into every test program of the framework's own runs by `scripts/tests.mjs`, through `NODE_OPTIONS` into
+// every program a test starts, and into every thread of them: notes each source file the program loads and each file
+// and folder it reads, copies, opens or lists under the tree that runs, each with its fingerprint as it stood when it
+// was first noted, each word of the environment it read as the run handed it, and how long the program ran and the
+// most memory it held. It tells them as they come where `scripts/tests.mjs` keeps them for the next run, so that a
+// thread that is ended and a program that is killed lose what came in their last moment alone.
 import { createHash } from 'node:crypto'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs'
 import { registerHooks, syncBuiltinESMExports } from 'node:module'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { threadId } from 'node:worker_threads'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import workerThreads, { threadId } from 'node:worker_threads'
 
 // The tree that runs, which `scripts/tests.mjs` names, and the test file whose program this is or started it. A
-// program that a test file's program started finds the file named by the one that started it.
+// program that a test file's program started, and a thread of it, finds the file named by the one that started it.
 const tree = process.env.TENT_TOUCHED_TREE
-const started = process.env.TENT_TOUCHED_OF !== undefined
 const of =
   process.env.TENT_TOUCHED_OF ??
   (tree && process.env.NODE_TEST_CONTEXT && process.argv[1]
@@ -22,7 +22,7 @@ const of =
     : undefined)
 
 // The ways of the files as the runtime gives them, before any is made to note.
-const { readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } = fs
+const { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } = fs
 
 /** The place of a path under the tree, written with `/`, or nothing for one outside it or of what a run makes. */
 function placeOf(path: string): string | undefined {
@@ -48,8 +48,36 @@ function printOf(path: string): string {
   }
 }
 
-// Each place noted, with its fingerprint when it was first noted, and whether a fingerprint is being read now.
-const noted = new Map<string, string>()
+// Where this program and thread tells what it noted, a line of each, which `scripts/tests.mjs` gathers, and the
+// lines not told yet. A file is told a tenth of a second after the first of them, and as the program ends: a write of
+// each line alone holds a busy computer, and a thread that is ended loses the files of its last tenth of a second.
+let told: string | undefined
+let waiting: string[] = []
+/** Tells the lines noted since the last telling. */
+function flush(): void {
+  if (!tree || !waiting.length) return
+  if (told === undefined) {
+    const folder = join(tree, 'results', 'touched')
+    mkdirSync(folder, { recursive: true })
+    told = join(folder, `${process.pid}-${threadId}.lines`)
+  }
+  const lines = waiting.join('')
+  waiting = []
+  appendFileSync(told, lines)
+}
+/**
+ * Tells one thing noted, with the others noted beside it: a word and a write of the rigs at once, since they are
+ * few and a thread is often ended right after it read a word.
+ */
+function tell(entry: Record<string, unknown>): void {
+  if (!tree || !of) return
+  if (!waiting.length) setTimeout(flush, 100).unref()
+  waiting.push(`${JSON.stringify({ of, ...entry })}\n`)
+  if (entry.file === undefined) flush()
+}
+
+// Each place noted, and whether a fingerprint is being read now: what it reads is noted already.
+const noted = new Set<string>()
 let printing = false
 // Whether the program wrote what the rigs of a run gather, a measure or a picture, which a replay would not give.
 let rigs = false
@@ -70,9 +98,10 @@ function note(given: unknown): void {
   const path = pathOf(given)
   const place = path === undefined ? undefined : placeOf(path)
   if (path === undefined || place === undefined || noted.has(place)) return
+  noted.add(place)
   printing = true
   try {
-    noted.set(place, printOf(path))
+    tell({ file: place, print: printOf(path) })
   } finally {
     printing = false
   }
@@ -95,8 +124,10 @@ function noteCopied(given: unknown): void {
 /** Notes a write into `results/parts/` of the tree, where the rigs of a run leave what they found. */
 function noteWritten(given: unknown): void {
   const path = pathOf(given)
-  if (tree && path !== undefined && relative(join(tree, 'results', 'parts'), resolve(path)).split(sep)[0] !== '..')
-    rigs = true
+  if (rigs || !tree || path === undefined) return
+  if (relative(join(tree, 'results', 'parts'), resolve(path)).split(sep)[0] === '..') return
+  rigs = true
+  tell({ rigs: true })
 }
 
 /** Notes what a listing by a pattern found: a path, or an entry with its folder. */
@@ -106,28 +137,59 @@ function noteFound(found: unknown, cwd: unknown): void {
   else if (found instanceof fs.Dirent) note(join(found.parentPath, found.name))
 }
 
-// The words of the environment the test file's own program read, each with its value as the program began. A copy
-// of the whole environment, as a program hands it to one it starts, reads no word: it reads each one's entry first.
-const words = new Map<string, string | null>()
-if (tree && of && !started) {
-  const began = { ...process.env }
+if (tree && of) {
+  // The program tells how long it ran and the most memory it held, as it ends: the profile of a run is made of them.
+  // A thread shares its program's memory, and tells nothing of it.
+  const top = process.env.TENT_TOUCHED_OF === undefined
+  if (threadId === 0)
+    process.once('exit', () =>
+      tell({
+        program: process.pid,
+        top,
+        ms: Math.round(process.uptime() * 1000),
+        peak: process.resourceUsage().maxRSS * 1024,
+      }),
+    )
+  process.once('exit', flush)
+  process.env.TENT_TOUCHED_OF = of
+  // A program that a test starts carries this hook too, and notes under the same test file.
+  const hook = `--import=${new URL(import.meta.url).href}`
+  if (!(process.env.NODE_OPTIONS ?? '').includes(hook))
+    process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ''} ${hook}`.trim()
+
+  // Each word of the environment that is read stands as the run handed it, which `scripts/tests.mjs` wrote: a word
+  // that a test set or changed for what it starts is the test's own, whose code its key holds already. A copy of the
+  // whole environment, as a program hands it to one it starts, reads no word: it reads each one's entry first.
+  const fold = (word: string): string => (process.platform === 'win32' ? word.toUpperCase() : word)
+  const handedAt = join(tree, 'results', 'handed.json')
+  const handed = new Map<string, string>(
+    existsSync(handedAt)
+      ? Object.entries(JSON.parse(readFileSync(handedAt, 'utf8'))).map(([word, value]) => [fold(word), String(value)])
+      : [],
+  )
+  const words = new Set<string>()
+  const read = (target: NodeJS.ProcessEnv, word: string | symbol): void => {
+    if (typeof word !== 'string' || words.has(fold(word))) return
+    const now: unknown = Reflect.get(target, word)
+    const was = handed.get(fold(word))
+    if ((now === undefined && was === undefined) || now === was) {
+      words.add(fold(word))
+      // A word is kept by the fingerprint of its value: the record holds no value, which may be a secret.
+      tell({ word: fold(word), value: was === undefined ? null : print(was) })
+    }
+  }
   // The word whose entry was last read: a copy reads a word's entry and then the word itself, at once.
   let described: string | symbol | undefined
-  // The words that the run itself sets for the runner.
-  const own = new Set(['NODE_TEST_CONTEXT', 'TENT_TOUCHED_OF', 'TENT_TOUCHED_TREE'])
-  const read = (word: string | symbol): void => {
-    if (typeof word === 'string' && !own.has(word) && !words.has(word)) words.set(word, began[word] ?? null)
-  }
   process.env = new Proxy(process.env, {
     get(target, word, receiver) {
       if (word === described) described = undefined
-      else read(word)
+      else read(target, word)
       return Reflect.get(target, word, receiver)
     },
     // A word is set on the environment itself, which takes a value alone.
     set: (target, word, value) => Reflect.set(target, word, value),
     has(target, word) {
-      read(word)
+      read(target, word)
       return Reflect.has(target, word)
     },
     getOwnPropertyDescriptor(target, word) {
@@ -135,14 +197,7 @@ if (tree && of && !started) {
       return Reflect.getOwnPropertyDescriptor(target, word)
     },
   })
-}
 
-if (tree && of) {
-  process.env.TENT_TOUCHED_OF = of
-  // A program that a test starts carries this hook too, and notes under the same test file.
-  const hook = `--import=${new URL(import.meta.url).href}`
-  if (!(process.env.NODE_OPTIONS ?? '').includes(hook))
-    process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ''} ${hook}`.trim()
   registerHooks({
     load(url, context, next) {
       note(url.split('?')[0])
@@ -204,17 +259,60 @@ if (tree && of) {
     }
   })
   syncBuiltinESMExports()
-  process.once('exit', () => {
-    const folder = join(tree, 'results', 'touched')
-    mkdirSync(folder, { recursive: true })
-    writeFileSync(
-      join(folder, `${process.pid}-${threadId}.json`),
-      JSON.stringify({
-        of,
-        files: Object.fromEntries([...noted].sort(([a], [b]) => (a < b ? -1 : 1))),
-        env: Object.fromEntries(words),
-        rigs,
-      }),
-    )
-  })
+
+  // A thread of the program loads this hook first, as a program it starts does: its code then runs as it would.
+  const rig = fileURLToPath(import.meta.url)
+  const Started = workerThreads.Worker
+  const addressOf = (file: string | URL): string =>
+    file instanceof URL
+      ? file.href
+      : file.startsWith('file:') || file.startsWith('data:')
+        ? file
+        : pathToFileURL(resolve(file)).href
+  // A thread that is ended where it stands runs no end of its own: it tells what it noted when it is asked to, first,
+  // and is given a second.
+  const channel = `tent-touched-${process.pid}`
+  if (threadId !== 0) {
+    const asked = new workerThreads.BroadcastChannel(channel)
+    asked.unref()
+    asked.onmessage = (message) => {
+      if (Reflect.get(Object(message.data), 'flush') !== threadId) return
+      flush()
+      asked.postMessage({ flushed: threadId })
+    }
+  }
+  /** Asks a thread to tell what it noted, and answers once it did, or a second later. */
+  const told = (thread: number): Promise<void> => {
+    const asking = new workerThreads.BroadcastChannel(channel)
+    return new Promise<void>((done) => {
+      const timer = setTimeout(done, 1000)
+      asking.onmessage = (message) => {
+        if (Reflect.get(Object(message.data), 'flushed') !== thread) return
+        clearTimeout(timer)
+        done()
+      }
+      asking.postMessage({ flush: thread })
+    }).finally(() => asking.close())
+  }
+  class Noted extends Started {
+    #ended = false
+    constructor(file: string | URL, options: workerThreads.WorkerOptions = {}) {
+      super(
+        options.eval
+          ? `require(${JSON.stringify(rig)});\n${String(file)}`
+          : `require(${JSON.stringify(rig)});\nimport(${JSON.stringify(addressOf(file))})`,
+        { ...options, eval: true },
+      )
+      // A thread that ended by itself told what it noted as it ended.
+      this.once('exit', () => {
+        this.#ended = true
+      })
+    }
+    override async terminate(): Promise<number> {
+      if (!this.#ended) await told(this.threadId)
+      return super.terminate()
+    }
+  }
+  Reflect.set(workerThreads, 'Worker', Noted)
+  syncBuiltinESMExports()
 }

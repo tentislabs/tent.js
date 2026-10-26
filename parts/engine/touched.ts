@@ -19,6 +19,7 @@ export type TouchedKind =
   | 'asked'
   | 'browsers'
   | 'pictures'
+  | 'heard'
 
 /** What one test touched while it runs in this program, by the name the program of the tests gives it. */
 export interface TestNotes {
@@ -42,6 +43,9 @@ const keptCalls = 20
 // The test whose work is under way: a note is made where the work is, never by what the program says runs now, so
 // work that a test set off and that ends after it still lands under that test.
 const tests = new AsyncLocalStorage<TestNotes>()
+// The test whose program this is as a whole, in a program that a test started: all its work is that test's.
+let whole: TestNotes | undefined
+const current = (): TestNotes | undefined => tests.getStore() ?? whole
 
 // The notes of every test of this program, by the name of the test, which this program writes as one file.
 const kept = new Map<string, TestNotes>()
@@ -62,15 +66,20 @@ export function notesOf(test: string): TestNotes {
   return made
 }
 
+/** Has all the work of this program be the work of a test, by its name: a program that the test started is. */
+export function noteAllAs(test: string): void {
+  whole = notesOf(test)
+}
+
 /** Carries work out as the work of a test, whose notes take what it touches, and answers what the work answers. */
 export const underTest = <Answer>(notes: TestNotes, work: () => Answer): Answer => tests.run(notes, work)
 
 /** The name of the test whose work is under way, which crosses with a call to a thread, or nothing outside a test. */
-export const testUnderWay = (): string | undefined => tests.getStore()?.test
+export const testUnderWay = (): string | undefined => current()?.test
 
 /** Notes that the test whose work is under way touched a thing of that kind. Outside a test it does nothing. */
 export function noteTouched(kind: TouchedKind, name: string): void {
-  const notes = tests.getStore()
+  const notes = current()
   if (!notes || name === '') return
   const names = notes.touched.get(kind) ?? new Set<string>()
   names.add(name)
@@ -79,7 +88,7 @@ export function noteTouched(kind: TouchedKind, name: string): void {
 
 /** Notes that the work of the test under way reached outside the program, in a few words of what it reached. */
 export function noteOutside(what: string): void {
-  tests.getStore()?.outside.add(what)
+  current()?.outside.add(what)
 }
 
 /**
@@ -87,18 +96,18 @@ export function noteOutside(what: string): void {
  * longer under way, as when a browser asks: outside a test it does nothing.
  */
 export function outsideNoter(): (what: string) => void {
-  const notes = tests.getStore()
+  const notes = current()
   return (what) => notes?.outside.add(what)
 }
 
 /** Notes that the work of the test under way stood outside the held clock of its app, in a few words of what. */
 export function noteUnheld(what: string): void {
-  tests.getStore()?.unheld.add(what)
+  current()?.unheld.add(what)
 }
 
 /** Notes a word of the environment that the work of the test under way read, with its value as the program began. */
 export function noteWord(word: string, value: string | null): void {
-  const notes = tests.getStore()
+  const notes = current()
   if (notes && !notes.env.has(word)) notes.env.set(word, value)
 }
 
@@ -109,7 +118,7 @@ export function noteLoaded(path: string, print: string): void {
 
 /** Keeps the facts of a call that the test under way made, as its newest: the last twenty are kept. */
 export function noteCalled(facts: unknown): void {
-  const notes = tests.getStore()
+  const notes = current()
   if (!notes) return
   notes.calls.push(facts)
   notes.calls.splice(0, Math.max(0, notes.calls.length - keptCalls))
@@ -117,13 +126,13 @@ export function noteCalled(facts: unknown): void {
 
 /** Notes the random seed of a test app that the test under way opened: the first it opened is the one printed. */
 export function noteSeed(seed: string): void {
-  const notes = tests.getStore()
+  const notes = current()
   if (notes && notes.seed === undefined) notes.seed = seed
 }
 
 /** Notes that a test app was opened: outside the work of any test, its tests share its data. */
 export function noteOpened(): void {
-  if (!tests.getStore()) openedApart = true
+  if (!current()) openedApart = true
 }
 
 /**

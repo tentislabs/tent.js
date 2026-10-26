@@ -165,6 +165,10 @@ const text = (value: string): { type: 'string'; value: string } => ({ type: 'str
  * for another place than the app is made by the engine, under the rule of the guarded fetch, and one for a name of
  * the app's own is answered by the app in this program, which the browser need not find. Answers the page.
  * Throws T0016, as not run where the engine does not speak WebDriver BiDi on this computer.
+ *
+ * Each page is a browser of its own, where a page of Chromium is a context of the program's one browser: a context
+ * of Firefox cannot route its requests through the engine without a door of system access this design does not
+ * open, and the WebDriver program of WebKit is one program for each session.
  */
 export async function bidiBrowser(o: Opened, at: DrawnAt, opening: BrowserOpening): Promise<Browsed> {
   const { origin } = at

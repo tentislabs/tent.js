@@ -1,20 +1,26 @@
 // Carries out the tests of a tree with the test runner of the runtime and the reporter of the runs, and runs again
 // only the test files whose record holds a changed file, a failure, a night test or a measure.
-// Run: node scripts/tests.mjs [folder] [--night] [--shard=<n>/<of>] [--all]      The light tests, or with --night the
-// heavy ones alone; with --shard the share of them that one of several machines runs side by side; with --all every
-// file, whatever its record holds.
+// Run: node scripts/tests.mjs [folder] [--night] [--shard=<n>/<of>] [--all] [--profile]      The light tests, or with
+// --night the heavy ones alone; with --shard the share of them that one of several machines runs side by side; with
+// --all every file, whatever its record holds; with --profile what each test file cost in time and memory, written
+// into results/profile.json, with the costliest printed.
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
-import { dirname, join } from 'node:path'
+import { spawn, spawnSync } from 'node:child_process'
+import { once } from 'node:events'
+import { totalmem } from 'node:os'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { concurrencyOf, coresHere, memoryNow } from '../rig/memory.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const words = process.argv.slice(2)
 const night = words.includes('--night')
 const all = words.includes('--all')
+const profiling = words.includes('--profile')
 const shard = words.find((word) => word.startsWith('--shard='))?.slice('--shard='.length)
-const folder = words.find((word) => !word.startsWith('--')) ?? root
+// The folder by its whole path: each program of the run is started in it, and reads the paths of the run from there.
+const folder = resolve(words.find((word) => !word.startsWith('--')) ?? root)
 
 // The rigs of a run each write a small file here, and one that an earlier run left would be gathered as its own.
 rmSync(join(folder, 'results', 'parts'), { recursive: true, force: true })
@@ -73,7 +79,21 @@ const ground = [
   ),
 ].join('\n')
 // What the runner and each test program are handed of the environment, which a word a test read is held to.
-const handed = { ...env, TENT_RUN: night ? 'night' : 'day', TENT_TOUCHED_TREE: folder }
+// Every program of the run, and every program one starts, loads the modules it compiled before from the runtime's
+// compile cache: a quarter of the load of the engine. Nothing under `results/` stands in a key of a test.
+const handed = {
+  ...env,
+  TENT_RUN: night ? 'night' : 'day',
+  TENT_TOUCHED_TREE: folder,
+  NODE_COMPILE_CACHE: join(folder, 'results', 'compile-cache'),
+}
+// The rig of each program reads it, and notes a word as the run handed it: one a test set itself is the test's own.
+// It is taken away when the run ends, since a word may hold a secret.
+mkdirSync(join(folder, 'results'), { recursive: true })
+writeFileSync(join(folder, 'results', 'handed.json'), JSON.stringify(handed))
+// A word as the system finds it: by its letters alone on Windows, as the rig notes it.
+const fold = (word) => (process.platform === 'win32' ? word.toUpperCase() : word)
+const handedFolded = new Map(Object.entries(handed).map(([word, value]) => [fold(word), value]))
 /**
  * The key of a test file: what the run stands on, each file and folder its programs touched with its fingerprint,
  * and each word of the environment its program read with its value.
@@ -90,7 +110,12 @@ const keyOf = (prints, words) =>
 const keyNow = (record) =>
   keyOf(
     Object.fromEntries(record.touched.map((path) => [path, printOf(path)])),
-    Object.fromEntries(Object.keys(record.env ?? {}).map((word) => [word, handed[word] ?? null])),
+    Object.fromEntries(
+      Object.keys(record.env ?? {}).map((word) => {
+        const value = handedFolded.get(fold(word))
+        return [word, value === undefined ? null : print(value)]
+      }),
+    ),
   )
 
 // A file whose tests passed and whose key is what it was is replayed: but a night test, a measure and a file whose
@@ -129,9 +154,19 @@ const others = night
 const written = () =>
   existsSync(results) ? readdirSync(results).filter((name) => /^(linux|windows|macos)(\.night)?\.json$/.test(name)) : []
 
+// The most memory one test file's programs held together, at the ninetieth share of the files of a whole run on
+// Windows with `--profile`: half of them 253 MB, the most 13 GB, of a file that starts many programs.
+const programPeak = 450 * 1024 * 1024
+// As many test files at once as the processor has cores less one, and no more than the memory there is holds.
+const concurrency = concurrencyOf({ cores: coresHere(), free: memoryNow(), peak: programPeak })
+
+// The least memory there was while the run went on, which a run with --profile looks at twice a second.
+let least = Number.POSITIVE_INFINITY
+const began = { at: performance.now(), free: memoryNow() }
+
 /** Runs a set of the files, with the words given beside them, as a share of the machines where `shared`. */
-function runOf(set, more, shared) {
-  const ended = spawnSync(
+async function runOf(set, more, shared) {
+  const runner = spawn(
     process.execPath,
     [
       // A screen file is a `.tsx` file, which the runtime loads through this rig alone.
@@ -152,8 +187,13 @@ function runOf(set, more, shared) {
     ],
     { cwd: folder, stdio: 'inherit', env: handed },
   )
-  if (ended.error) throw ended.error
-  return ended.status ?? 1
+  const looking = profiling ? setInterval(() => (least = Math.min(least, memoryNow())), 500) : undefined
+  try {
+    const [code] = await once(runner, 'exit')
+    return code ?? 1
+  } finally {
+    clearInterval(looking)
+  }
 }
 
 /** What each test file the run carried out stood as, with the ids of its tests, as the reporter wrote it. */
@@ -167,27 +207,82 @@ const filesRan = () => (existsSync(join(results, 'files.json')) ? readJson(join(
 function touchedOf() {
   const noted = join(results, 'touched')
   const touched = {}
-  for (const name of existsSync(noted) ? readdirSync(noted) : []) {
-    const read = readJson(join(noted, name))
-    const held = touched[read.of] ?? { prints: {}, env: {}, rigs: false, changed: false }
-    for (const [path, one] of Object.entries(read.files)) {
-      if (held.prints[path] !== undefined && held.prints[path] !== one) held.changed = true
-      held.prints[path] = one
+  for (const name of existsSync(noted) ? readdirSync(noted) : [])
+    for (const line of readFileSync(join(noted, name), 'utf8').split('\n')) {
+      // A program that was killed as it told may leave its last line cut: it is no note.
+      let read
+      try {
+        read = JSON.parse(line)
+      } catch {
+        continue
+      }
+      const held = touched[read.of] ?? { prints: {}, env: {}, rigs: false, changed: false }
+      if (read.file !== undefined) {
+        if (held.prints[read.file] !== undefined && held.prints[read.file] !== read.print) held.changed = true
+        held.prints[read.file] = read.print
+      }
+      if (read.word !== undefined) held.env[read.word] = read.value
+      held.rigs ||= read.rigs === true
+      touched[read.of] = held
     }
-    Object.assign(held.env, read.env)
-    held.rigs ||= read.rigs
-    touched[read.of] = held
-  }
   for (const held of Object.values(touched))
     held.changed ||= Object.entries(held.prints).some(([path, one]) => printOf(path) !== one)
   return touched
+}
+
+/**
+ * Writes `results/profile.json`: what each test file of the run cost, from what each of its programs told as it
+ * ended, its time and the peak of its own program, the sum of the peaks of all its programs and how many there were,
+ * and the time of the run and the most memory the computer held while it went on. Prints the twenty costliest files
+ * by time and by memory, and that peak.
+ */
+function profiled() {
+  const noted = join(results, 'touched')
+  const files = {}
+  for (const name of existsSync(noted) ? readdirSync(noted) : [])
+    for (const line of readFileSync(join(noted, name), 'utf8').split('\n')) {
+      let read
+      try {
+        read = JSON.parse(line)
+      } catch {
+        continue
+      }
+      if (read.program === undefined) continue
+      const held = files[read.of] ?? { ms: 0, peak: 0, sum: 0, programs: 0 }
+      if (read.top) Object.assign(held, { ms: Math.max(held.ms, read.ms), peak: Math.max(held.peak, read.peak) })
+      held.sum += read.peak
+      held.programs += 1
+      files[read.of] = held
+    }
+  const sorted = Object.fromEntries(Object.entries(files).sort(([a], [b]) => (a < b ? -1 : 1)))
+  // The most memory the computer held while the run went on, and how much of it the run took beside what it held before.
+  const peak = totalmem() - Math.min(least, began.free)
+  const taken = Math.max(0, began.free - least)
+  const profile = { ms: Math.round(performance.now() - began.at), peak, taken, files: sorted }
+  mkdirSync(results, { recursive: true })
+  writeFileSync(join(results, 'profile.json'), `${JSON.stringify(profile, null, 2)}\n`)
+  const mb = (bytes) => `${Math.round(bytes / 1024 / 1024)} MB`
+  const costliest = (by, said) =>
+    Object.entries(files)
+      .sort(([, a], [, b]) => b[by] - a[by])
+      .slice(0, 20)
+      .map(([file, one]) => `  ${said(one)}  ${file}`)
+  console.log(
+    [
+      'costliest by time:',
+      ...costliest('ms', (one) => `${(one.ms / 1000).toFixed(1)} s`),
+      'costliest by memory:',
+      ...costliest('sum', (one) => `${mb(one.sum)} (its own program ${mb(one.peak)}, ${one.programs} programs)`),
+      `peak of the run: ${mb(peak)}, ${mb(taken)} more than as it began, in ${(profile.ms / 1000 / 60).toFixed(1)} minutes`,
+    ].join('\n'),
+  )
 }
 
 // The runner given no file runs every file it finds by its own patterns, so a set with none is not run.
 const sets = [
   // A heavy test holds a machine's processor and memory by itself: side by side they starved a runner of Windows
   // until it lost its server, so the night runs its files one at a time.
-  [others, night ? ['--test-concurrency=1'] : []],
+  [others, [`--test-concurrency=${night ? 1 : concurrency}`]],
   [measures, ['--test-concurrency=1']],
 ].filter(([set]) => set.length)
 
@@ -195,14 +290,14 @@ const sets = [
 const shares = join(results, 'sets')
 rmSync(shares, { recursive: true, force: true })
 const ran = {}
-const codes = sets.map(([set, more], k) => {
+const codes = []
+for (const [k, [set, more]] of sets.entries()) {
   rmSync(join(results, 'files.json'), { force: true })
-  const code = runOf(set, more, true)
+  codes.push(await runOf(set, more, true))
   Object.assign(ran, filesRan())
   mkdirSync(join(shares, String(k)), { recursive: true })
   for (const name of written()) renameSync(join(results, name), join(shares, String(k), name))
-  return code
-})
+}
 rmSync(join(results, 'files.json'), { force: true })
 // A replayed file stands in the result file as each of its ids stood when it was kept.
 if (replayed.size) {
@@ -254,4 +349,6 @@ if (!night) {
   for (const name of readdirSync(keptFolder)) rmSync(join(keptFolder, name))
   writeFileSync(keptFile, `${JSON.stringify(record, null, 2)}\n`)
 }
+if (profiling) profiled()
+rmSync(join(folder, 'results', 'handed.json'), { force: true })
 process.exit(codes.find((code) => code !== 0) ?? joined)
