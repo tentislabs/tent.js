@@ -2,9 +2,9 @@
 // write of that file, and started again: the second start applies each kept change that lies above the number of
 // its file, from its record, and holds every file against the first set.
 // Run: node fileApplied.ts <folder>
-import { writeSync } from 'node:fs'
 import { join } from 'node:path'
 import { applyChange, changesTable, connected, hereTable, keptChanges, openFiles, sqliteStore } from '../../index.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const folder = process.argv[2]
 const system = { kind: 'system' }
@@ -46,8 +46,7 @@ if (!read(second.shared, { from: changesTable.name, count: true })) {
   })
   for (const change of changes.slice(0, -1)) applyChange(second, change)
   applyChange(second, changes.at(-1), { only: 'kept' })
-  writeSync(1, 'kept\n')
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60_000)
+  killedAt('kept')
   console.log('broken: the program was not killed')
   process.exit(3)
 }

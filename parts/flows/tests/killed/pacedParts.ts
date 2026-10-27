@@ -1,11 +1,12 @@
 // A program that makes the starts of a flow paced by one part of `pace`, and is killed after its last start: the
 // second start makes none, and waits for every run that the kept starts make.
 // Run: node pacedParts.ts <data folder> <part>
-import { appendFileSync, existsSync, readFileSync, writeSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { sqliteStore } from '../../../data/index.ts'
 import { createRunner, runTableSteps } from '../../index.ts'
 import { movingClock } from './moving.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [folder, part] = process.argv.slice(2)
 const version = 'v1'
@@ -74,8 +75,7 @@ if (!existsSync(made)) {
     runner.add({ flow: 'paced', version, startedBy: { kind: 'system' }, input: { n } })
   appendFileSync(made, 'made\n')
   // Every start is written: the harness kills the program here, while the kept starts wait.
-  writeSync(1, 'added all\n')
-  await new Promise((done) => setTimeout(done, 60_000))
+  killedAt('added all')
 }
 // The second start makes no start: it waits until each run that was kept has ended.
 for (;;) {

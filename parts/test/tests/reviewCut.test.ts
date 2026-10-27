@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import test from 'node:test'
-import { current, level } from './many.ts'
+import { current, level, readersHeld } from './many.ts'
 import { served } from './served.ts'
 import { idByEmail, stormed } from './storms.ts'
 
@@ -48,18 +48,22 @@ test('[32-12] a picture as a user leaves the sessions of that user as they were:
   assert.deepEqual(sessionsOf(at.dataFolder, id), before)
 })
 
-test('[29-3@5] a browser of a user on a reader of a test app is that user, as on the writer: a test app and its readers are called alike', async (t) => {
-  const { app } = await stormed(t, 'stormed')
-  const near = await app.reader()
-  await current(app, near)
-  const maya = await idByEmail(app, 'maya@example.com')
-  await level(app, near)
-  assert.deepEqual(await app.browser({ as: maya }).call('whoAmI'), {
-    ok: true,
-    value: maya,
-  })
-  assert.deepEqual(await near.browser({ as: maya }).call('whoAmI'), {
-    ok: true,
-    value: maya,
-  })
-})
+test(
+  '[29-3@5] a browser of a user on a reader of a test app is that user, as on the writer: a test app and its readers are called alike',
+  readersHeld,
+  async (t) => {
+    const { app } = await stormed(t, 'stormed')
+    const near = await app.reader()
+    await current(app, near)
+    const maya = await idByEmail(app, 'maya@example.com')
+    await level(app, near)
+    assert.deepEqual(await app.browser({ as: maya }).call('whoAmI'), {
+      ok: true,
+      value: maya,
+    })
+    assert.deepEqual(await near.browser({ as: maya }).call('whoAmI'), {
+      ok: true,
+      value: maya,
+    })
+  },
+)

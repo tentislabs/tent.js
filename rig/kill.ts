@@ -1,4 +1,5 @@
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process'
+import { writeSync } from 'node:fs'
 import { basename } from 'node:path'
 import { createInterface } from 'node:readline'
 
@@ -10,6 +11,26 @@ type Killed = { kills: number; seed: number; ended: Ended[] }
 
 // The rounds in a row that may end before their kill. A program that never reaches its kill would be started for ever.
 const again = 10
+
+// The word a start that its round kills at a line is handed, with that line; the start after the kill is handed none.
+const killedWord = 'TENT_KILLED_AT'
+
+/**
+ * Takes a line that a program prints for the run that kills it. Writes it at once, not when the program next gives
+ * way. Where it is the line this start is killed at, the start stands still there until the kill, so it never ends by
+ * itself before its kill, however slow the computer is; any other start goes on at once.
+ */
+export function killedAt(line: string): void {
+  writeSync(
+    1,
+    `${line}
+`,
+  )
+  if (process.env[killedWord] === line) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+}
+
+/** Whether this start of a program is the one its round kills at a line: a start that works on until it is killed. */
+export const killedStart = (): boolean => process.env[killedWord] !== undefined
 
 /** Answers a source of numbers from 0 up to 1 that gives the same numbers for the same seed. */
 function drawer(seed: number): () => number {
@@ -89,9 +110,11 @@ function once(
   kill: { when?: string; after?: number; wait: number },
 ): Promise<Ended & { killed: boolean; hung: boolean }> {
   return new Promise((resolve, reject) => {
+    const { [killedWord]: _, ...env } = process.env
     const program = spawn(process.execPath, [file, ...args], {
       stdio: ['ignore', 'pipe', 'pipe'],
       detached: process.platform !== 'win32',
+      env: kill.when === undefined ? env : { ...env, [killedWord]: kill.when },
     })
     let out = ''
     let printed = ''

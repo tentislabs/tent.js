@@ -95,9 +95,22 @@ test('[54-6] the browser ends with its program, and none is left', { timeout: 30
 
 test('[54-6] pages of Firefox start a browser each, as before', { timeout: 300_000 }, async (t) => {
   const { app } = await running(t)
-  const ours = (): number => readdirSync(tmpdir()).filter((name) => name.startsWith('tent-firefox-')).length
-  const before = ours()
-  const pages = [await browsed(app, opening('firefox')), await browsed(app, opening('firefox'))]
-  t.after(() => Promise.all(pages.map((one) => one.end())))
-  assert.equal(ours() - before, 2)
+  // The folders of passing files are this program's own while its pages start: a browser that another program of the
+  // run starts at the same time is never counted.
+  const own = mkdtempSync(join(tmpdir(), 'tent-pages-'))
+  const words = ['TMPDIR', 'TEMP', 'TMP'].map((word) => [word, process.env[word]] as const)
+  for (const [word] of words) process.env[word] = own
+  const pages: Browsed[] = []
+  try {
+    for (let n = 0; n < 2; n++) pages.push(await browsed(app, opening('firefox')))
+  } finally {
+    for (const [word, value] of words)
+      if (value === undefined) delete process.env[word]
+      else process.env[word] = value
+  }
+  t.after(async () => {
+    await Promise.all(pages.map((one) => one.end()))
+    rmSync(own, { recursive: true, force: true, maxRetries: 30, retryDelay: 100 })
+  })
+  assert.equal(readdirSync(own).filter((name) => name.startsWith('tent-firefox-')).length, 2)
 })

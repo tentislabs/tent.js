@@ -11,52 +11,57 @@ import {
   logRows,
   machinesOf,
   moment,
+  readersHeld,
   send,
   titles,
   until,
   writerOf,
 } from './many.ts'
 
-test('[29-2] a reader that starts empty fetches the running version and the data, joins, answers nothing itself until it is current, and then answers what the writer answers', async (t) => {
-  const app = await writerOf(t)
-  for (const title of ['one', 'two', 'three']) await send(app, 'addOrder', { title })
-  const near = await app.reader()
-  assert.deepEqual([app.role, near.role], ['writer', 'reader'])
-  // The folder of the reader holds the running version and the data, and no half file.
-  const folder = folderOf(t, 'reader-2')
-  assert.equal(existsSync(join(folder, 'data.db')), true)
-  assert.deepEqual(
-    readdirSync(folder).filter((name) => name.startsWith('data.db.fetch')),
-    [],
-  )
-  const [version] = readdirSync(join(folder, 'versions'))
-  assert.equal(existsSync(join(folder, 'versions', version, 'description.json')), true)
-  assert.deepEqual([near.at().n, near.at().sum], [app.at().n, app.at().sum])
-  assert.equal(near.description.app.name, 'many')
+test(
+  '[29-2] a reader that starts empty fetches the running version and the data, joins, answers nothing itself until it is current, and then answers what the writer answers',
+  readersHeld,
+  async (t) => {
+    const app = await writerOf(t)
+    for (const title of ['one', 'two', 'three']) await send(app, 'addOrder', { title })
+    const near = await app.reader()
+    assert.deepEqual([app.role, near.role], ['writer', 'reader'])
+    // The folder of the reader holds the running version and the data, and no half file.
+    const folder = folderOf(t, 'reader-2')
+    assert.equal(existsSync(join(folder, 'data.db')), true)
+    assert.deepEqual(
+      readdirSync(folder).filter((name) => name.startsWith('data.db.fetch')),
+      [],
+    )
+    const [version] = readdirSync(join(folder, 'versions'))
+    assert.equal(existsSync(join(folder, 'versions', version, 'description.json')), true)
+    assert.deepEqual([near.at().n, near.at().sum], [app.at().n, app.at().sum])
+    assert.equal(near.description.app.name, 'many')
 
-  // Until it is current it answers nothing itself: a query is handed to the writer, and `/_t/health` is T0029.
-  assert.equal(near.at().current, false)
-  const before = callsOf(t, 'data', 'listOrders')
-  const early = await send(near, 'listOrders')
-  assert.equal(early.status, 200)
-  assert.equal(Object(early.value).length, 3)
-  assert.equal(callsOf(t, 'data', 'listOrders'), before + 1)
-  assert.equal(callsOf(t, 'reader-2', 'listOrders'), 0)
-  const unwell = await send(near, '', {}, { path: '/_t/health', method: 'GET' })
-  assert.deepEqual([unwell.status, unwell.code], [503, 'T0029'])
+    // Until it is current it answers nothing itself: a query is handed to the writer, and `/_t/health` is T0029.
+    assert.equal(near.at().current, false)
+    const before = callsOf(t, 'data', 'listOrders')
+    const early = await send(near, 'listOrders')
+    assert.equal(early.status, 200)
+    assert.equal(Object(early.value).length, 3)
+    assert.equal(callsOf(t, 'data', 'listOrders'), before + 1)
+    assert.equal(callsOf(t, 'reader-2', 'listOrders'), 0)
+    const unwell = await send(near, '', {}, { path: '/_t/health', method: 'GET' })
+    assert.deepEqual([unwell.status, unwell.code], [503, 'T0029'])
 
-  // Once it is current it answers what the writer answers, with no request reaching the writer.
-  await current(app, near)
-  const [mine, theirs] = [await send(near, 'listOrders'), await send(app, 'listOrders')]
-  assert.deepEqual(mine.value, theirs.value)
-  assert.equal(callsOf(t, 'reader-2', 'listOrders'), 1)
-  assert.equal(callsOf(t, 'data', 'listOrders'), before + 2)
-  assert.equal((await send(near, '', {}, { path: '/_t/health', method: 'GET' })).status, 200)
-  // What the writer writes from now on arrives, and is what the reader answers.
-  await send(app, 'addOrder', { title: 'four' })
-  assert.equal(near.at().n, app.at().n)
-  assert.deepEqual(await titles(near), ['one', 'two', 'three', 'four'])
-})
+    // Once it is current it answers what the writer answers, with no request reaching the writer.
+    await current(app, near)
+    const [mine, theirs] = [await send(near, 'listOrders'), await send(app, 'listOrders')]
+    assert.deepEqual(mine.value, theirs.value)
+    assert.equal(callsOf(t, 'reader-2', 'listOrders'), 1)
+    assert.equal(callsOf(t, 'data', 'listOrders'), before + 2)
+    assert.equal((await send(near, '', {}, { path: '/_t/health', method: 'GET' })).status, 200)
+    // What the writer writes from now on arrives, and is what the reader answers.
+    await send(app, 'addOrder', { title: 'four' })
+    assert.equal(near.at().n, app.at().n)
+    assert.deepEqual(await titles(near), ['one', 'two', 'three', 'four'])
+  },
+)
 
 test('[29-2] the machines are listed with their kinds and their numbers, on the writer and on a reader', async (t) => {
   const { app, near, far } = await machinesOf(t)

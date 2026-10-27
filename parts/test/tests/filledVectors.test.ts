@@ -6,7 +6,7 @@ import test from 'node:test'
 import { buildProject } from '../../build/index.ts'
 import type { TestApp } from '../index.ts'
 import { appIn, command, readFile } from './desks.ts'
-import { current } from './many.ts'
+import { current, readersHeld } from './many.ts'
 import { listened } from './probe.ts'
 import { copyOf } from './projects.ts'
 
@@ -207,15 +207,19 @@ test('[51-14] tent filled shows the limit of a by, or that it has none', async (
   assert.equal(of('notes')?.limits, 'none')
 })
 
-test('[51-14] a reader that carried out an action which states changes false sends what its model call used, and the writer counts it', async (t) => {
-  const { app, dataFolder } = await vectors(t)
-  const near = await app.reader()
-  await current(app, near)
-  assert.equal(await near.call('greet', undefined, { as: { kind: 'system' } }), 'Hello.')
-  await until(
-    app,
-    'the writer counted the call of the reader',
-    () => amount(dataFolder, 'thinker', 'system', 'calls') === 1,
-  )
-  assert.equal(amount(dataFolder, 'thinker', 'system', 'tokensOut'), 2)
-})
+test(
+  '[51-14] a reader that carried out an action which states changes false sends what its model call used, and the writer counts it',
+  readersHeld,
+  async (t) => {
+    const { app, dataFolder } = await vectors(t)
+    const near = await app.reader()
+    await current(app, near)
+    assert.equal(await near.call('greet', undefined, { as: { kind: 'system' } }), 'Hello.')
+    await until(
+      app,
+      'the writer counted the call of the reader',
+      () => amount(dataFolder, 'thinker', 'system', 'calls') === 1,
+    )
+    assert.equal(amount(dataFolder, 'thinker', 'system', 'tokensOut'), 2)
+  },
+)

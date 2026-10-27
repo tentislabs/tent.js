@@ -1,8 +1,9 @@
 // A program that starts twelve runs of a flow that is paced, three each fifth of a second, and is killed after one
 // of its starts: the second start adds the starts that the first did not, and waits for every run to end.
 // Run: node paced.ts <data folder>
-import { appendFileSync, readFileSync, writeSync } from 'node:fs'
+import { appendFileSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { killedAt } from '../../../../rig/kill.ts'
 import { sqliteStore } from '../../../data/index.ts'
 import { createRunner, runTableSteps } from '../../index.ts'
 import { movingClock } from './moving.ts'
@@ -57,8 +58,8 @@ const had = new Set(runner.find({ flow: 'paced' }).map((run) => run.input.n))
 for (let n = 1; n <= 12; n += 1) {
   if (had.has(n)) continue
   runner.add({ flow: 'paced', version, startedBy: { kind: 'system' }, input: { n } })
-  // The start is written when `add` answers: the line tells the harness that it may kill the program here.
-  writeSync(1, `added ${n}\n`)
+  // The start is written when `add` answers: the start that is killed at this line stands still here.
+  killedAt(`added ${n}`)
 }
 const runs = runner.find({ flow: 'paced' })
 const answers = await Promise.all(runs.map((run) => runner.wait(run.id)))

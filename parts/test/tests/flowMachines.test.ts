@@ -5,7 +5,7 @@ import type { TestContext } from 'node:test'
 import test from 'node:test'
 import type { TestApp } from '../index.ts'
 import type { Machines } from './many.ts'
-import { beat, codeOf, current, level, machinesOf, send, until } from './many.ts'
+import { beat, codeOf, current, level, machinesOf, readersHeld, send, until } from './many.ts'
 import { notDropped } from './started.ts'
 
 const system = { as: 'system' } as const
@@ -104,75 +104,79 @@ test('[29-10] a flow runs on the writer alone: with three machines joined, a tri
   assert.deepEqual([await count(far, 'before b'), await count(far, 'after b')], [1, 1])
 })
 
-test('[29-10] [29-7@7b] after a reader took over, a run that waited goes on from its saved step and fires its timer once, and the runner runs on the new writer', async (t) => {
-  const { app, near, far } = await withFlows(t)
-  const run = notDropped(await app.start('pause', { name: 'kept', wait: '1 day' }, system)).run
-  await untilState(app, run, 'waiting')
-  await level(app, near, far)
-  await app.kill()
-  await beat(near, 6)
-  // While it is a reader it starts no runner: the time of the wait passes, and nothing wakes the run there.
-  assert.equal(near.role, 'reader')
-  near.clock.advance('1 day')
-  await beat(near, 2)
-  assert.equal(near.runs.read(run)?.state, 'waiting')
-  assert.deepEqual(
-    near.runs.read(run)?.steps.map((step) => [step.name, step.state]),
-    [
-      ['before', 'done'],
-      ['wait', 'waiting'],
-    ],
-  )
+test(
+  '[29-10] [29-7@7b] after a reader took over, a run that waited goes on from its saved step and fires its timer once, and the runner runs on the new writer',
+  readersHeld,
+  async (t) => {
+    const { app, near, far } = await withFlows(t)
+    const run = notDropped(await app.start('pause', { name: 'kept', wait: '1 day' }, system)).run
+    await untilState(app, run, 'waiting')
+    await level(app, near, far)
+    await app.kill()
+    await beat(near, 6)
+    // While it is a reader it starts no runner: the time of the wait passes, and nothing wakes the run there.
+    assert.equal(near.role, 'reader')
+    near.clock.advance('1 day')
+    await beat(near, 2)
+    assert.equal(near.runs.read(run)?.state, 'waiting')
+    assert.deepEqual(
+      near.runs.read(run)?.steps.map((step) => [step.name, step.state]),
+      [
+        ['before', 'done'],
+        ['wait', 'waiting'],
+      ],
+    )
 
-  await near.takeOver()
-  assert.equal(near.role, 'writer')
-  // The new writer takes the run up: its wait is over, its first step is read as it was saved, and its last is carried out.
-  await untilState(near, run, 'done')
-  assert.equal(await near.runs.wait(run), 'kept')
-  assert.deepEqual([await count(near, 'before kept'), await count(near, 'after kept')], [1, 1])
-  assert.deepEqual(
-    near.runs.read(run)?.steps.map((step) => [step.name, step.state]),
-    [
-      ['before', 'done'],
-      ['wait', 'done'],
-      ['after', 'done'],
-    ],
-  )
-  // More time wakes it no second time.
-  near.clock.advance('2 days')
-  await beat(near, 2)
-  assert.equal(await count(near, 'after kept'), 1)
+    await near.takeOver()
+    assert.equal(near.role, 'writer')
+    // The new writer takes the run up: its wait is over, its first step is read as it was saved, and its last is carried out.
+    await untilState(near, run, 'done')
+    assert.equal(await near.runs.wait(run), 'kept')
+    assert.deepEqual([await count(near, 'before kept'), await count(near, 'after kept')], [1, 1])
+    assert.deepEqual(
+      near.runs.read(run)?.steps.map((step) => [step.name, step.state]),
+      [
+        ['before', 'done'],
+        ['wait', 'done'],
+        ['after', 'done'],
+      ],
+    )
+    // More time wakes it no second time.
+    near.clock.advance('2 days')
+    await beat(near, 2)
+    assert.equal(await count(near, 'after kept'), 1)
 
-  // The runner runs on the new writer: a trigger fires there once, and a run is started and ended there.
-  assert.equal((await send(near, 'addOrder', { title: 'by the new writer' })).status, 200)
-  await until(
-    'the trigger of the new writer ended its run',
-    async () => (await count(near, 'noted by the new writer')) === 1,
-  )
-  const next = notDropped(await near.start('pause', { name: 'new', wait: '1 hour' }, system)).run
-  await untilState(near, next, 'waiting')
-  near.clock.advance('1 hour')
-  await untilState(near, next, 'done')
-  // The far reader follows the new writer and holds what its runs wrote, once each.
-  await until(
-    'the far reader follows the new writer',
-    async () => {
-      await beat(far)
-      return far.at().epoch === near.at().epoch && far.at().n === near.at().n
-    },
-    40,
-  )
-  await current(near, far)
-  assert.deepEqual(await customers(far), [
-    'after kept',
-    'after new',
-    'before kept',
-    'before new',
-    'noted by the new writer',
-  ])
-  // A reader that waits for a run reads how it ended from its own data.
-  assert.equal(await codeOf(far.runs.wait(next)), undefined)
-})
+    // The runner runs on the new writer: a trigger fires there once, and a run is started and ended there.
+    assert.equal((await send(near, 'addOrder', { title: 'by the new writer' })).status, 200)
+    await until(
+      'the trigger of the new writer ended its run',
+      async () => (await count(near, 'noted by the new writer')) === 1,
+    )
+    const next = notDropped(await near.start('pause', { name: 'new', wait: '1 hour' }, system)).run
+    await untilState(near, next, 'waiting')
+    near.clock.advance('1 hour')
+    await untilState(near, next, 'done')
+    // The far reader follows the new writer and holds what its runs wrote, once each.
+    await until(
+      'the far reader follows the new writer',
+      async () => {
+        await beat(far)
+        return far.at().epoch === near.at().epoch && far.at().n === near.at().n
+      },
+      40,
+    )
+    await current(near, far)
+    assert.deepEqual(await customers(far), [
+      'after kept',
+      'after new',
+      'before kept',
+      'before new',
+      'noted by the new writer',
+    ])
+    // A reader that waits for a run reads how it ended from its own data.
+    assert.equal(await codeOf(far.runs.wait(next)), undefined)
+  },
+)
 
 test('[29-10] on a reader the runs are read from its own data, and on test data a start, a yes, a no and a stop that code asks a reader for are carried out by the writer', async (t) => {
   const { app, near, far } = await withFlows(t)

@@ -1,8 +1,8 @@
 // A program that is killed between the commit of a tenant's file and the kept change of that write, and started
 // again: the second start opens the file, and holds that it was given a kept change with `fetch`.
 // Run: node fileKept.ts <folder>
-import { writeSync } from 'node:fs'
 import { changesTable, connected, hereTable, openFiles, sqliteStore } from '../../index.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const folder = process.argv[2]
 const system = { kind: 'system' }
@@ -23,8 +23,7 @@ const searcher = {
   has: () => true,
   wrote(_table, _id, texts) {
     if (texts?.note !== 'the last') return
-    writeSync(1, 'committed\n')
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 60_000)
+    killedAt('committed')
   },
   find: () => [],
 }

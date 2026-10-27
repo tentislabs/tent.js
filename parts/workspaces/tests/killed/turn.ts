@@ -11,6 +11,7 @@ import { createEngine } from '../../../engine/index.ts'
 import { testSecrets } from '../../../test/secrets.ts'
 import { createWorkspaces } from '../../index.ts'
 import { toolTemplates } from '../tooled.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [folder, phase] = process.argv.slice(2)
 mkdirSync(folder, { recursive: true })
@@ -50,8 +51,7 @@ const killedHere = async (line: string): Promise<never> => {
   const { workspace } = JSON.parse(readFileSync(ids, 'utf8'))
   writeFileSync(join(folder, 'run-before.txt'), String(workspaces.history(workspace).turns()[0]?.run))
   writeFileSync(once, '')
-  writeSync(1, `${line}\n`)
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+  killedAt(line)
   throw new Error('never')
 }
 

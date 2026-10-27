@@ -1,9 +1,10 @@
 // A program that is killed between a commit and the handing on of that write to a sink, and started again: each
 // start is told by `start` where the data stands, and the sink keeps the number it holds in a file of its own.
 // Run: node handing.ts <data folder>
-import { existsSync, readFileSync, writeFileSync, writeSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { connected, sqliteStore } from '../../index.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const folder = process.argv[2]
 const system = { kind: 'system' }
@@ -39,6 +40,5 @@ if (gap) {
 } else {
   store.write((tx) => tx.add('entries', { k: holds() + 1 }, system))
   // The write is committed and the sink has not taken it: the kill is to arrive now.
-  writeSync(1, 'mid\n')
-  await new Promise((resolve) => setTimeout(resolve, 60_000))
+  killedAt('mid')
 }

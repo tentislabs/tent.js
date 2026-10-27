@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { addOrder, addTeam, callsIn, deskOf, hasFile, readerFolder } from './desks.ts'
-import { current, level, moment, until } from './many.ts'
+import { current, level, moment, readersHeld, until } from './many.ts'
 import type { Watcher } from './watched.ts'
 import { watcher } from './watched.ts'
 
@@ -54,36 +54,40 @@ test("[50-7] a page that watches a query over two tenants' files is sent the cha
   assert.equal(page.of('result', 'two').length + page.of('rows', 'two').length, 3)
 })
 
-test("[50-7] a page on a reader that watches a query over two tenants' files is sent the change of a write to either, and nothing for a write to a third", async (t) => {
-  const desk = await deskOf(t)
-  const { app } = desk
-  const [north, south, east, west] = [
-    await addTeam(app, 'North'),
-    await addTeam(app, 'South'),
-    await addTeam(app, 'East'),
-    await addTeam(app, 'West'),
-  ]
-  await addOrder(app, north, 'a lamp')
-  await addOrder(app, east, 'a shelf')
-  const near = await app.reader()
-  await current(app, near)
-  await level(app, near)
-  const page = watcher(near)
-  // One file is there, and one is not yet.
-  assert.deepEqual((await page.watch('two', 'ordersOf', { input: { teams: [north, south] } })).value, ['a lamp'])
-  await addOrder(app, south, 'a desk')
-  await until('the page of the reader is sent the first row of a tenant', () => page.got.length === 2)
-  assert.deepEqual(held(page, 'two'), ['a lamp', 'a desk'])
-  await addOrder(app, north, 'a rug')
-  await until('the page of the reader is sent the order', () => page.got.length === 3)
-  assert.deepEqual(held(page, 'two'), ['a lamp', 'a rug', 'a desk'])
-  // The reader ran the query itself, and does not run it again for a write to the file of another tenant.
-  const runs = callsIn(readerFolder(desk, 2), 'ordersOf')
-  assert.ok(runs >= 3)
-  await addOrder(app, east, 'a stool')
-  await addOrder(app, west, 'a first one')
-  await level(app, near)
-  await moment(200)
-  assert.deepEqual([page.got.length, callsIn(readerFolder(desk, 2), 'ordersOf')], [3, runs])
-  assert.equal(callsIn(desk.dataFolder, 'ordersOf'), 0)
-})
+test(
+  "[50-7] a page on a reader that watches a query over two tenants' files is sent the change of a write to either, and nothing for a write to a third",
+  readersHeld,
+  async (t) => {
+    const desk = await deskOf(t)
+    const { app } = desk
+    const [north, south, east, west] = [
+      await addTeam(app, 'North'),
+      await addTeam(app, 'South'),
+      await addTeam(app, 'East'),
+      await addTeam(app, 'West'),
+    ]
+    await addOrder(app, north, 'a lamp')
+    await addOrder(app, east, 'a shelf')
+    const near = await app.reader()
+    await current(app, near)
+    await level(app, near)
+    const page = watcher(near)
+    // One file is there, and one is not yet.
+    assert.deepEqual((await page.watch('two', 'ordersOf', { input: { teams: [north, south] } })).value, ['a lamp'])
+    await addOrder(app, south, 'a desk')
+    await until('the page of the reader is sent the first row of a tenant', () => page.got.length === 2)
+    assert.deepEqual(held(page, 'two'), ['a lamp', 'a desk'])
+    await addOrder(app, north, 'a rug')
+    await until('the page of the reader is sent the order', () => page.got.length === 3)
+    assert.deepEqual(held(page, 'two'), ['a lamp', 'a rug', 'a desk'])
+    // The reader ran the query itself, and does not run it again for a write to the file of another tenant.
+    const runs = callsIn(readerFolder(desk, 2), 'ordersOf')
+    assert.ok(runs >= 3)
+    await addOrder(app, east, 'a stool')
+    await addOrder(app, west, 'a first one')
+    await level(app, near)
+    await moment(200)
+    assert.deepEqual([page.got.length, callsIn(readerFolder(desk, 2), 'ordersOf')], [3, runs])
+    assert.equal(callsIn(desk.dataFolder, 'ordersOf'), 0)
+  },
+)

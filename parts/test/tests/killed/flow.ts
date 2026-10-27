@@ -1,10 +1,11 @@
 // A program that opens an app, starts a run of a flow, and stands still when one of its steps is saved, until it
 // is killed. Started again, it opens the app once more, waits for the run to end and says what it finds.
 // Run: node flow.ts <bundle> <data folder> <flow> <how many steps are done when the first start stands still>
-import { existsSync, writeFileSync, writeSync } from 'node:fs'
+import { existsSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { createEngine } from '../../../engine/index.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [bundle, dataFolder, flow, after] = process.argv.slice(2)
 const once = join(dataFolder, '..', 'killed-once')
@@ -17,8 +18,7 @@ engine.on('step.done', () => {
   if (done !== Number(after) || existsSync(once)) return
   // The step is saved. The first start stands still here until it is killed, so that nothing follows the step.
   writeFileSync(once, '')
-  writeSync(1, `saved step ${after}\n`)
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+  killedAt(`saved step ${after}`)
 })
 const app = await engine.open(bundle, { dataFolder, mode: 'test' })
 const [held] = app.runs.find({ flow })

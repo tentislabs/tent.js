@@ -114,6 +114,15 @@ test('[03-3] a program is ended at its line, before it can do what follows it', 
   assert.equal(existsSync(join(folder, 'after.txt')), false, `the program went on after its line, seed ${killed.seed}`)
 })
 
+test('[03-3] a start that its round kills stands still at the line it is killed at, so a program that would end at once after it is killed in every round', async () => {
+  const killed = await runKilled(program('held'), { times: 20, when: 'go' })
+  assert.equal(killed.kills, 20)
+  assert.deepEqual(
+    killed.ended,
+    Array.from({ length: 20 }, () => ({ code: 0, out: 'go\nended\n' })),
+  )
+})
+
 test('[03-3] the kill ends every program that the program started', async (t) => {
   const folder = work(t, 'started.txt')
   const killed = await runKilled(program('starts'), { times: 1, when: 'up', args: [folder] })

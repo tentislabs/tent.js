@@ -15,6 +15,7 @@ import {
   machinesOf,
   moment,
   projectOf,
+  readersHeld,
   send,
   titles,
   until,
@@ -276,106 +277,118 @@ test('[29-8] with two versions loadable a page of the older one is served by a r
   assert.equal(Object((await page.watch('old', 'listOrders', { version: first })).value).length, 3)
 })
 
-test('[29-8] a reader that is not ready within versionWait is closed, joins again, and serves the new version', async (t) => {
-  // A reader of this app may be behind for two minutes, so a link that carries nothing is not given up before
-  // the time that a switch gives a reader has passed.
-  const { app, near, far } = await machinesOf(t, (folder) => {
-    const file = join(folder, 'tent.ts')
-    const stated = "{ title: 'Many machines' }"
-    assert.ok(readFileSync(file, 'utf8').includes(stated))
-    writeFileSync(
-      file,
-      readFileSync(file, 'utf8').replace(stated, "{ title: 'Many machines', limits: { behind: '2 minutes' } }"),
+test(
+  '[29-8] a reader that is not ready within versionWait is closed, joins again, and serves the new version',
+  readersHeld,
+  async (t) => {
+    // A reader of this app may be behind for two minutes, so a link that carries nothing is not given up before
+    // the time that a switch gives a reader has passed.
+    const { app, near, far } = await machinesOf(t, (folder) => {
+      const file = join(folder, 'tent.ts')
+      const stated = "{ title: 'Many machines' }"
+      assert.ok(readFileSync(file, 'utf8').includes(stated))
+      writeFileSync(
+        file,
+        readFileSync(file, 'utf8').replace(stated, "{ title: 'Many machines', limits: { behind: '2 minutes' } }"),
+      )
+    })
+    const first = running(app)
+    await order(app, 'one')
+    await order(app, 'two')
+    await level(app, near, far)
+    near.hold()
+    const limited = "orders.oldest('createdAt').limit(1000)"
+    const second = await app.add(
+      await nextVersion(t, 'second', 'functions/functions.ts', limited, limited.replace('1000', '1')),
     )
-  })
-  const first = running(app)
-  await order(app, 'one')
-  await order(app, 'two')
-  await level(app, near, far)
-  near.hold()
-  const limited = "orders.oldest('createdAt').limit(1000)"
-  const second = await app.add(
-    await nextVersion(t, 'second', 'functions/functions.ts', limited, limited.replace('1000', '1')),
-  )
-  await until('the far reader holds the second version', () => far.versions().some((held) => held.id === second))
-  const switching = app.switch(second)
-  const ended = watched(switching)
-  // Just short of the time it gives a reader, the switch still waits.
-  app.clock.advance('59 seconds')
-  await moment(200)
-  assert.deepEqual([ended(), running(app), running(near)], [false, first, first])
-  // Past it, the link of the reader that is not ready is closed, and the switch is made without it.
-  app.clock.advance('2 seconds')
-  await switching
-  assert.equal(running(app), second)
-  await until('the far reader runs the second version', () => running(far) === second)
-  // The writer holds that reader no more: its link was closed.
-  assert.deepEqual(
-    app.machines().map((one) => one.role),
-    ['writer', 'reader'],
-  )
-  // The reader joins again, fetches the version, and serves it once it is current.
-  near.release()
-  await until('the near reader runs the second version', () => running(near) === second)
-  await current(app, near)
-  await level(app, near, far)
-  const before = callsOf(t, 'data', 'listOrders')
-  assert.equal(Object((await send(near, 'listOrders')).value).length, 1)
-  assert.equal(callsOf(t, 'data', 'listOrders'), before)
-})
+    await until('the far reader holds the second version', () => far.versions().some((held) => held.id === second))
+    const switching = app.switch(second)
+    const ended = watched(switching)
+    // Just short of the time it gives a reader, the switch still waits.
+    app.clock.advance('59 seconds')
+    await moment(200)
+    assert.deepEqual([ended(), running(app), running(near)], [false, first, first])
+    // Past it, the link of the reader that is not ready is closed, and the switch is made without it.
+    app.clock.advance('2 seconds')
+    await switching
+    assert.equal(running(app), second)
+    await until('the far reader runs the second version', () => running(far) === second)
+    // The writer holds that reader no more: its link was closed.
+    assert.deepEqual(
+      app.machines().map((one) => one.role),
+      ['writer', 'reader'],
+    )
+    // The reader joins again, fetches the version, and serves it once it is current.
+    near.release()
+    await until('the near reader runs the second version', () => running(near) === second)
+    await current(app, near)
+    await level(app, near, far)
+    const before = callsOf(t, 'data', 'listOrders')
+    assert.equal(Object((await send(near, 'listOrders')).value).length, 1)
+    assert.equal(callsOf(t, 'data', 'listOrders'), before)
+  },
+)
 
-test('[29-6@6] a reader that is not current closes its live connections and refuses a new one with T0029', async (t) => {
-  const { app, near } = await machinesOf(t)
-  const page = watcher(near)
-  await page.watch('a', 'listOrders')
-  near.cut()
-  await beat(app, 7)
-  assert.equal(near.at().current, false)
-  await until('the live connection of the reader was closed', () => page.closed())
-  assert.equal(await codeOf(() => watcher(near)), 'T0029')
-  // Joined again and current, it takes a live connection as before.
-  near.join()
-  await current(app, near)
-  const again = watcher(near)
-  assert.equal((await again.watch('a', 'listOrders')).t, 'result')
-})
+test(
+  '[29-6@6] a reader that is not current closes its live connections and refuses a new one with T0029',
+  readersHeld,
+  async (t) => {
+    const { app, near } = await machinesOf(t)
+    const page = watcher(near)
+    await page.watch('a', 'listOrders')
+    near.cut()
+    await beat(app, 7)
+    assert.equal(near.at().current, false)
+    await until('the live connection of the reader was closed', () => page.closed())
+    assert.equal(await codeOf(() => watcher(near)), 'T0029')
+    // Joined again and current, it takes a live connection as before.
+    near.join()
+    await current(app, near)
+    const again = watcher(near)
+    assert.equal((await again.watch('a', 'listOrders')).t, 'result')
+  },
+)
 
-test('[29-6@6] after a switch to a version that states a shorter behind, a reader that was cut off before it is waited for by the longer one', async (t) => {
-  const { app, near, far } = await machinesOf(t)
-  const shorter = await app.add(
-    await nextVersion(
-      t,
-      'shorter',
-      'tent.ts',
-      "{ title: 'Many machines' }",
-      "{ title: 'Many machines', limits: { behind: '2 seconds' } }",
-    ),
-  )
-  await until('both readers hold the version', () =>
-    [near, far].every((one) => one.versions().some((held) => held.id === shorter)),
-  )
-  // The near reader is cut off, and then the version that lets a reader be behind for two seconds is switched to.
-  near.cut()
-  await app.switch(shorter)
-  const write = send(app, 'addOrder', { title: 'after the switch' })
-  const ended = watched(write)
-  // Four seconds on, the write still waits: the reader may be current for as long as the version before let it.
-  await beat(app, 4)
-  assert.equal(ended(), false)
-  await beat(app, 3)
-  assert.equal((await write).status, 200)
-  // A reader that is cut off under the new version is waited for by the shorter time.
-  near.join()
-  await current(app, near)
-  await beat(app, 6)
-  await current(app, near)
-  near.cut()
-  const second = send(app, 'addOrder', { title: 'under the shorter one' })
-  const secondEnded = watched(second)
-  await beat(app, 4)
-  assert.equal(secondEnded(), true)
-  assert.equal((await second).status, 200)
-})
+test(
+  '[29-6@6] after a switch to a version that states a shorter behind, a reader that was cut off before it is waited for by the longer one',
+  readersHeld,
+  async (t) => {
+    const { app, near, far } = await machinesOf(t)
+    const shorter = await app.add(
+      await nextVersion(
+        t,
+        'shorter',
+        'tent.ts',
+        "{ title: 'Many machines' }",
+        "{ title: 'Many machines', limits: { behind: '2 seconds' } }",
+      ),
+    )
+    await until('both readers hold the version', () =>
+      [near, far].every((one) => one.versions().some((held) => held.id === shorter)),
+    )
+    // The near reader is cut off, and then the version that lets a reader be behind for two seconds is switched to.
+    near.cut()
+    await app.switch(shorter)
+    const write = send(app, 'addOrder', { title: 'after the switch' })
+    const ended = watched(write)
+    // Four seconds on, the write still waits: the reader may be current for as long as the version before let it.
+    await beat(app, 4)
+    assert.equal(ended(), false)
+    await beat(app, 3)
+    assert.equal((await write).status, 200)
+    // A reader that is cut off under the new version is waited for by the shorter time.
+    near.join()
+    await current(app, near)
+    await beat(app, 6)
+    await current(app, near)
+    near.cut()
+    const second = send(app, 'addOrder', { title: 'under the shorter one' })
+    const secondEnded = watched(second)
+    await beat(app, 4)
+    assert.equal(secondEnded(), true)
+    assert.equal((await second).status, 200)
+  },
+)
 
 test('[29-6@6] a version that a reader cannot load is never ready there, and the log of the reader says so as the log of the writer does', async (t) => {
   const { app, near, far } = await machinesOf(t, (folder) => {
