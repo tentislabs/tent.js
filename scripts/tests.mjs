@@ -209,6 +209,8 @@ async function runOf(set, more, shared) {
       // What each test file touches is noted, in its program and in every program it starts.
       `--import=${pathToFileURL(join(root, 'rig', 'touched.ts')).href}`,
       '--test',
+      // A file whose tests all ended ends too: what it left open fails its own test, and never holds a run.
+      '--test-force-exit',
       night ? '--test-name-pattern=\\[night\\]' : '--test-skip-pattern=\\[night\\]',
       ...(shard && shared ? [`--test-shard=${shard}`] : []),
       ...more,

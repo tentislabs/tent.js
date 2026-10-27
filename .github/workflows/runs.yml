@@ -57,7 +57,8 @@ jobs:
       # file of tests/systems.txt drives a browser.
       - name: The browsers of the tests
         if: matrix.system == 'linux'
-        run: npx playwright-core install --with-deps chromium firefox webkit
+        # A mirror of Ubuntu that hangs is given ten minutes, and a second try, before it holds the machine.
+        run: for try in 1 2; do timeout 600 npx playwright-core install --with-deps chromium firefox webkit && break; done
       # The checks of the whole tree run once for each system, on its first machine.
       # A run on main fails where a joined list differs from the one it makes. A pull request goes on with its own.
       - name: node scripts/lists.mjs
@@ -156,7 +157,8 @@ jobs:
         run: npm ci
       - name: The browsers of the tests
         if: steps.changed.outputs.count != '0'
-        run: npx playwright-core install --with-deps chromium firefox webkit
+        # A mirror of Ubuntu that hangs is given ten minutes, and a second try, before it holds the machine.
+        run: for try in 1 2; do timeout 600 npx playwright-core install --with-deps chromium firefox webkit && break; done
       - name: Each three times
         if: steps.changed.outputs.count != '0'
         run: npm test -- --list=results/new.txt --times=3
