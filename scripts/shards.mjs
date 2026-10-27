@@ -1,5 +1,6 @@
 // Joins the result files of the shares of one run, each a machine's own, into one result file for each system: a test
-// stands as the worst state any share gave it, and the measures and pictures of every share are kept.
+// stands as the worst state any share gave it, and the measures, the pictures and the flaky tests of every share are
+// kept.
 // Run: node scripts/shards.mjs <folder of the shares> <folder of results>
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -24,6 +25,7 @@ for (const file of found(from)) {
     if (held.tests[id] === undefined || worst.indexOf(state) > worst.indexOf(held.tests[id])) held.tests[id] = state
   Object.assign(held.measures, one.measures)
   Object.assign(held.pictures, one.pictures)
+  if (one.flaky?.length) held.flaky = [...new Set([...(held.flaky ?? []), ...one.flaky])].sort()
   joined.set(name, held)
 }
 mkdirSync(into, { recursive: true })

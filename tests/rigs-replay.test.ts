@@ -39,13 +39,3 @@ test('[53-21] in the framework repository, node scripts/tests.mjs after a change
     assert.deepEqual(ranIn(folder), ['heavy'])
   }
 })
-
-test('[53-22] in the framework repository, a test that fails is not run a second time: scripts/tests.mjs holds no second try, rig/report.ts writes no results/failed.json, and the run names nothing flaky', (t) => {
-  const folder = copyOf(t, '53-22')
-  const ran = run(folder)
-  assert.notEqual(ran.code, 0, ran.out)
-  assert.equal(readFileSync(join(folder, 'tries'), 'utf8'), 'tried\n', 'the test that failed ran once')
-  assert.doesNotMatch(ran.out, /flaky/)
-  assert.equal(existsSync(join(folder, 'results', 'failed.json')), false)
-  assert.deepEqual(result(folder).tests, { '99-1': 'failed', '99-2': 'passed' })
-})

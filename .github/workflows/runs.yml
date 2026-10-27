@@ -1,6 +1,8 @@
 name: runs
 
-# The automatic runs: every pull request and every push to main, on the three systems.
+# The automatic runs: every pull request and every push to main, on the three systems, as Next.js runs its own: Linux
+# runs every test, and Windows and macOS the test files of tests/systems.txt alone, whose point is a difference between
+# systems. A test file of tests/browsers.txt goes through the three engines, and every other through Chromium alone.
 # A commit whose message holds [skip ci] anywhere starts none: GitHub itself leaves such a commit out.
 on:
   pull_request:
@@ -19,22 +21,20 @@ concurrency:
 
 jobs:
   run:
-    name: ${{ matrix.system }} ${{ matrix.shard }}/4
+    name: ${{ matrix.system }} ${{ matrix.shard }}/${{ matrix.of }}
     strategy:
       # Each system runs to its end when another fails.
       fail-fast: false
-      # The tests of each system are shared out over four machines side by side: a whole run on one free runner
-      # takes most of an hour, and longer than that on macOS.
+      # The tests of Linux are shared out over four machines side by side: a whole run on one free runner takes most
+      # of an hour. The few files of Windows and macOS take one machine each.
       matrix:
-        system: [linux, windows, macos]
-        shard: [1, 2, 3, 4]
         include:
-          - system: linux
-            os: ubuntu-latest
-          - system: windows
-            os: windows-latest
-          - system: macos
-            os: macos-latest
+          - { system: linux, os: ubuntu-latest, shard: 1, of: 4, list: '' }
+          - { system: linux, os: ubuntu-latest, shard: 2, of: 4, list: '' }
+          - { system: linux, os: ubuntu-latest, shard: 3, of: 4, list: '' }
+          - { system: linux, os: ubuntu-latest, shard: 4, of: 4, list: '' }
+          - { system: windows, os: windows-latest, shard: 1, of: 1, list: --list=tests/systems.txt }
+          - { system: macos, os: macos-latest, shard: 1, of: 1, list: --list=tests/systems.txt }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -53,9 +53,11 @@ jobs:
           cache: npm
       - name: npm ci
         run: npm ci
-      # The browsers of the tests, as the pinned playwright-core names them, with what Linux needs to run them.
+      # The browsers of the tests, as the pinned playwright-core names them, with what Linux needs to run them. No test
+      # file of tests/systems.txt drives a browser.
       - name: The browsers of the tests
-        run: npx playwright-core install ${{ matrix.system == 'linux' && '--with-deps' || '' }} chromium firefox webkit
+        if: matrix.system == 'linux'
+        run: npx playwright-core install --with-deps chromium firefox webkit
       # The checks of the whole tree run once for each system, on its first machine.
       # A run on main fails where a joined list differs from the one it makes. A pull request goes on with its own.
       - name: node scripts/lists.mjs
@@ -80,28 +82,28 @@ jobs:
           key: tests-kept-${{ matrix.system }}-1-
           restore-keys: tests-kept-${{ matrix.system }}-1-
       - name: The record of the tests of main, of its share 2
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.of >= 2
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: results/kept/2.json
           key: tests-kept-${{ matrix.system }}-2-
           restore-keys: tests-kept-${{ matrix.system }}-2-
       - name: The record of the tests of main, of its share 3
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.of >= 3
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: results/kept/3.json
           key: tests-kept-${{ matrix.system }}-3-
           restore-keys: tests-kept-${{ matrix.system }}-3-
       - name: The record of the tests of main, of its share 4
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && matrix.of >= 4
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: results/kept/4.json
           key: tests-kept-${{ matrix.system }}-4-
           restore-keys: tests-kept-${{ matrix.system }}-4-
       - name: The tests
-        run: npm test -- --shard=${{ matrix.shard }}/4 ${{ github.event_name == 'push' && '--all' || '' }}
+        run: npm test -- --shard=${{ matrix.shard }}/${{ matrix.of }} ${{ matrix.list }} ${{ github.event_name == 'push' && '--all' || '' }}
       # A push to main runs every test, and keeps the record of its share for the pull requests that follow.
       - name: Keep the record of the tests
         if: github.event_name == 'push' && !cancelled()
@@ -119,3 +121,42 @@ jobs:
             **/*.new.png
             !node_modules/**
           if-no-files-found: ignore
+
+  new-tests:
+    name: new tests, three times
+    # The test files that a pull request adds or changes run three times in a row on Linux, with no second try, so a
+    # flaky test is caught before it is joined, as Next.js runs its new tests: one failure fails the job.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    env:
+      TENT_COMMIT: ${{ github.event.pull_request.head.sha }}
+      TENT_BARS: report
+    steps:
+      # A pull request is checked out as joined to its target: the first parent of that commit is the target.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - name: The test files the pull request adds or changes
+        id: changed
+        run: |
+          mkdir -p results
+          git diff --name-only --diff-filter=AMR HEAD^1 HEAD | grep -E '^(tests|parts/[^/]+/tests)/[^/]+\.test\.ts$' > results/new.txt || true
+          cat results/new.txt
+          echo "count=$(wc -l < results/new.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+      - name: npm ci
+        if: steps.changed.outputs.count != '0'
+        run: npm ci
+      - name: The browsers of the tests
+        if: steps.changed.outputs.count != '0'
+        run: npx playwright-core install --with-deps chromium firefox webkit
+      - name: Each three times
+        if: steps.changed.outputs.count != '0'
+        run: npm test -- --list=results/new.txt --times=3

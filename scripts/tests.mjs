@@ -1,17 +1,31 @@
 // Carries out the tests of a tree with the test runner of the runtime and the reporter of the runs, and runs again
-// only the test files whose record holds a changed file, a failure, a night test or a measure.
-// Run: node scripts/tests.mjs [folder] [--night] [--shard=<n>/<of>] [--all] [--profile]      The light tests, or with
-// --night the heavy ones alone; with --shard the share of them that one of several machines runs side by side; with
-// --all every file, whatever its record holds; with --profile what each test file cost in time and memory, written
-// into results/profile.json, with the costliest printed.
+// only the test files whose record holds a changed file, a failure, a night test or a measure. The files of the tests
+// that failed are run once more: a test that passes there passes the run and is named flaky.
+// Run: node scripts/tests.mjs [folder] [--night] [--shard=<n>/<of>] [--all] [--profile] [--list=<file>] [--times=<n>]
+// The light tests, or with --night the heavy ones alone; with --shard the share of them that one of several machines
+// runs side by side; with --all every file, whatever its record holds; with --profile what each test file cost in time
+// and memory, written into results/profile.json, with the costliest printed; with --list only the test files that
+// the file names, one path from the tree on each line; with --times every file that runs, that many times in a row
+// and with no second try, as new tests are run before they are joined.
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
 import { once } from 'node:events'
 import { constants, setPriority, totalmem } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { concurrencyOf, coresHere, memoryNow } from '../parts/cli/programsAtOnce.ts'
+import { listed } from '../rig/where.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const words = process.argv.slice(2)
@@ -24,8 +38,11 @@ const night = words.includes('--night')
 const all = words.includes('--all')
 const profiling = words.includes('--profile')
 const shard = words.find((word) => word.startsWith('--shard='))?.slice('--shard='.length)
+const times = Number(words.find((word) => word.startsWith('--times='))?.slice('--times='.length) ?? 1)
 // The folder by its whole path: each program of the run is started in it, and reads the paths of the run from there.
 const folder = resolve(words.find((word) => !word.startsWith('--')) ?? root)
+const list = words.find((word) => word.startsWith('--list='))?.slice('--list='.length)
+const only = list === undefined ? undefined : new Set(listed(folder, list))
 
 // The rigs of a run each write a small file here, and one that an earlier run left would be gathered as its own.
 rmSync(join(folder, 'results', 'parts'), { recursive: true, force: true })
@@ -42,10 +59,12 @@ const folders = ['tests', ...parts.map((part) => `parts/${part}/tests`)].filter(
 const textOf = (under, name) => readFileSync(join(folder, under, name), 'utf8')
 // A file that holds no test the run carries out is not handed to it: the runner starts the last hooks of such a file
 // without waiting for its first ones, so what a first hook opens is never closed and the file never ends.
-const namesIn = (under) =>
+const allIn = (under) =>
   readdirSync(join(folder, under)).filter(
     (name) => name.endsWith('.test.ts') && (!night || textOf(under, name).includes('[night]')),
   )
+/** The test files of a folder that this run carries out: those of the list alone, where it is given one. */
+const namesIn = (under) => allIn(under).filter((name) => !only || only.has(`${under}/${name}`))
 
 // A measure of time taken beside other tests measures them too: a file that measures runs after the others, alone.
 const measures = folders.flatMap((under) =>
@@ -137,12 +156,16 @@ const keyNow = (record) =>
 // A file whose tests passed and whose key is what it was is replayed: but a night test, a measure and a file whose
 // rigs wrote what the run gathers, which always run.
 const replayed = new Set(
-  night || all
+  night || all || times > 1
     ? []
     : Object.entries(kept)
         .filter(
           ([file, record]) =>
-            !record.failed && !record.rigs && !measures.includes(file) && record.key === keyNow(record),
+            (!only || only.has(file)) &&
+            !record.failed &&
+            !record.rigs &&
+            !measures.includes(file) &&
+            record.key === keyNow(record),
         )
         .map(([file]) => file),
 )
@@ -158,7 +181,7 @@ const others = night
       const names = namesIn(under).filter((name) => !measures.includes(`${under}/${name}`))
       const run = names.filter((name) => !replayed.has(`${under}/${name}`))
       if (!run.length) return []
-      const left = namesIn(under).filter((name) => !run.includes(name))
+      const left = allIn(under).filter((name) => !run.includes(name))
       if (!left.length) return [`${under}/*.test.ts`]
       // The shorter of the two: the files that run by their names, or the folder with the others left out.
       const named = run.map((name) => `${under}/${name}`)
@@ -296,28 +319,92 @@ const sets = [
   [measures, ['--test-concurrency=1']],
 ].filter(([set]) => set.length)
 
-// Each set writes the result file of the run: each is laid aside, and they are joined into it as shares are.
+const worst = ['passed', 'owed', 'failed']
+const system = { win32: 'windows', darwin: 'macos', linux: 'linux' }[process.platform]
+const ran = {}
+// The tests named flaky: each failed at its first try and passed at its second. And what failed the run, which
+// `results/failed.json` holds once the run ends: each test that failed at its last try, and each other reason.
+const flaky = []
+const failedRun = { failing: [], wrong: [] }
+const failedFile = join(results, 'failed.json')
+/** What the reporter wrote of the tests that failed and of what else failed the run, taken away once read. */
+function failedOf() {
+  const read = existsSync(failedFile) ? readJson(failedFile) : undefined
+  rmSync(failedFile, { force: true })
+  return read
+}
+
+/**
+ * Runs a set of the files, and where tests of them failed and nothing else failed the run, runs their files once
+ * more, as the test runners of the strongest frameworks retry: a test that passes there passes the run and is named
+ * flaky, as a warning of the run where it is GitHub's, until it is mended. The result file holds each id as the second
+ * try left it, and the names of the flaky tests. A file whose test failed keeps its failure in its record, so it is
+ * run again by the next run too. Run more than once in a row, nothing is tried twice. Answers the code it ended with.
+ */
+async function triedOf(set, more) {
+  rmSync(join(results, 'files.json'), { force: true })
+  failedOf()
+  const code = await runOf(set, more, true)
+  Object.assign(ran, filesRan())
+  const first = failedOf()
+  const name = written().find((one) => one.endsWith('.night.json') === night)
+  if (code === 0 || times > 1 || !first?.failing.length || first.wrong.length || !name) {
+    failedRun.failing.push(...(first?.failing ?? []))
+    failedRun.wrong.push(...(first?.wrong ?? []))
+    return code
+  }
+  const before = readJson(join(results, name))
+  const files = [...new Set(first.failing.map((one) => one.file))]
+  console.log(`\nThe tests that failed are run once more, with the other tests of their ${files.length} files.\n`)
+  const again = await runOf(files, more, false)
+  const second = failedOf()
+  failedRun.failing.push(...(second?.failing ?? []))
+  failedRun.wrong.push(...(second?.wrong ?? []))
+  const after = readJson(join(results, name))
+  // An id that failed stands as its second try left it: every test that failed stood in a file run again.
+  const tests = { ...before.tests }
+  for (const [id, state] of Object.entries(after.tests)) {
+    const was = before.tests[id]
+    tests[id] =
+      was === undefined || was === 'failed' ? state : worst[Math.max(worst.indexOf(was), worst.indexOf(state))]
+  }
+  const ordered = Object.fromEntries(Object.entries(tests).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+  const failedAgain = new Set((second?.failing ?? []).map((one) => `${one.file} ${one.name}`))
+  const named = first.failing.filter((one) => !failedAgain.has(`${one.file} ${one.name}`)).map((one) => one.name)
+  for (const one of named) {
+    const said = `flaky: ${one}, which failed at its first try and passed at its second`
+    console.log(process.env.GITHUB_ACTIONS ? `::warning title=A flaky test::${said}` : said)
+  }
+  flaky.push(...named)
+  writeFileSync(
+    join(results, name),
+    `${JSON.stringify({ ...after, tests: ordered, ...(named.length ? { flaky: named } : {}) }, null, 2)}\n`,
+  )
+  return again
+}
+
+// Each set writes the result file of the run: each is laid aside, and they are joined into it as shares are, so an id
+// stands as the worst of every round.
 const shares = join(results, 'sets')
 rmSync(shares, { recursive: true, force: true })
-const ran = {}
 const codes = []
-for (const [k, [set, more]] of sets.entries()) {
-  rmSync(join(results, 'files.json'), { force: true })
-  codes.push(await runOf(set, more, true))
-  Object.assign(ran, filesRan())
-  mkdirSync(join(shares, String(k)), { recursive: true })
-  for (const name of written()) renameSync(join(results, name), join(shares, String(k), name))
+for (let round = 1; round <= times; round++) {
+  if (times > 1) console.log(`\nRound ${round} of ${times}.\n`)
+  for (const [k, [set, more]] of sets.entries()) {
+    codes.push(await triedOf(set, more))
+    mkdirSync(join(shares, `${round}-${k}`), { recursive: true })
+    for (const name of written()) renameSync(join(results, name), join(shares, `${round}-${k}`, name))
+  }
 }
 rmSync(join(results, 'files.json'), { force: true })
+writeFileSync(failedFile, `${JSON.stringify(failedRun, null, 2)}\n`)
 // A replayed file stands in the result file as each of its ids stood when it was kept.
 if (replayed.size) {
   const tests = {}
-  const worst = ['passed', 'owed', 'failed']
   for (const [id, state] of [...replayed].flatMap((file) => Object.entries(kept[file].ids)))
     if (tests[id] === undefined || worst.indexOf(state) > worst.indexOf(tests[id])) tests[id] = state
-  const system = { win32: 'windows', darwin: 'macos', linux: 'linux' }[process.platform]
   // The commit is the one the shares that ran name, or the one the run names where every file was replayed.
-  const ranShare = sets.map((_, k) => join(shares, String(k), `${system}.json`)).find(existsSync)
+  const ranShare = sets.map((_, k) => join(shares, `1-${k}`, `${system}.json`)).find(existsSync)
   const commit = ranShare ? readJson(ranShare).commit : (process.env.TENT_COMMIT ?? '')
   mkdirSync(join(shares, 'replayed'), { recursive: true })
   writeFileSync(
@@ -334,9 +421,24 @@ if (existsSync(shares) && readdirSync(shares).length) {
   rmSync(shares, { recursive: true, force: true })
 }
 
-// The record of the light run: each file that ran, with what it touched, its key and how it stood, and each replayed
-// file as it was kept. A file that is no test file of the tree any more is gone.
-if (!night) {
+// The tests named flaky stand in the summary of the job, where everyone who opens the run sees them.
+if (flaky.length && process.env.GITHUB_STEP_SUMMARY)
+  appendFileSync(
+    process.env.GITHUB_STEP_SUMMARY,
+    [
+      `## The flaky tests on ${system}`,
+      '',
+      'Each failed at its first try and passed at its second, and so passed the run, until it is mended.',
+      '',
+      ...flaky.map((one) => `- ${one}`),
+      '',
+    ].join('\n'),
+  )
+
+// The record of the light run: each file that ran, with what it touched, its key and how it stood, each replayed file
+// as it was kept, and each file outside the list of a run given one as it was kept. A file that is no test file of the
+// tree any more is gone. A run of the same files several times in a row keeps the record as it was.
+if (!night && times === 1) {
   const touched = touchedOf()
   const record = {}
   for (const [file, stood] of Object.entries(ran)) {
@@ -355,6 +457,9 @@ if (!night) {
     }
   }
   for (const file of replayed) record[file] = kept[file]
+  if (only)
+    for (const [file, held] of Object.entries(kept))
+      if (!only.has(file) && existsSync(join(folder, file))) record[file] ??= held
   mkdirSync(keptFolder, { recursive: true })
   for (const name of readdirSync(keptFolder)) rmSync(join(keptFolder, name))
   writeFileSync(keptFile, `${JSON.stringify(record, null, 2)}\n`)

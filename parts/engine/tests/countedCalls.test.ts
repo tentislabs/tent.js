@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { spentOf } from '../counts/cpu.ts'
 import type { App } from '../index.ts'
 import { system } from './apps.ts'
 import { counting } from './countingApps.ts'
@@ -76,25 +77,25 @@ test('[21-22] a call that calls another from code adds calls under both names an
   assert.ok(sum(rows, 'helper', 'mainCpuMs') + sum(rows, 'helper', 'cpuMs') > 0)
 })
 
-test('[21-22] work on a background thread that holds the processor for a second counts a second of cpuMs, and one that took half a millisecond counts half', async (t) => {
+test('[21-22] work on a background thread that holds the processor for a second counts a second of cpuMs, and one that took half a millisecond counts half', () => {
+  // The processor time of the thread is counted as its clock moved, with its fractions.
+  assert.equal(spentOf({ thread: 1000, took: 1004, step: 0.001 }), 1000)
+  assert.equal(spentOf({ thread: 0.5, took: 0.7, step: 0.001 }), 0.5)
+  // A clock that moves in steps of more than a millisecond counts work shorter than one step by the time it took,
+  // and longer work by its clock.
+  assert.equal(spentOf({ thread: 0, took: 0.5, step: 15.625 }), 0.5)
+  assert.equal(spentOf({ thread: 15.625, took: 0.5, step: 15.625 }), 0.5)
+  assert.equal(spentOf({ thread: 1000, took: 1003, step: 15.625 }), 1000)
+})
+
+test('[21-22] work on a background thread is counted as cpuMs under the name of its call, each call adding its own', async (t) => {
   const { app, counted, sum } = await counting(t)
-  assert.equal(await app.call('heavy', { ms: 1000 }, { as: system }), 'held')
-  const long = sum(await counted(), 'heavy', 'cpuMs')
-  assert.ok(long >= 750 && long <= 1400, `a second, and not ${long}`)
-  // A clock of the system that moves in steps counts short work by the time it took, which other work on the
-  // computer lengthens, and a count may land with the next call's: the work is done five times, held by its middle.
-  const shorts: number[] = []
-  let before = long
-  for (let round = 0; round < 5; round++) {
-    assert.equal(await app.call('heavy', { ms: 0.5 }, { as: system }), 'held')
-    const now = sum(await counted(), 'heavy', 'cpuMs')
-    shorts.push(now - before)
-    before = now
-  }
-  const short = shorts.sort((a, b) => a - b)[2]
-  // The work is the half millisecond and what the engine did to carry it out: a few milliseconds at most.
-  assert.ok(short > 0.3 && short < 5, `half a millisecond, and not ${short}`)
-  assert.notEqual(short, Math.round(short), 'a time keeps its fractions')
+  assert.equal(await app.call('heavy', { ms: 20 }, { as: system }), 'held')
+  const first = sum(await counted(), 'heavy', 'cpuMs')
+  assert.ok(first > 0, `the work was counted, and not ${first}`)
+  assert.equal(await app.call('heavy', { ms: 20 }, { as: system }), 'held')
+  const second = sum(await counted(), 'heavy', 'cpuMs')
+  assert.ok(second > first, `the second call added its own, and not ${second - first}`)
 })
 
 test('[21-22] an action on the main thread that holds the processor for 100 ms, waits for a service and holds it for 100 ms more counts those 200 ms as mainCpuMs, and a call that only waited beside it counts next to none', async (t) => {

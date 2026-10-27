@@ -1,17 +1,30 @@
 // The one file that names the driver of a real browser. A test of a part imports it, and no file that is shipped.
+import { dirname, join, relative, sep } from 'node:path'
 import { after } from 'node:test'
+import { fileURLToPath } from 'node:url'
 import type { Browser, Page } from 'playwright-core'
 import { chromium, firefox, webkit } from 'playwright-core'
 import { silenced } from './silence.ts'
 import { secondFamily, testFamily, testFontRules } from './testFont.ts'
+import { inEveryEngine } from './where.ts'
 
 export type { Page } from 'playwright-core'
 
 /** A browser engine that a test is run in. */
 export type BrowserEngine = 'chromium' | 'firefox' | 'webkit'
 
-/** The three engines, in the order a test goes through them. */
-export const browserEngines: readonly BrowserEngine[] = ['chromium', 'firefox', 'webkit']
+// The tree that runs, and the test file whose program this is or started it, by its path from the tree.
+const tree = process.env.TENT_TOUCHED_TREE ?? join(dirname(fileURLToPath(import.meta.url)), '..')
+const testFile =
+  process.env.TENT_TOUCHED_OF ?? (process.argv[1] ? relative(tree, process.argv[1]).split(sep).join('/') : '')
+
+/**
+ * The engines a test goes through, in their order: the three where `tests/browsers.txt` names its file, and
+ * Chromium alone elsewhere.
+ */
+export const browserEngines: readonly BrowserEngine[] = inEveryEngine(testFile, tree)
+  ? ['chromium', 'firefox', 'webkit']
+  : ['chromium']
 
 const launchers = { chromium, firefox, webkit }
 

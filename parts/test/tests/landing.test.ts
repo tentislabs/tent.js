@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { browserEngines } from '../../../rig/browser.ts'
 import type { Caller } from '../../core/index.ts'
 import { TentError } from '../../core/index.ts'
 import type { BrowserEngine } from '../../engine/index.ts'
@@ -11,10 +12,7 @@ import { closing, copyOf } from './projects.ts'
 
 const moment = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms))
 
-// Each test runs in the three engines: WebKit where it speaks WebDriver BiDi on this computer.
-const engines: BrowserEngine[] = ['chromium', 'firefox', 'webkit']
-
-/** The page of the orders in one engine as that user, or nothing where the engine is not driven on this computer. */
+/** The page of the orders in one engine as that user, or nothing where WebKit does not speak WebDriver BiDi here. */
 async function ordersIn(app: TestApp, engine: BrowserEngine, as: Caller): Promise<Page | undefined> {
   return app.open('/orders', { as, engine }).catch((error: unknown) => {
     if (error instanceof TentError && error.fields?.engine === 'notRun' && engine === 'webkit') return undefined
@@ -32,7 +30,7 @@ test('[48-2] a press whose call answers late is waited for exactly, by the recor
     gate.enter()
     await gate.held
   })
-  for (const engine of engines) {
+  for (const engine of browserEngines) {
     const page = await ordersIn(app, engine, ada)
     if (!page) continue
     let enter = (): void => undefined
@@ -66,7 +64,7 @@ test('[48-2] a write that reaches the page through its watch is waited for exact
   const app = await testApp({ folder: copyOf(t, 'opened') })
   closing(t, () => app.close())
   const ada = await app.user({ name: 'Ada', roles: [] })
-  for (const engine of engines) {
+  for (const engine of browserEngines) {
     const page = await ordersIn(app, engine, ada)
     if (!page) continue
     for (const title of [`From afar in ${engine}`, `Further in ${engine}`]) {
@@ -85,7 +83,7 @@ test('[48-2] a step that never lands fails after testStep, naming what it still 
   const app = await testApp({ folder: copyOf(t, 'opened') })
   closing(t, () => app.close())
   const ada = await app.user({ name: 'Ada', roles: [] })
-  for (const engine of engines) {
+  for (const engine of browserEngines) {
     const page = await ordersIn(app, engine, ada)
     if (!page) continue
     const started = performance.now()

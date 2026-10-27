@@ -1,6 +1,7 @@
 name: night
 
-# The heavy tests, whose name holds [night]: each night on main, on the three systems.
+# The heavy tests, whose name holds [night]: each night on main, on Linux, which runs every test. No test file of
+# tests/systems.txt, which Windows and macOS run, holds a heavy test.
 # It can also be started by hand, with gh workflow run night.yml.
 on:
   schedule:
@@ -15,18 +16,14 @@ jobs:
     name: ${{ matrix.system }} ${{ matrix.shard }}/4
     strategy:
       fail-fast: false
-      # The heavy tests of each system are shared out over four machines side by side: on one free runner they take
-      # longer than the hours a job is given.
+      # The heavy tests are shared out over four machines side by side: on one free runner they take longer than the
+      # hours a job is given.
       matrix:
-        system: [linux, windows, macos]
+        system: [linux]
         shard: [1, 2, 3, 4]
         include:
           - system: linux
             os: ubuntu-latest
-          - system: windows
-            os: windows-latest
-          - system: macos
-            os: macos-latest
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     defaults:

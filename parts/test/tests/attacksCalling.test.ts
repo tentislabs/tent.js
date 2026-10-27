@@ -337,36 +337,24 @@ test('[05-10.36] an action with no system that hands sessions.endAll and session
   assert.equal(Object(own.wire.value).length, 1)
 })
 
-// Not run on Windows, where the minute of the count began anew within the flood in the public run 40465200396.
-const floodNotOnWindows = {
-  skip:
-    process.platform === 'win32'
-      ? 'the minute began anew within the flood on Windows in the public run 40465200396'
-      : false,
-}
-
-test(
-  '[05-10.30] a flood of requests with no cookie and with made-up session cookies, to an app whose identify asks, is T0005 from the 601st of a minute on, before identify is asked',
-  floodNotOnWindows,
-  async (t) => {
-    const { app } = await stormed(t, 'identified')
-    const from = '203.0.113.50'
-    const asked = async (): Promise<number> => Number(await app.as('system').call('asked', {}))
-    const before = await asked()
-    const codes = new Map<string, number>()
-    for (let n = 0; n < 700; n++) {
-      const cookie = n % 2 ? { cookie: `tent_session.shop=${String(n).padStart(43, 'x')}` } : {}
-      const code = wireCodeOf((await calledByBrowser(app, 'whoAmI', {}, { from, ...cookie })).wire)
-      codes.set(code, (codes.get(code) ?? 0) + 1)
-    }
-    assert.deepEqual(Object.fromEntries(codes), { ok: 600, T0005: 100 })
-    assert.equal((await asked()) - before, 600)
-    // Another address is not held, and the next minute counts anew.
-    assert.equal(wireCodeOf((await calledByBrowser(app, 'whoAmI', {}, { from: '203.0.113.51' })).wire), 'ok')
-    app.clock.advance('1 minute')
-    assert.equal(wireCodeOf((await calledByBrowser(app, 'whoAmI', {}, { from })).wire), 'ok')
-  },
-)
+test('[05-10.30] a flood of requests with no cookie and with made-up session cookies, to an app whose identify asks, is T0005 from the 601st of a minute on, before identify is asked', async (t) => {
+  const { app } = await stormed(t, 'identified')
+  const from = '203.0.113.50'
+  const asked = async (): Promise<number> => Number(await app.as('system').call('asked', {}))
+  const before = await asked()
+  const codes = new Map<string, number>()
+  for (let n = 0; n < 700; n++) {
+    const cookie = n % 2 ? { cookie: `tent_session.shop=${String(n).padStart(43, 'x')}` } : {}
+    const code = wireCodeOf((await calledByBrowser(app, 'whoAmI', {}, { from, ...cookie })).wire)
+    codes.set(code, (codes.get(code) ?? 0) + 1)
+  }
+  assert.deepEqual(Object.fromEntries(codes), { ok: 600, T0005: 100 })
+  assert.equal((await asked()) - before, 600)
+  // Another address is not held, and the next minute counts anew.
+  assert.equal(wireCodeOf((await calledByBrowser(app, 'whoAmI', {}, { from: '203.0.113.51' })).wire), 'ok')
+  app.clock.advance('1 minute')
+  assert.equal(wireCodeOf((await calledByBrowser(app, 'whoAmI', {}, { from })).wire), 'ok')
+})
 
 test('[05-10.30] identify is asked for a request that passes step 3 alone: a file of the bundle and the address of health ask it nothing, and use up none of identifyPerMinute', async (t) => {
   const { app } = await stormed(t, 'identified')
