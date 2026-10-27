@@ -8,13 +8,18 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
 import { once } from 'node:events'
-import { totalmem } from 'node:os'
+import { constants, setPriority, totalmem } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { concurrencyOf, coresHere, memoryNow } from '../parts/cli/programsAtOnce.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const words = process.argv.slice(2)
+
+// The run and every program it starts, which take the priority of the program that starts them, give way to the
+// computer's own programs: a run that holds every core of a machine of the automatic runs starved the program that
+// reports to its server until the server lost it.
+setPriority(constants.priority.PRIORITY_BELOW_NORMAL)
 const night = words.includes('--night')
 const all = words.includes('--all')
 const profiling = words.includes('--profile')
@@ -78,6 +83,16 @@ const ground = [
     (path) => `${path} ${print(readFileSync(join(root, path)))}`,
   ),
 ].join('\n')
+// The most memory one test file's programs held together, at the ninetieth share of the files of a whole run on
+// Windows with `--profile`: half of them 253 MB, the most 13 GB, of a file that starts many programs.
+const programPeak = 450 * 1024 * 1024
+// As many test files at once as the processor has cores less one, and no more than the memory there is holds.
+const concurrency = concurrencyOf({ cores: coresHere(), free: memoryNow(), peak: programPeak })
+// The cores each program of the run has as its share, which the rig holds it to: a program a test starts that runs
+// programs side by side, as `tent test` does, runs no more of them than its share holds. Two at the least, so that a
+// program has one to run beside it.
+const share = Math.max(2, Math.floor(coresHere() / (night ? 1 : concurrency)))
+
 // What the runner and each test program are handed of the environment, which a word a test read is held to.
 // Every program of the run, and every program one starts, loads the modules it compiled before from the runtime's
 // compile cache: a quarter of the load of the engine. Nothing under `results/` stands in a key of a test.
@@ -85,6 +100,7 @@ const handed = {
   ...env,
   TENT_RUN: night ? 'night' : 'day',
   TENT_TOUCHED_TREE: folder,
+  TENT_RUN_CORES: String(share),
   NODE_COMPILE_CACHE: join(folder, 'results', 'compile-cache'),
 }
 // The rig of each program reads it, and notes a word as the run handed it: one a test set itself is the test's own.
@@ -153,12 +169,6 @@ const others = night
 /** The result files that stand in the folder of results, by their names. */
 const written = () =>
   existsSync(results) ? readdirSync(results).filter((name) => /^(linux|windows|macos)(\.night)?\.json$/.test(name)) : []
-
-// The most memory one test file's programs held together, at the ninetieth share of the files of a whole run on
-// Windows with `--profile`: half of them 253 MB, the most 13 GB, of a file that starts many programs.
-const programPeak = 450 * 1024 * 1024
-// As many test files at once as the processor has cores less one, and no more than the memory there is holds.
-const concurrency = concurrencyOf({ cores: coresHere(), free: memoryNow(), peak: programPeak })
 
 // The least memory there was while the run went on, which a run with --profile looks at twice a second.
 let least = Number.POSITIVE_INFINITY

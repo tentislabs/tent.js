@@ -2,7 +2,7 @@
 // and of `tent test` alike.
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
-import { cpus, freemem } from 'node:os'
+import { availableParallelism, freemem } from 'node:os'
 
 /** The number of a line of `vm_stat` or of `/proc/meminfo` that begins with its name, or 0 where it has none. */
 function numberOf(text: string, name: string): number {
@@ -52,5 +52,8 @@ export function memoryNow(): number {
 export const concurrencyOf = (o: { cores: number; free: number; peak: number }): number =>
   Math.max(1, Math.min(o.cores - 1, Math.floor(o.free / o.peak)))
 
-/** The cores of this computer's processor. */
-export const coresHere = (): number => cpus().length
+/**
+ * The cores of this computer's processor that this program may use: those its affinity and its system's limits leave
+ * it, as a machine of the runs or a container gives fewer than the processor holds.
+ */
+export const coresHere = (): number => availableParallelism()

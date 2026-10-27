@@ -7,6 +7,7 @@
 import { createHash } from 'node:crypto'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs'
+import os from 'node:os'
 import { registerHooks, syncBuiltinESMExports } from 'node:module'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -21,6 +22,14 @@ const of =
   (tree && process.env.NODE_TEST_CONTEXT && process.argv[1]
     ? relative(tree, process.argv[1]).split(sep).join('/')
     : undefined)
+
+// A program of the run has the share of the cores that the run hands it: what it starts side by side, as `tent test`
+// starts test files, is no more than that share holds beside the other programs of the run.
+const cores = Number(process.env.TENT_RUN_CORES)
+if (cores > 0) {
+  Reflect.set(os, 'availableParallelism', () => cores)
+  syncBuiltinESMExports()
+}
 
 // The ways of the files as the runtime gives them, before any is made to note.
 const { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } = fs
