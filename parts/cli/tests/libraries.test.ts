@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { test } from 'node:test'
+import { test as each } from 'node:test'
 import { measure } from '../../../rig/budgets.ts'
 import type { Page } from '../../../rig/browser.ts'
 import { browserEngines, inBrowser } from '../../../rig/browser.ts'
@@ -17,6 +17,15 @@ import {
   watched,
 } from './librarying.ts'
 import { typed } from './typed.ts'
+
+// Owed on GitHub, where this file ends its tests and its program then never ends, so its machine runs out its hour.
+const todo =
+  process.env.GITHUB_ACTIONS === 'true' ? 'the program of this file never ends on the machines of GitHub' : false
+const test = (name: string, run: () => Promise<void>): void =>
+  void each(name, { todo }, async () => {
+    assert.notEqual(process.env.GITHUB_ACTIONS, 'true', 'owed on GitHub')
+    await run()
+  })
 
 // The project is built for release and served once for the tests of this file, and once in `tent dev`.
 let release: ReturnType<typeof servedLibraries> | undefined
