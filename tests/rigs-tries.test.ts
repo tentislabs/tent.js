@@ -16,14 +16,10 @@ test('[03-33] a test that fails is run once more, alone with the tests of its fi
   assert.ok(once.out.includes(`flaky: ${flakyName}`), once.out)
   assert.deepEqual(result(folder).tests, { '99-1': 'passed', '99-2': 'passed' })
   assert.equal(readFileSync(join(folder, 'runs'), 'utf8'), 'ran\n', 'a file whose tests passed is not run again')
-  // The flaky test is named where everyone sees it: in the result file, in the summary of the job and on the page
-  // of state.
+  // The flaky test is named where everyone sees it: in the result file and in the summary of the job. The page of
+  // state is not in the public repository, so its test stands in rigs-state.test.ts.
   assert.deepEqual(JSON.parse(readFileSync(join(folder, 'results', `${system()}.json`), 'utf8')).flaky, [flakyName])
   assert.ok(readFileSync(summary, 'utf8').includes(flakyName), readFileSync(summary, 'utf8'))
-  const page = start(root, 'docs/state.mjs', join(folder, 'results'))
-  assert.equal(page.code, 0, page.out)
-  const flaky = readFileSync(join(folder, 'results', 'state.md'), 'utf8').split('## The flaky tests\n')[1] ?? ''
-  assert.ok(flaky.includes(`- ${system()}: ${flakyName}`), flaky)
 
   const broken = copyOf(t, '33')
   const twice = run(broken)
