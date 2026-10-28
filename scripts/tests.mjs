@@ -1,9 +1,8 @@
 // Carries out the tests of a tree with the test runner of the runtime and the reporter of the runs, and runs again
 // only the test files whose record holds a changed file, a failure, a night test or a measure. The files of the tests
 // that failed are run once more: a test that passes there passes the run and is named flaky.
-// Run: node scripts/tests.mjs [folder] [--night] [--shard=<n>/<of>] [--all] [--profile] [--list=<file>] [--times=<n>]
-// The light tests, or with --night the heavy ones alone; with --shard the share of them that one of several machines
-// runs side by side; with --all every file, whatever its record holds; with --profile what each test file cost in time
+// Run: node scripts/tests.mjs [folder] [--night] [--all] [--profile] [--list=<file>] [--times=<n>]
+// The light tests, or with --night the heavy ones alone; with --all every file, whatever its record holds; with --profile what each test file cost in time
 // and memory, written into results/profile.json, with the costliest printed; with --list only the test files that
 // the file names, one path from the tree on each line; with --times every file that runs, that many times in a row
 // and with no second try, as new tests are run before they are joined.
@@ -19,7 +18,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { once } from 'node:events'
 import { constants, setPriority, totalmem } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -37,7 +36,6 @@ setPriority(constants.priority.PRIORITY_BELOW_NORMAL)
 const night = words.includes('--night')
 const all = words.includes('--all')
 const profiling = words.includes('--profile')
-const shard = words.find((word) => word.startsWith('--shard='))?.slice('--shard='.length)
 const times = Number(words.find((word) => word.startsWith('--times='))?.slice('--times='.length) ?? 1)
 // The folder by its whole path: each program of the run is started in it, and reads the paths of the run from there.
 const folder = resolve(words.find((word) => !word.startsWith('--')) ?? root)
@@ -74,14 +72,12 @@ const measures = folders.flatMap((under) =>
 )
 
 const results = join(folder, 'results')
-// The record of each test file of the light run, as the runs before kept it: by machine, each a file of its own.
+// The record of each test file of the light run, as the runs before kept it. On GitHub it is kept between runs by the
+// cache of the workflow, so a push there too runs only what it touched.
 const keptFolder = join(results, 'kept')
-const keptFile = join(keptFolder, `${shard?.split('/')[0] ?? 'all'}.json`)
+const keptFile = join(keptFolder, 'all.json')
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'))
-const kept = Object.assign(
-  {},
-  ...(existsSync(keptFolder) ? readdirSync(keptFolder).map((name) => readJson(join(keptFolder, name))) : []),
-)
+const kept = existsSync(keptFile) ? readJson(keptFile) : {}
 
 const print = (bytes) => createHash('sha256').update(bytes).digest('hex')
 /** The fingerprint of a path of the tree as it stands: a file by its bytes, a folder by its names, or none. */
@@ -197,8 +193,8 @@ const written = () =>
 let least = Number.POSITIVE_INFINITY
 const began = { at: performance.now(), free: memoryNow() }
 
-/** Runs a set of the files, with the words given beside them, as a share of the machines where `shared`. */
-async function runOf(set, more, shared) {
+/** Runs a set of the files, with the words given beside them. */
+async function runOf(set, more) {
   const runner = spawn(
     process.execPath,
     [
@@ -210,7 +206,6 @@ async function runOf(set, more, shared) {
       `--import=${pathToFileURL(join(root, 'rig', 'touched.ts')).href}`,
       '--test',
       night ? '--test-name-pattern=\\[night\\]' : '--test-skip-pattern=\\[night\\]',
-      ...(shard && shared ? [`--test-shard=${shard}`] : []),
       ...more,
       '--test-reporter=spec',
       '--test-reporter-destination=stdout',
@@ -344,7 +339,7 @@ function failedOf() {
 async function triedOf(set, more) {
   rmSync(join(results, 'files.json'), { force: true })
   failedOf()
-  const code = await runOf(set, more, true)
+  const code = await runOf(set, more)
   Object.assign(ran, filesRan())
   const first = failedOf()
   const name = written().find((one) => one.endsWith('.night.json') === night)
@@ -356,7 +351,7 @@ async function triedOf(set, more) {
   const before = readJson(join(results, name))
   const files = [...new Set(first.failing.map((one) => one.file))]
   console.log(`\nThe tests that failed are run once more, with the other tests of their ${files.length} files.\n`)
-  const again = await runOf(files, more, false)
+  const again = await runOf(files, more)
   const second = failedOf()
   failedRun.failing.push(...(second?.failing ?? []))
   failedRun.wrong.push(...(second?.wrong ?? []))
@@ -383,8 +378,34 @@ async function triedOf(set, more) {
   return again
 }
 
-// Each set writes the result file of the run: each is laid aside, and they are joined into it as shares are, so an id
-// stands as the worst of every round.
+/**
+ * Joins the result files laid aside by each set and round into one result file for each system: a test stands as the
+ * worst state any of them gave it, and the measures, the pictures and the flaky tests of each are kept.
+ */
+function joinedInto(from, into) {
+  const held = new Map()
+  for (const file of readdirSync(from, { recursive: true }).map(String)) {
+    const name = file.replace(/^.*[\\/]/, '')
+    if (!/^(linux|windows|macos)(\.night)?\.json$/.test(name)) continue
+    const one = readJson(join(from, file))
+    const joined = held.get(name) ?? { ...one, tests: {}, measures: {}, pictures: {} }
+    for (const [id, state] of Object.entries(one.tests))
+      if (joined.tests[id] === undefined || worst.indexOf(state) > worst.indexOf(joined.tests[id])) joined.tests[id] = state
+    Object.assign(joined.measures, one.measures)
+    Object.assign(joined.pictures, one.pictures)
+    if (one.flaky?.length) joined.flaky = [...new Set([...(joined.flaky ?? []), ...one.flaky])].sort()
+    held.set(name, joined)
+  }
+  mkdirSync(into, { recursive: true })
+  for (const [name, result] of held) {
+    const tests = Object.fromEntries(Object.entries(result.tests).sort(([a], [b]) => a.localeCompare(b)))
+    writeFileSync(join(into, name), `${JSON.stringify({ ...result, tests }, null, 2)}
+`)
+  }
+}
+
+// Each set writes the result file of the run: each is laid aside, and they are joined into it, so an id stands as the
+// worst of every round.
 const shares = join(results, 'sets')
 rmSync(shares, { recursive: true, force: true })
 const codes = []
@@ -413,11 +434,8 @@ if (replayed.size) {
   )
   for (const file of [...replayed].sort()) console.log(`replayed ${file}`)
 }
-let joined = 0
-if (existsSync(shares) && readdirSync(shares).length) {
-  joined =
-    spawnSync(process.execPath, [join(root, 'scripts', 'shards.mjs'), shares, results], { stdio: 'inherit' }).status ??
-    1
+if (existsSync(shares)) {
+  joinedInto(shares, results)
   rmSync(shares, { recursive: true, force: true })
 }
 
@@ -461,9 +479,8 @@ if (!night && times === 1) {
     for (const [file, held] of Object.entries(kept))
       if (!only.has(file) && existsSync(join(folder, file))) record[file] ??= held
   mkdirSync(keptFolder, { recursive: true })
-  for (const name of readdirSync(keptFolder)) rmSync(join(keptFolder, name))
   writeFileSync(keptFile, `${JSON.stringify(record, null, 2)}\n`)
 }
 if (profiling) profiled()
 rmSync(join(folder, 'results', 'handed.json'), { force: true })
-process.exit(codes.find((code) => code !== 0) ?? joined)
+process.exit(codes.find((code) => code !== 0) ?? 0)

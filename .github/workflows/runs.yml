@@ -1,8 +1,9 @@
 name: runs
 
 # The run on GitHub: the test files of tests/systems.txt on macOS, whose point is a difference between systems, on
-# every pull request and every push to main. Every other test runs on the owner's computer, on Windows and on Linux:
-# a run of every test on shared machines gave more faults of the machines than of the code.
+# every pull request and every push to main, and of them only those whose record holds a change, as on any computer.
+# Every other test runs on the owner's computer, on Windows and on Linux: a run of every test on shared machines gave
+# more faults of the machines than of the code.
 # A commit whose message holds [skip ci] anywhere starts none: GitHub itself leaves such a commit out.
 on:
   pull_request:
@@ -40,8 +41,15 @@ jobs:
           cache: npm
       - name: npm ci
         run: npm ci
-      - name: The tests of tests/systems.txt
-        run: npm test -- --list=tests/systems.txt --all
+      # The record of what each test file touched, kept between runs: a push runs again only the files its change
+      # reached, and a branch with none of its own starts from the newest of main.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: results/kept
+          key: kept-macos-${{ github.sha }}
+          restore-keys: kept-macos-
+      - name: The tests of tests/systems.txt that the change touched
+        run: npm test -- --list=tests/systems.txt
       - name: Keep the result file
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
