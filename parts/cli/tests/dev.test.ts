@@ -480,6 +480,20 @@ test('[21-11@6] in the mode development a blocked script is shown in the overlay
 })
 
 test('[15-6@6] tent dev --json answers what it ran when it ends, a second tent dev in one project is refused and names the first, --fresh empties the development data and applies the seed again, and a port that is taken gives the next free one', async (t) => {
+  // A session that a failed step leaves running is ended before its folder is removed, so the program ends with the
+  // test: what a test asks for at its end is done in the order asked.
+  const sessions = new Set<Promise<number>>()
+  const session = (words: string[], out: (line: string) => void): Promise<number> => {
+    const ended = tent(words, { folder, out })
+    sessions.add(ended)
+    void ended.finally(() => sessions.delete(ended))
+    return ended
+  }
+  t.after(async () => {
+    if (!sessions.size) return
+    process.emit('SIGTERM')
+    await Promise.allSettled([...sessions])
+  })
   const folder = copied(t, 'dev-command', 'devs')
   const engineFile = (): { port: number; pid: number; mode: string } | undefined =>
     existsSync(join(folder, '.tent', 'engine.json'))
@@ -494,7 +508,7 @@ test('[15-6@6] tent dev --json answers what it ran when it ends, a second tent d
     return Object(await answer.json()).value
   }
   const lines: string[] = []
-  const ended = tent(['dev', '--port', '0', '--json'], { folder, out: (line) => lines.push(line) })
+  const ended = session(['dev', '--port', '0', '--json'], (line) => lines.push(line))
   await until('the engine of tent dev runs', () => engineFile() !== undefined)
   assert.deepEqual([engineFile()?.mode, engineFile()?.pid], ['development', process.pid])
   // New data is seeded, and a write of the session stays in it.
@@ -503,7 +517,7 @@ test('[15-6@6] tent dev --json answers what it ran when it ends, a second tent d
 
   // A second `tent dev` in the same project is refused: it names the program that holds the data.
   const second: string[] = []
-  const refused = await tent(['dev', '--port', '0', '--json'], { folder, out: (line) => second.push(line) })
+  const refused = await session(['dev', '--port', '0', '--json'], (line) => second.push(line))
   const said = Object(JSON.parse(second.join('\n')))
   assert.equal(refused, 1)
   assert.deepEqual([said.ok, said.findings[0].code], [false, 'T0013'])
@@ -533,7 +547,7 @@ test('[15-6@6] tent dev --json answers what it ran when it ends, a second tent d
   await new Promise<void>((done) => taken.listen(0, '127.0.0.1', done))
   t.after(() => taken.close())
   const held = Object(taken.address()).port
-  const again = tent(['dev', '--port', String(held)], { folder, out: () => undefined })
+  const again = session(['dev', '--port', String(held)], () => undefined)
   await until('the second session runs', () => engineFile() !== undefined)
   assert.ok(Number(engineFile()?.port) > held, `the port ${engineFile()?.port} is the next free one after ${held}`)
   assert.deepEqual(
@@ -544,7 +558,7 @@ test('[15-6@6] tent dev --json answers what it ran when it ends, a second tent d
   assert.equal(await again, 0)
 
   // `--fresh` empties the development data and applies the seed again.
-  const fresh = tent(['dev', '--port', '0', '--fresh'], { folder, out: () => undefined })
+  const fresh = session(['dev', '--port', '0', '--fresh'], () => undefined)
   await until('the fresh session runs', () => engineFile() !== undefined)
   assert.deepEqual(
     Object(await call('allItems', {})).map((row: { title: string }) => row.title),

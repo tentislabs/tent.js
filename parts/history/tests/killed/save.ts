@@ -1,10 +1,13 @@
 // A program that is killed during a save and started again: each start first holds the history against "it opens
-// and its last point is whole", and then saves a number of times in a row.
+// and its last point is whole", and then saves a number of times in a row. The start that the run kills saves on
+// until the kill lands, so the kill arrives within a save on a slow computer and a quick one alike. The start after a
+// kill ends by itself.
 // Run: node save.ts <the folder of a project>
 import { createHash, randomBytes } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, writeSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { killedStart } from '../../../../rig/kill.ts'
 import { openHistory } from '../../index.ts'
 
 const folder = process.argv[2]
@@ -52,7 +55,7 @@ history.tidy(Date.now() + 1, { kept: 0 })
 
 // Bytes that do not pack, so that a save has work to do, each file with the number of its save in front.
 const by = { kind: 'tool', id: 'killed' }
-for (let n = last + 1; n <= last + 6; n++) {
+for (let n = last + 1; killedStart() || n <= last + 6; n++) {
   const head = new TextEncoder().encode(String(n).padStart(12, '0'))
   for (let k = 0; k < 8; k++) writeFileSync(join(folder, `file-${k}.bin`), Buffer.concat([head, randomBytes(65536)]))
   appendFileSync(begun, `${n}\n`)

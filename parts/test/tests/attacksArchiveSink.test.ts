@@ -23,7 +23,7 @@ import {
   readerFolder,
   titlesOf,
 } from './desks.ts'
-import { beat, current, level } from './many.ts'
+import { beat, current, level, readersHeld } from './many.ts'
 import { closing, copyOf } from './projects.ts'
 
 const system = { as: { kind: 'system' } } as const
@@ -467,30 +467,34 @@ test('[45-1] a writer with a near reader keeps its changes for the reader beside
   assert.equal(await rowsOf(reader.app), print, 'the reader stands at the moment too')
 })
 
-test('[45-1] a reader that takes over keeps an archive of its own from then on: a restore to a moment reaches what it wrote', async (t) => {
-  const desk = await deskOf(t)
-  const { app } = desk
-  const near = await app.reader()
-  await current(app, near)
-  const north = await addTeam(app, 'North')
-  await addOrder(app, north, 'by the first writer')
-  await level(app, near)
-  await app.kill()
-  await beat(near, 7)
-  await near.takeOver()
-  const folder = readerFolder(desk, 2)
-  await command(near, folder, 'data', { what: 'backup' })
-  for (let m = 1; m <= 3; m++) {
+test(
+  '[45-1] a reader that takes over keeps an archive of its own from then on: a restore to a moment reaches what it wrote',
+  readersHeld,
+  async (t) => {
+    const desk = await deskOf(t)
+    const { app } = desk
+    const near = await app.reader()
+    await current(app, near)
+    const north = await addTeam(app, 'North')
+    await addOrder(app, north, 'by the first writer')
+    await level(app, near)
+    await app.kill()
+    await beat(near, 7)
+    await near.takeOver()
+    const folder = readerFolder(desk, 2)
+    await command(near, folder, 'data', { what: 'backup' })
+    for (let m = 1; m <= 3; m++) {
+      near.clock.advance('1 minute')
+      await addOrder(near, north, `by the new writer ${m}`)
+    }
+    const middle = new Date(String((await ordersOf(near, north)).at(-1)?.createdAt)).getTime() + 30_000
+    const print = await titlesOf(near, north)
     near.clock.advance('1 minute')
-    await addOrder(near, north, `by the new writer ${m}`)
-  }
-  const middle = new Date(String((await ordersOf(near, north)).at(-1)?.createdAt)).getTime() + 30_000
-  const print = await titlesOf(near, north)
-  near.clock.advance('1 minute')
-  await addOrder(near, north, 'after the moment')
-  await command(near, folder, 'data', { what: 'restore', at: momentOf(middle) })
-  assert.deepEqual(await titlesOf(near, north), print)
-})
+    await addOrder(near, north, 'after the moment')
+    await command(near, folder, 'data', { what: 'restore', at: momentOf(middle) })
+    assert.deepEqual(await titlesOf(near, north), print)
+  },
+)
 
 test('[45-1] after the file of one tenant was put back from a backup, a restore to a later moment reaches its rows, or is refused', async (t) => {
   const { held, teams } = await archivedWithTeams(t)

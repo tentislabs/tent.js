@@ -27,17 +27,28 @@ export async function beat(app: TestApp, times = 1): Promise<void> {
   }
 }
 
+// The bound of a test that waits for a reader to be current: a reader that never is fails the test here, and a
+// loaded computer that answers its beats late never reaches it.
+export const readersHeld = { timeout: 600_000 }
+
 /**
  * Has the beats of the machines pass until each of those readers is current. A beat and its answer cross in a
  * moment: where they did not within some beats, the computer is slow, and each later beat is given a longer one,
- * so that an answer is not older than a reader may be behind when it arrives.
+ * so that an answer is not older than a reader may be behind when it arrives. It waits on that fact alone: the test's
+ * own timeout bounds it, which closes the test's apps, and the wait then ends naming where each reader stood.
  */
 export async function current(app: TestApp, ...readers: TestApp[]): Promise<void> {
-  for (let i = 0; i < 80 && !readers.every((one) => one.at().current); i++) {
-    app.clock.advance('1 second')
-    await moment(i < 8 ? 15 : 100)
+  let stood: ReturnType<TestApp['at']>[] = []
+  try {
+    for (let i = 0; ; i++) {
+      stood = readers.map((one) => one.at())
+      if (stood.every((one) => one.current)) return
+      app.clock.advance('1 second')
+      await moment(i < 8 ? 15 : 100)
+    }
+  } catch (error) {
+    throw new Error(`a reader was never current: they stood at ${JSON.stringify(stood)}`, { cause: error })
   }
-  for (const one of readers) assert.equal(one.at().current, true, 'a reader is current after its beats')
 }
 
 /**

@@ -23,7 +23,8 @@ test('[48-7] --plan writes a test for a screen with a form, which runs and passe
   assert.match(written, /app\.open\('\/orders', \{ as: user \}\)/)
   assert.match(written, /page\.type\('title', /)
   assert.match(written, /page\.type\('count', '1'\)/)
-  assert.match(written, /page\.pick\('urgent', true\)/)
+  // Each field takes the one sample of its type, which `app.make` and the cases of the declarations take too.
+  assert.match(written, /page\.pick\('urgent', false\)/)
   assert.match(written, /What calls addOrder/)
   assert.match(written, /What calls addSample/)
   // A test file of that name is there now: a second plan does not write over it.
@@ -62,7 +63,8 @@ test('[48-7] --shard runs a share of the files split by their names, and --join 
   const folders = [join(project, '..', 'first'), join(project, '..', 'second')]
   const shares: string[][] = []
   for (const [n, folder] of folders.entries()) {
-    const one = typedApart(project, 'test', '--shard', `${n + 1}/2`, '--json')
+    // Each share runs its tests whole, as a machine with no record of the tests does.
+    const one = typedApart(project, 'test', '--shard', `${n + 1}/2`, '--all', '--json')
     assert.equal(one.ended, 0, one.printed)
     const files = valueOf(one.answer).files
     shares.push(Array.isArray(files) ? files.map(String) : [])
@@ -84,7 +86,8 @@ test('[15-6] tent test <file> runs that file, tent test <name> the tests of that
   const file = typedApart(project, 'test', 'tests/orders.test.ts', '--json')
   assert.equal(file.ended, 0, file.printed)
   assert.deepEqual([valueOf(file.answer).files, valueOf(file.answer).passed], [['tests/orders.test.ts'], 2])
-  const named = typedApart(project, 'test', 'an order is added', '--json')
+  // The tests of that name ran with their file a moment ago: `--all` runs them again, where they would be replayed.
+  const named = typedApart(project, 'test', 'an order is added', '--all', '--json')
   assert.equal(named.ended, 0, named.printed)
   assert.equal(valueOf(named.answer).passed, 1, named.printed)
   // A word that names no file and no test is not found; a second word, which the command does not take, is T0038.

@@ -23,6 +23,8 @@ const heldDate = new Proxy(realDate, {
 
 // How many queries stand in each other at the moment: the swap is made by the first and taken back by the last.
 let running = 0
+// What stood before the swap, which is put back: a test's own clock and source among them, never those of the runtime.
+let stood: { date: DateConstructor; random: () => number } | undefined
 // The `fetch` of the heap while the swap is in place.
 let fetching: typeof fetch | undefined
 
@@ -33,6 +35,7 @@ let fetching: typeof fetch | undefined
  */
 export function pure<Answer>(work: () => Answer): Answer {
   if (running++ === 0) {
+    stood = { date: globalThis.Date, random: Math.random }
     globalThis.Date = heldDate
     Math.random = refuse('drew a random number')
     // The two members stand on the kind of `crypto`: one of its own on the thing itself hides them, and is taken away again.
@@ -47,8 +50,9 @@ export function pure<Answer>(work: () => Answer): Answer {
     return work()
   } finally {
     if (--running === 0) {
-      globalThis.Date = realDate
-      Math.random = realRandom
+      globalThis.Date = stood?.date ?? realDate
+      Math.random = stood?.random ?? realRandom
+      stood = undefined
       if (typeof globalThis.crypto === 'object')
         for (const name of ['getRandomValues', 'randomUUID']) Reflect.deleteProperty(globalThis.crypto, name)
       if (fetching) globalThis.fetch = fetching

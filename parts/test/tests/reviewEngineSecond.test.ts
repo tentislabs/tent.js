@@ -7,7 +7,7 @@ import { buildProject } from '../../build/index.ts'
 import { createEngine, replaceSecretKey } from '../../engine/index.ts'
 import { testApp } from '../index.ts'
 import { appIn, command, readFile } from './desks.ts'
-import { current, level } from './many.ts'
+import { current, level, readersHeld } from './many.ts'
 import { closing, copyOf, tempOf } from './projects.ts'
 import { served } from './served.ts'
 
@@ -29,12 +29,15 @@ test('[20-7] after a person is removed, the words of the files they uploaded tha
   assert.deepEqual(kept, [], 'the words of a file of a removed person are kept in the cache')
 })
 
-test('[22-14] a reader that joins again after a new key holds the rows of a tenant table as its writer sealed them again', async (t) => {
-  const temp = tempOf(t)
-  const folder = copyOf(t, 'vaulted')
-  writeFileSync(
-    join(folder, 'functions.ts'),
-    `import { anyone, change, input, link, table, text } from 'tentjs'
+test(
+  '[22-14] a reader that joins again after a new key holds the rows of a tenant table as its writer sealed them again',
+  readersHeld,
+  async (t) => {
+    const temp = tempOf(t)
+    const folder = copyOf(t, 'vaulted')
+    writeFileSync(
+      join(folder, 'functions.ts'),
+      `import { anyone, change, input, link, table, text } from 'tentjs'
 
 const open = anyone('a test reads what only a machine with the key opens')
 
@@ -59,33 +62,34 @@ export const keep = change('keep', {
   set: vault.of(input('team')).add({ title: input('title'), note: input('note') }),
 })
 `,
-  )
-  const app = await testApp({ folder })
-  closing(t, () => app.close())
-  const home = (name: string): string =>
-    join(temp, String(readdirSync(temp).find((one) => one.startsWith('tent-test-'))), name)
-  const team = String(Object(await app.call('addTeam', { name: 'the team' }, system)).id)
-  await app.call('keep', { team, title: 'a', note: 'what the team keeps' }, system)
-  // The writes of the shared file go on after the last write of the team's file.
-  for (let i = 0; i < 5; i++) await app.call('addTeam', { name: `team ${i}` }, system)
-  const keyOf = (name: string): string => readFileSync(join(home(name), 'secret.key'), 'utf8')
-  const near = await app.reader({ secretKey: keyOf('data') })
-  closing(t, () => near.close())
-  await current(app, near)
-  await level(app, near)
-  // The writer is stopped, its key replaced, and started again: the reader joins again.
-  await app.kill()
-  await replaceSecretKey(home('data'))
-  await app.restart()
-  await app.call('addTeam', { name: 'after the new key' }, system)
-  await current(app, near)
-  await level(app, near)
-  const sealedIn = (name: string): string => {
-    const file = join(home(name), 'tenants', 'teams', team.slice(-2), `${team}.db`)
-    return String(readFile(file, 'SELECT "note" FROM "vault"')[0]?.note)
-  }
-  assert.equal(sealedIn('reader-2'), sealedIn('data'), 'the reader holds the row as the old key sealed it')
-})
+    )
+    const app = await testApp({ folder })
+    closing(t, () => app.close())
+    const home = (name: string): string =>
+      join(temp, String(readdirSync(temp).find((one) => one.startsWith('tent-test-'))), name)
+    const team = String(Object(await app.call('addTeam', { name: 'the team' }, system)).id)
+    await app.call('keep', { team, title: 'a', note: 'what the team keeps' }, system)
+    // The writes of the shared file go on after the last write of the team's file.
+    for (let i = 0; i < 5; i++) await app.call('addTeam', { name: `team ${i}` }, system)
+    const keyOf = (name: string): string => readFileSync(join(home(name), 'secret.key'), 'utf8')
+    const near = await app.reader({ secretKey: keyOf('data') })
+    closing(t, () => near.close())
+    await current(app, near)
+    await level(app, near)
+    // The writer is stopped, its key replaced, and started again: the reader joins again.
+    await app.kill()
+    await replaceSecretKey(home('data'))
+    await app.restart()
+    await app.call('addTeam', { name: 'after the new key' }, system)
+    await current(app, near)
+    await level(app, near)
+    const sealedIn = (name: string): string => {
+      const file = join(home(name), 'tenants', 'teams', team.slice(-2), `${team}.db`)
+      return String(readFile(file, 'SELECT "note" FROM "vault"')[0]?.note)
+    }
+    assert.equal(sealedIn('reader-2'), sealedIn('data'), 'the reader holds the row as the old key sealed it')
+  },
+)
 
 // What a review of the whole found in the second third of `engine`, where it takes a built project to show it:
 // each test holds a sentence of a document that the code does not hold, and fails while that stands.

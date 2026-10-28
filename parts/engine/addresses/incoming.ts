@@ -14,6 +14,7 @@ import { visit } from '../visit.ts'
 import { countedAs } from '../web/names.ts'
 import { errorAnswer, jsonAnswer } from '../wire.ts'
 import { countAnswered, countAnswering } from '../counts/screens.ts'
+import { noteTouched } from '../touched.ts'
 
 const isFound = (matched: object): matched is IncomingFound =>
   typeof Reflect.get(matched, 'name') === 'string' && typeof Reflect.get(matched, 'record') === 'object'
@@ -66,6 +67,7 @@ export const address: Address = {
   async handle({ app: o, request, matched, about, began }) {
     if (!isFound(matched)) return errorAnswer(o, 'incoming', new TentError('T0001', 'No call coming in is here.'))
     const { name, record, params } = matched
+    noteTouched('incoming', name)
     countAnswering(name, nobody)
     try {
       countedIn(o, about.from)

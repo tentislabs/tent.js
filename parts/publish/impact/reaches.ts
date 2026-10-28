@@ -4,13 +4,15 @@ import type { Reached } from './face.ts'
 import type { Stored } from './read.ts'
 import { doorsOf, listOf, recordsOf } from './read.ts'
 
-/** Every name of a function that a stored value of a screen asks: what each entry of its `data` reads. */
-function asked(value: unknown, found: Set<string>): Set<string> {
-  if (Array.isArray(value)) for (const one of value) asked(one, found)
-  else if (isStored(value)) {
-    if (typeof value.what === 'string') found.add(value.what)
-    for (const one of Object.values(value)) asked(one, found)
-  }
+/**
+ * Every name of a function that a screen or a component asks: what each entry of its `data` reads, as the build
+ * stores it under `query` or `action`, and each function it calls.
+ */
+function asked(record: Stored): Set<string> {
+  const found = new Set(listOf(record.calls))
+  for (const entry of Object.values(isStored(record.data) ? record.data : {}))
+    for (const kind of ['query', 'action'])
+      if (isStored(entry) && typeof entry[kind] === 'string') found.add(entry[kind])
   return found
 }
 
@@ -36,10 +38,10 @@ const graphOf = (description: Description): Graph => ({
   ],
 })
 
-/** The screens and components that ask a function, each with whether its pages are kept as public. */
+/** The screens and components that ask or call a function, each with whether its pages are kept as public. */
 function screensOf(graph: Graph, fn: string): Reached[] {
   return graph.screens
-    .filter(([, , record]) => asked(record.data, new Set()).has(fn))
+    .filter(([, , record]) => asked(record).has(fn))
     .map(([name, kind, record]) => ({
       name,
       kind,
@@ -63,7 +65,7 @@ const functionOf = (graph: Graph, name: string): Reached => {
 /**
  * Takes a description and the name of a definition that changed: a table, a column as `<table>.<column>`, or a
  * function. Answers everything that depends on it, as a tree to the screens and the offers at its ends: a table
- * reaches the functions that read it, and a function the screens that ask it.
+ * reaches the functions that read it, and a function the screens and components that read it or call it.
  */
 export function reachedBy(description: Description, name: string): Reached[] {
   const graph = graphOf(description)

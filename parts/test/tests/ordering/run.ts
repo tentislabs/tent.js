@@ -3,10 +3,13 @@
 // Each start opens the app on a clock that the program moves past each wait, places the big order where none is
 // placed yet, and prints `step done <name>` as each step is saved. Once the run has ended it prints `ended:` with
 // the rows and the steps, and ends by itself.
-import { appendFileSync, writeSync } from 'node:fs'
+import { appendFileSync } from 'node:fs'
 
 const [bundle, dataFolder, mailFile] = process.argv.slice(2)
+// Loaded as the program runs, and not named at its top: this file lies in the project, whose build holds every file
+// it imports to the project.
 const { createEngine } = await import('../../../engine/index.ts')
+const { killedAt } = await import('../../../../rig/kill.ts')
 
 const system = { as: { kind: 'system' } }
 let now = Date.now()
@@ -34,11 +37,10 @@ const mailer = {
   },
 }
 const engine = createEngine({ port: 0, makers: { clock: () => clock, mailer: () => mailer } })
-// The line is written at once, and the program then stands still a moment: a kill at the line lands before the
-// next step does anything, on a quick computer as on a slow one.
+// The line is written at once, and the start that is killed at it stands still there: a kill at the line lands
+// before the next step does anything, on a quick computer as on a slow one.
 engine.on('step.done', (told) => {
-  writeSync(1, `step done ${told.step}\n`)
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500)
+  killedAt(`step done ${told.step}`)
 })
 const app = await engine.open(bundle, { dataFolder, mode: 'test' })
 const orders = await app.read({ from: 'orders' }, system)

@@ -14,9 +14,15 @@ const root = join(import.meta.dirname, '..', '..', '..')
 const project = join(import.meta.dirname, 'libraries')
 
 // What the tests of a file started and made: each is ended and removed when the file ends, also where a test failed.
-const ends: (() => Promise<void> | void)[] = []
+// Each end is given twenty seconds, so one that never ends fails the file by its name and holds no run.
+const ends: { what: string; end: () => Promise<void> | void }[] = []
 after(async () => {
-  for (const end of ends.reverse()) await end()
+  const stuck: string[] = []
+  for (const { what, end } of ends.reverse()) {
+    const bound = new Promise<boolean>((done) => setTimeout(() => done(false), 20_000).unref())
+    if (!(await Promise.race([Promise.resolve(end()).then(() => true), bound]))) stuck.push(what)
+  }
+  assert.deepEqual(stuck, [], 'what the tests started and did not end within twenty seconds')
 })
 
 /**
@@ -51,7 +57,10 @@ export function laidLibraries(name: string, change?: (folder: string) => void): 
   cpSync(project, folder, { recursive: true })
   symlinkSync(join(packages, 'node_modules'), join(folder, 'node_modules'), 'junction')
   change?.(folder)
-  ends.push(() => rmSync(folder, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }))
+  ends.push({
+    what: `the folder ${name}`,
+    end: () => rmSync(folder, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }),
+  })
   return folder
 }
 
@@ -64,7 +73,7 @@ export async function servedLibraries(): Promise<{ address: string; app: App }> 
     [],
   )
   const engine: Engine = createEngine({ port: 0 })
-  ends.push(() => engine.close())
+  ends.push({ what: 'the engine of the release', end: () => engine.close() })
   const dataFolder = join(folder, '.tent', 'served')
   const app = await engine.open(made.bundleFolder, { dataFolder, mode: 'test' })
   await app.seed()
@@ -77,7 +86,7 @@ export async function developedLibraries(): Promise<{ address: string; dev: Awai
   const folder = laidLibraries('dev')
   const lines: string[] = []
   const dev = await startDev(folder, { port: 0, out: (line) => lines.push(line) })
-  ends.push(() => dev.close())
+  ends.push({ what: 'tent dev', end: () => dev.close() })
   return { address: `http://localhost:${dev.port}`, dev }
 }
 
@@ -192,7 +201,14 @@ export async function frameTool(): Promise<string> {
       ].join('\n'),
     )
   })
-  ends.push(() => new Promise<void>((done) => server.close(() => done())))
+  // A browser keeps its connections open, which a server waits for before it closes.
+  ends.push({
+    what: 'the frame tool',
+    end: () => {
+      server.closeAllConnections()
+      return new Promise<void>((done) => server.close(() => done()))
+    },
+  })
   await new Promise<void>((done) => server.listen(0, '127.0.0.1', done))
   const address = server.address()
   return `http://127.0.0.1:${typeof address === 'object' && address !== null ? address.port : ''}`

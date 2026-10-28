@@ -1,0 +1,15 @@
+parts/build/tests/places.test.ts
+parts/cli/tests/attacksInstall.test.ts
+parts/cli/tests/devEnded.test.ts
+parts/cli/tests/doors.test.ts
+parts/cli/tests/installers.test.ts
+parts/cli/tests/pythonLock.test.ts
+parts/cli/tests/repair.test.ts
+parts/cli/tests/service.test.ts
+parts/cli/tests/shipped.test.ts
+parts/cli/tests/startChecks.test.ts
+parts/cli/tests/update.test.ts
+parts/connect/tests/owners.test.ts
+parts/core/tests/reviewCiGreen.test.ts
+parts/engine/tests/layingCapitals.test.ts
+tests/rigs-kill.test.ts

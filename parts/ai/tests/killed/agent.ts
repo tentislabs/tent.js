@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { buildProject } from '../../../build/index.ts'
 import { createEngine } from '../../../engine/index.ts'
 import { testSecrets } from '../../../test/secrets.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [project, out, dataFolder, told, killAfter] = process.argv.slice(2)
 mkdirSync(told, { recursive: true })
@@ -39,9 +40,8 @@ const engine = createEngine({ port: 0, makers: { providers: () => ({ anthropic: 
 engine.on('step.done', (o) => {
   if (o.step !== killAfter || existsSync(once)) return
   writeFileSync(once, '')
-  writeSync(1, `saved ${o.step}\n`)
   // The first start stands still here until it is killed, so that nothing follows the step.
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+  killedAt(`saved ${o.step}`)
 })
 // Every secret that the project names has a value on the test data, as a test app gives it.
 if (!existsSync(join(dataFolder, 'secret.key')))

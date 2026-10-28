@@ -1,7 +1,7 @@
 import { TentError } from '../../core/index.ts'
 import type { Description } from '../../core/internal.ts'
 import type { Mode } from '../../data/index.ts'
-import { sqliteStore } from '../../data/index.ts'
+import { idMaker, sqliteStore } from '../../data/index.ts'
 import type { App } from '../app.ts'
 import type { Machine, MachineTold } from '../copy/machine.ts'
 import type { OpenCounting } from '../counts/options.ts'
@@ -118,6 +118,7 @@ export async function frameOf(program: Program, w: Opening, room: Room): Promise
     description,
     store: sqliteStore(),
     clock: systemClock,
+    ids: idMaker(() => o.clock.now()),
     log: {
       write: () => undefined,
       writeAll: () => undefined,
@@ -173,8 +174,13 @@ export async function frameOf(program: Program, w: Opening, room: Room): Promise
         (await import('../mcp/streams.ts')).mcpRequest(o, grant, method, params),
     },
   }
-  const { clock, lease } = program.makers
+  const { clock, lease, random } = program.makers
   o.clock = clock?.(input) ?? systemClock
+  const source = random?.(input)
+  if (source) {
+    o.random = source
+    o.ids = idMaker(() => o.clock.now(), source)
+  }
   const leased = lease?.(input)
   o.made.push(o.clock, ...(leased ? [leased] : []))
   return {

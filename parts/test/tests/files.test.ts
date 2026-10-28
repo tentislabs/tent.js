@@ -27,7 +27,7 @@ import {
   titlesOf,
   writeFile,
 } from './desks.ts'
-import { codeOf, current, level, moment, until } from './many.ts'
+import { codeOf, current, level, moment, readersHeld, until } from './many.ts'
 import { copyOf } from './projects.ts'
 
 const system = { as: { kind: 'system' } } as const
@@ -475,37 +475,41 @@ test('[50-6] [16-2@4] a file that cannot be brought up is marked failed with its
   assert.deepEqual(await titlesOf(app, last), ['first of 11'])
 })
 
-test('[50-6] the upkeep is done again every upkeepEvery by the clock of the app, and a reader removes what lies under tenants/.tmp and nothing else', async (t) => {
-  const desk = await deskOf(t)
-  const { app, dataFolder } = desk
-  const near = await app.reader()
-  await current(app, near)
-  const folder = readerFolder(desk, 2)
-  const [north, gone] = [await addTeam(app, 'North'), await addTeam(app, 'Gone')]
-  await addOrder(app, north, 'a lamp')
-  await addOrder(app, gone, 'a desk')
-  await level(app, near)
-  // Both machines close their files. Then, with no word to either engine: a half copy under `tenants/.tmp/` of each,
-  // and the row of one team taken out of the shared file of each, so that its file is the file of nobody.
-  app.clock.advance('2 minutes')
-  await moment(20)
-  for (const one of [dataFolder, folder]) {
-    mkdirSync(join(one, 'tenants', '.tmp'), { recursive: true })
-    writeFileSync(join(one, 'tenants', '.tmp', 'half.db'), 'half a copy')
-    writeFile(join(one, 'data.db'), 'DELETE FROM "teams" WHERE "id" = ?', gone)
-    assert.equal(hasFile(one, gone), true)
-  }
-  app.clock.advance('1 day')
-  await moment(20)
-  // The writer holds the disk against its directory both ways.
-  assert.equal(existsSync(join(dataFolder, 'tenants', '.tmp', 'half.db')), false)
-  assert.equal(hasFile(dataFolder, gone), false)
-  assert.equal(hasFile(dataFolder, north), true)
-  // A reader writes no file of its own accord: it removes what is temporary, and leaves the rest to its writer.
-  assert.equal(existsSync(join(folder, 'tenants', '.tmp', 'half.db')), false)
-  assert.equal(hasFile(folder, gone), true)
-  assert.equal(hasFile(folder, north), true)
-})
+test(
+  '[50-6] the upkeep is done again every upkeepEvery by the clock of the app, and a reader removes what lies under tenants/.tmp and nothing else',
+  readersHeld,
+  async (t) => {
+    const desk = await deskOf(t)
+    const { app, dataFolder } = desk
+    const near = await app.reader()
+    await current(app, near)
+    const folder = readerFolder(desk, 2)
+    const [north, gone] = [await addTeam(app, 'North'), await addTeam(app, 'Gone')]
+    await addOrder(app, north, 'a lamp')
+    await addOrder(app, gone, 'a desk')
+    await level(app, near)
+    // Both machines close their files. Then, with no word to either engine: a half copy under `tenants/.tmp/` of each,
+    // and the row of one team taken out of the shared file of each, so that its file is the file of nobody.
+    app.clock.advance('2 minutes')
+    await moment(20)
+    for (const one of [dataFolder, folder]) {
+      mkdirSync(join(one, 'tenants', '.tmp'), { recursive: true })
+      writeFileSync(join(one, 'tenants', '.tmp', 'half.db'), 'half a copy')
+      writeFile(join(one, 'data.db'), 'DELETE FROM "teams" WHERE "id" = ?', gone)
+      assert.equal(hasFile(one, gone), true)
+    }
+    app.clock.advance('1 day')
+    await moment(20)
+    // The writer holds the disk against its directory both ways.
+    assert.equal(existsSync(join(dataFolder, 'tenants', '.tmp', 'half.db')), false)
+    assert.equal(hasFile(dataFolder, gone), false)
+    assert.equal(hasFile(dataFolder, north), true)
+    // A reader writes no file of its own accord: it removes what is temporary, and leaves the rest to its writer.
+    assert.equal(existsSync(join(folder, 'tenants', '.tmp', 'half.db')), false)
+    assert.equal(hasFile(folder, gone), true)
+    assert.equal(hasFile(folder, north), true)
+  },
+)
 
 test('[50-6] tenant tables have tenants of two tables: each file stands under its table, is listed with it, and is behind by the layout of the tenant tables of that table alone', async (t) => {
   const first = await deskOf(t, { shops: true })

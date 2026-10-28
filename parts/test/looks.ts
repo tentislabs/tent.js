@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative, sep } from 'node:path'
 import { TentError } from '../core/index.ts'
+import { noteTouched } from '../engine/index.ts'
 import type { Page } from './page.ts'
 import { engineOf } from './page.ts'
 import { differing, readPng } from './png.ts'
@@ -64,6 +65,8 @@ export function expect(page: Page): Held {
     async looks(name, o = {}) {
       const kept = join(folder, 'tests', 'looks', engineOf(page), `${nameHeld(name)}.png`)
       const fresh = kept.replace(/\.png$/, '.new.png')
+      // Under `tent test`, the kept picture the test compared: a test of it runs again once the picture changed.
+      noteTouched('pictures', relative(folder, kept).split(sep).join('/'))
       const taken = await page.picture()
       if (!existsSync(kept)) {
         written(fresh, taken)
@@ -83,6 +86,8 @@ export function expect(page: Page): Held {
     async heard(name) {
       const kept = join(folder, 'tests', 'heard', engineOf(page), `${nameHeld(name)}.txt`)
       const fresh = kept.replace(/\.txt$/, '.new.txt')
+      // The kept text is what the result stands on, as a kept picture is.
+      noteTouched('heard', relative(folder, kept).split(sep).join('/'))
       const said = await page.reader()
       if (!existsSync(kept)) {
         written(fresh, said)

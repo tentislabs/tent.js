@@ -1,8 +1,9 @@
 // A program that is killed in the middle of a change and started again: each start first holds the file against
 // "all of the change or none", and then makes the change once more.
 // Run: node change.ts <data folder>
-import { appendFileSync, existsSync, readFileSync, writeSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { killedAt } from '../../../../rig/kill.ts'
 import { sqliteStore } from '../../index.ts'
 
 const folder = process.argv[2]
@@ -48,8 +49,8 @@ store.write((tx) => {
   tx.sql('DELETE FROM entries', [], ['entries'])
   for (let k = 0; k < size; k++) {
     tx.add('entries', { batch, k, note: `entry ${k} of batch ${batch}` }, system)
-    // Written at once, and not when the program next gives way: the kill is to arrive while the rows are added.
-    if (k === size / 4) writeSync(1, 'mid\n')
+    // The start that is killed stands still here, a quarter of the rows added: the kill arrives within the change.
+    if (k === size / 4) killedAt('mid')
   }
   tx.change('totals', totals.id, { batch, rows: size }, system)
 })

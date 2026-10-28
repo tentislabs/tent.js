@@ -6,6 +6,7 @@ export type { ChangeSink, Mode, Searcher, Store } from '../data/index.ts'
 // The ids that a program makes for what it keeps, in the form of the id of a row.
 export { isId, rowIds } from '../data/index.ts'
 export type { App } from './app.ts'
+export type { CallDone, CallFacts } from './called.ts'
 // A page of a real browser that the engine drives on an app, for the tests of a program that holds it.
 export type { Browsed, BrowserEngine, BrowserOpening } from './shot/browsed.ts'
 export { browsed } from './shot/browsed.ts'
@@ -84,3 +85,35 @@ export { readSecrets, unreadSecrets } from './values/readSecrets.ts'
 export type { ValuesAsked } from './values/stored.ts'
 export { replaceSecretKey } from './values/replaceKey.ts'
 export { makeSecretKey, newSecretKey, secretsNamed, storedValues } from './values/stored.ts'
+// What each test of `tent test` touched, noted where its work is: the program of the tests keeps and writes it.
+export type { TestNotes, TouchedKind } from './touched.ts'
+export {
+  noteAllAs,
+  noteCalled,
+  noteLoaded,
+  noteOpened,
+  noteOutside,
+  noteSeed,
+  noteTouched,
+  noteUnheld,
+  noteWord,
+  notesOf,
+  outsideNoter,
+  tellNotesTo,
+  testUnderWay,
+  underTest,
+  writeNotes,
+  writeToldNotes,
+} from './touched.ts'
+// Lines a thread hands its program through memory they share, which a thread held on a lock cannot stop.
+export { handLine, linesHanded, linesTold } from './threadLines.ts'
+// The words of the environment that the code of a test or of its app reads, noted under the test.
+export { calledByApp, isAppModule, noteWordsRead } from './envRead.ts'
+// What the cases made from the declarations hold: whatever would reach outside the program, refused where it leaves.
+export { heldRefusal, holdOutside, outsideHeld } from './outsideHeld.ts'
+// Every way out of the program, noted under the test whose work takes it, and held where the program holds it.
+export { leavesProgram, noteWaysOut } from './waysOut.ts'
+// The source of numbers from a random seed, by which a test app draws the same numbers on every computer.
+export { seededSource } from './seeded.ts'
+// Whether an address fits the pattern of a screen or a route, as the engine finds one.
+export { fitsPattern } from './pages/find.ts'

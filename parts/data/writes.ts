@@ -177,7 +177,7 @@ export function addRow(cx: DbContext, table: string, written: Row, of?: unknown)
       heldSteps(cx, file.at, model, values, true)
       sharedLinks(cx, model, values)
     }
-    const id = rowIds.next()
+    const id = (cx.o.ids ?? rowIds).next()
     // Opening the write of a tenant with no file makes the file, and a file is made only by a write that has
     // passed its rule: for such a tenant the rule is asked of the row first, in memory.
     const unmade = file.at !== undefined && cx.files?.has(file.at) === false

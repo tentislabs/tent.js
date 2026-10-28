@@ -2,6 +2,7 @@ import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { TentError } from '../../core/index.ts'
 import type { Description } from '../../core/internal.ts'
+import { touchedOf } from '../../core/internal.ts'
 import type { History } from '../../history/index.ts'
 import type { ImpactFacts } from './face.ts'
 
@@ -46,12 +47,12 @@ export async function describedAt(
   }
 }
 
-/** What each test of the app touched in its last run, as `tent test` wrote it into the data folder, or nothing. */
+/** What each test of the app touched in its last run, as `tent test` kept it in the data folder, or nothing. */
 export function touchedIn(data: string): ImpactFacts['touched'] {
-  const file = join(data, 'touched.json')
+  const file = join(data, 'tests.json')
   if (!existsSync(file)) return undefined
   try {
-    return JSON.parse(readFileSync(file, 'utf8'))
+    return touchedOf(JSON.parse(readFileSync(file, 'utf8')))
   } catch {
     return undefined
   }

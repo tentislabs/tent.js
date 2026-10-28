@@ -1,4 +1,5 @@
 import type { Description } from '../../core/internal.ts'
+import { testsTouching } from '../../core/internal.ts'
 import type { Change } from '../../history/index.ts'
 import { changesOf } from '../../history/index.ts'
 import { breaks } from '../breaks.ts'
@@ -79,16 +80,12 @@ export function impactOf(o: { against: string; live: Description; next: Descript
     const tree = reachedBy(next, name)
     return tree.length ? [{ name, tree }] : []
   })
-  // The tests of each changed definition, by what each test touched in its last run.
-  const touched = Object.entries(facts.touched ?? {})
+  // The tests of each changed definition, by what each test touched in its last run: a column by its table.
   const definitions = changed.filter(
     (name) => kindOf(next, name.split('.')[0]) !== 'definition' || kindOf(live, name.split('.')[0]) !== 'definition',
   )
   const tests = definitions.flatMap((name) => {
-    const by = touched
-      .filter(([, names]) => names.includes(name.split('.')[0]))
-      .map(([test]) => test)
-      .sort()
+    const by = testsTouching(facts.touched ?? {}, name.split('.')[0])
     return by.length ? [{ name, tests: by }] : []
   })
   const untested = definitions.filter((name) => !tests.some((one) => one.name === name))

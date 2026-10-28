@@ -98,4 +98,5 @@ export const list = [
   { name: 'T9001', load: () => import('./T9001.ts') },
   { name: 'T9002', load: () => import('./T9002.ts') },
   { name: 'T9003', load: () => import('./T9003.ts') },
+  { name: 'T9004', load: () => import('./T9004.ts') },
 ]

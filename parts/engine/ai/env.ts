@@ -8,6 +8,7 @@ import type { Opened } from '../opened.ts'
 import { textOf } from '../readers/text.ts'
 import { connectNow } from '../services/loaded.ts'
 import { standInOf } from '../services/standIns.ts'
+import { noteOutside, noteTouched } from '../touched.ts'
 import { askedOf } from '../flows/leave.ts'
 import { sourcesOf } from './sources.ts'
 import { toldPart } from './told.ts'
@@ -122,7 +123,11 @@ export function aiEnvOf(o: Opened, providers: Record<string, Provider> = {}): Ai
     providers,
     standIn(model) {
       const stand = standInOf(o, model)
-      return stand && Object.hasOwn(o.description.models, model) ? stand : undefined
+      const own = stand && Object.hasOwn(o.description.models, model) ? stand : undefined
+      // Under `tent test`, each model a test called, and one that no test faked, whose answer is no test's own.
+      noteTouched('models', model)
+      if (!own) noteOutside(`model ${model}`)
+      return own
     },
     get sources() {
       return sourcesOf(o.token)

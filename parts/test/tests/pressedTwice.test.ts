@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import type { BrowserEngine } from '../../engine/index.ts'
+import { browserEngines } from '../../../rig/browser.ts'
 import { testApp } from '../index.ts'
 import { closing, copyOf } from './projects.ts'
 
 // The runner ends a test that is held past this, whatever holds it, and the test's own closing then ends its browsers.
 const held = { timeout: 180_000 }
 
-for (const engine of ['chromium', 'firefox'] satisfies BrowserEngine[])
+for (const engine of browserEngines)
   test(
     `[48-2] a step waits for the move it set off to be drawn, so that a link pressed on the screen moved to moves again, in ${engine}`,
     held,

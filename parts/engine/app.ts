@@ -1,4 +1,5 @@
 import type { Caller, Finding } from '../core/index.ts'
+import type { CallDone } from './called.ts'
 import { TentError } from '../core/index.ts'
 import type { Description, Facts } from '../core/internal.ts'
 import { list } from './app/list.ts'
@@ -100,8 +101,15 @@ export interface App {
   /**
    * Puts a stand-in in place of a service or a model, by its name: for a service an object of its calls, each an
    * answer or a function of the input that gives one. It is asked in place of sending, until the app is closed.
+   * Under the name `fetch`, its member `fetch` answers every plain `fetch` of the app's code.
    */
   standIn(name: string, stand: object): void
+  /**
+   * In the mode `test` alone: carries a piece of work out, as a call of a test, and answers what it answered or
+   * threw with each table it read with its rows, each row it wrote as it was before and after, and its trace, at
+   * most 50 rows of a table. Throws T0013 in any other mode.
+   */
+  called<Answer>(work: () => Promise<Answer>): Promise<CallDone<Answer>>
   /** Applies the seed of the running version, as the system. */
   seed(): Promise<void>
   /**

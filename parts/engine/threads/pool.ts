@@ -10,6 +10,7 @@ import { dbFor } from '../program.ts'
 import type { Job, Start, ThreadTold } from './messages.ts'
 import { revivedHere } from './messages.ts'
 import { gatherRows } from '../counts/gather.ts'
+import { testUnderWay } from '../touched.ts'
 
 /** The query threads of one app: a heavy query is carried out on one of them, and they end with the app. */
 export interface QueryThreads {
@@ -193,7 +194,16 @@ export function queryThreads(o: Opened): QueryThreads {
           return
         }
         const into = readsNow()
-        const job: Job = { id: ++ids, name, input, caller, now: o.clock.now(), ...(into ? { reads: true } : {}) }
+        const test = testUnderWay()
+        const job: Job = {
+          id: ++ids,
+          name,
+          input,
+          caller,
+          now: o.clock.now(),
+          ...(into ? { reads: true } : {}),
+          ...(test === undefined ? {} : { test }),
+        }
         const more = { ...(ends === undefined ? {} : { ends }), ...(into ? { into } : {}) }
         waiting.push({ job, began, queued: performance.now(), done, failed, ...more })
         next()

@@ -52,6 +52,8 @@ export interface World {
   pageEnds: (() => Promise<void>)[]
   // Where the code of each machine runs: the test room where the test or its run asks for it.
   room?: Makers['room']
+  // The source of numbers of every machine of the test app, from its random seed.
+  random?: () => number
 }
 
 const newKey = (): string => randomBytes(32).toString('base64url')
@@ -137,11 +139,18 @@ export function reachFor(world: World, from: Machine): Reach {
   }
 }
 
+/** What every engine of a machine of the world is made with: the clock, the source of numbers, and the room. */
+export const makersOf = (world: World): Makers => ({
+  clock: () => world.clock,
+  ...(world.random ? { random: () => world.random ?? Math.random } : {}),
+  ...(world.room ? { room: world.room } : {}),
+})
+
 /** Opens a machine of the world as the writer of its data folder, in the mode `test`, where it answers on every name. */
 export async function openWriter(world: World, machine: Machine): Promise<App> {
   machine.engine = createEngine({
     port: 0,
-    makers: { clock: () => world.clock, ...(world.room ? { room: world.room } : {}) },
+    makers: makersOf(world),
     // A test app is built where the build tools are, so its engine reads sequences as `tent start` does.
     readBody,
   })
@@ -160,7 +169,7 @@ export async function openReader(world: World, machine: Machine, of: Machine): P
   machine.key ??= keyFor(world, machine.far)
   machine.engine = createEngine({
     port: 0,
-    makers: { clock: () => world.clock, ...(world.room ? { room: world.room } : {}) },
+    makers: makersOf(world),
   })
   try {
     machine.app = await machine.engine.read({

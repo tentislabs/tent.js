@@ -1,5 +1,6 @@
 import type { Traced } from '../../data/index.ts'
 import type { Opened } from '../opened.ts'
+import { noteTouched } from '../touched.ts'
 import type { Span } from './span.ts'
 import { endSpan, insideSpan, openSpan, spanNow } from './span.ts'
 
@@ -24,6 +25,8 @@ function rowsIn(answer: unknown): number {
  * is carried out as it is, and past the first hundred of one span each is counted in the fact `dbMore` of that span.
  */
 export function dbSpan<Answer>(o: Opened, what: Traced, work: () => Answer): Answer {
+  // Under `tent test`, the table that the test read or wrote, through whatever work of the app.
+  noteTouched(what.kind === 'write' ? 'wrote' : 'read', what.table)
   const parent = spanNow()
   if (!parent) return work()
   const count = held.get(parent) ?? 0

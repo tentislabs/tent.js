@@ -10,6 +10,8 @@ import { sourceOf } from './projectSource.ts'
 import type { BuildOptions, Work } from './work.ts'
 import { newWork } from './work.ts'
 import { lookupsFor } from './lookups.ts'
+import type { Prints } from './prints.ts'
+import { printsOf } from './prints.ts'
 
 // What reads the tree of a source file, for the rules of the check, which read the same tree.
 export type { Declared, Scan } from './read/scan.ts'
@@ -88,6 +90,18 @@ export async function describeProject(folder: string): Promise<{
     source: sourceOf(work),
     why: work.why,
   }
+}
+
+export type { Prints } from './prints.ts'
+
+/**
+ * Takes the folder of a project and paths from it. Describes the project, writing no bundle, and answers its
+ * description with what a result of a test stands on: the fingerprint of each definition by its stored record and
+ * every file its file reaches, of each file named with every file it reaches, and of the packages it has installed.
+ */
+export async function projectPrints(folder: string, paths: string[]): Promise<Prints & { description: Description }> {
+  const work = await build(folder, { for: 'dev' }, false)
+  return { description: work.description, ...printsOf(work, work.description, paths) }
 }
 
 /**

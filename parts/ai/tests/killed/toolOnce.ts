@@ -6,6 +6,7 @@ import { join } from 'node:path'
 import { buildProject } from '../../../build/index.ts'
 import { createEngine } from '../../../engine/index.ts'
 import { testSecrets } from '../../../test/secrets.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [project, out, dataFolder, told] = process.argv.slice(2)
 mkdirSync(told, { recursive: true })
@@ -30,9 +31,8 @@ const engine = createEngine({ port: 0, makers: { providers: () => ({ anthropic: 
 engine.on('change.done', (o) => {
   if (o.name !== 'addOrder' || existsSync(once)) return
   writeFileSync(once, '')
-  writeSync(1, 'added\n')
   // The first start stands still here, its write committed and its step not saved, until it is killed.
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+  killedAt('added')
 })
 if (!existsSync(join(dataFolder, 'secret.key')))
   testSecrets(dataFolder, JSON.parse(readFileSync(join(bundle, 'description.json'), 'utf8')), {})

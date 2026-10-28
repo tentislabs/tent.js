@@ -73,6 +73,7 @@ export function dbOf(o: Opened, at: At): Db {
   return createDb(o.files ?? o.store, served.description, at.as, 'async', served.rules, {
     system: at.as.kind === 'system',
     now: () => o.clock.now(),
+    ids: o.ids,
     ...sealed(served),
     // Each read of the run is a span of the step it is made in, and is noted for the step where its work notes reads.
     traced: (what, work) => dbSpan(o, what, work),

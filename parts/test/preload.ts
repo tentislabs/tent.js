@@ -1,12 +1,16 @@
+import { seededSource } from '../engine/index.ts'
+
 /**
  * What each document of a page that a test opens runs before its own scripts, handed how far the clock of the app
- * stands ahead of the time of the system. It lays the record of the test into the page, under the name the page
- * code looks for: the page code of a page in the mode `test` gives it what a test reads, and a page of the engine's
- * own, which holds no page code, gives nothing once it has loaded. And the time of the page runs as the clock of the
- * app does, so that `app.clock.advance` moves the pages too. The function is sent to the browser as its text: it
- * names nothing outside itself.
+ * stands ahead of the time of the system, and a seed with the text of the source of numbers made from it. It lays the
+ * record of the test into the page, under the name the page code looks for: the page code of a page in the mode
+ * `test` gives it what a test reads, and a page of the engine's own, which holds no page code, gives nothing once it
+ * has loaded. The time of the page runs as the clock of the app does, so that `app.clock.advance` moves the pages
+ * too, and where a seed is handed, `Math.random` and the random values of `crypto`, which the ids of its calls are
+ * made of, are drawn from it and the number of the document, which the engine that drives the page counts. The
+ * function is sent to the browser as its text: it names nothing outside itself.
  */
-function preloaded(ahead: number): void {
+function preloaded(ahead: number, seed?: string, source?: (seed: string) => () => number): void {
   const name = Symbol.for('tent.test')
   if (Reflect.get(globalThis, name) !== undefined) return
   const Real = Date
@@ -19,6 +23,31 @@ function preloaded(ahead: number): void {
     get: (made, key) => (key === 'now' ? now : Reflect.get(made, key)),
   })
   Reflect.set(globalThis, 'Date', Moved)
+  // Each document of the page draws from a seed of its own, by its number among the documents the page loaded, which
+  // the engine that drives the page counts: a reload, a page it went on to and a frame each make the ids of their
+  // calls anew, and never one an earlier made, whatever the page keeps or clears.
+  let nth = 0
+  try {
+    const asked = new XMLHttpRequest()
+    asked.open('GET', '/_t/document', false)
+    asked.send()
+    nth = Number(asked.responseText) || 0
+  } catch {
+    // A document of no origin asks nothing, and draws as the browser does.
+  }
+  if (seed !== undefined && source && nth > 0) {
+    const random = source(`${seed} ${nth}`)
+    Math.random = random
+    if (globalThis.crypto)
+      Reflect.defineProperty(globalThis.crypto, 'getRandomValues', {
+        value: <Values extends ArrayBufferView>(values: Values): Values => {
+          const bytes = new Uint8Array(values.buffer, values.byteOffset, values.byteLength)
+          for (let k = 0; k < bytes.length; k++) bytes[k] = Math.floor(random() * 256)
+          return values
+        },
+        configurable: true,
+      })
+  }
   let give = (_tested: unknown): void => undefined
   const hook: { ready: Promise<unknown>; tested?: unknown; give(tested: unknown): void; move(to: number): void } = {
     ready: new Promise((done) => {
@@ -39,5 +68,8 @@ function preloaded(ahead: number): void {
   })
 }
 
-/** The text that a page of a test runs first, with the clock of the app as far ahead as it stands now. */
-export const preloadText = (ahead: number): string => `() => (${String(preloaded)})(${JSON.stringify(ahead)})`
+/** The text that a page of a test runs first, with the clock of the app as far ahead as it stands now, and its seed. */
+export const preloadText = (ahead: number, seed?: string): string =>
+  seed === undefined
+    ? `() => (${String(preloaded)})(${JSON.stringify(ahead)})`
+    : `() => (${String(preloaded)})(${JSON.stringify(ahead)}, ${JSON.stringify(seed)}, ${String(seededSource)})`

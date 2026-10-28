@@ -1,5 +1,6 @@
 import { later, TentError } from '../core/index.ts'
 import type { Clock } from '../core/internal.ts'
+import { systemNow } from '../core/internal.ts'
 
 /** The clock of a test app, as a test holds it. */
 export interface TestClock {
@@ -9,10 +10,17 @@ export interface TestClock {
    * read, and for one that moves the time back or not at all.
    */
   advance(length: string): void
+  /**
+   * Takes a moment: a `Date`, a number of milliseconds, or a text that a `Date` reads. Sets the time of the app to
+   * it, as a clock of the system is set: each timer due by then is called once, at that moment, in the order of their
+   * moments. Throws T0027 for a moment that does not read.
+   */
+  set(moment: Date | number | string): void
 }
 
-// Kept from the start of the program: the clock of the runtime is swapped for one that fails while a query runs.
-const realNow = Date.now
+// The time of the system, read where no swap of `Date` reaches: a query swaps it for one that fails, and under
+// `tent test` the code of a call reads the clock of its app through it, this clock among them.
+const realNow = systemNow
 
 // How far each clock of a test stands ahead of the time of the system, in milliseconds, which the pages of a test follow.
 const aheads = new WeakMap<TestClock, () => number>()
@@ -25,6 +33,12 @@ const movers = new WeakMap<TestClock, Set<(ahead: number) => void>>()
 
 // When each clock of a test was last moved, by the time of the program, which `settled` reads.
 const moved = new WeakMap<TestClock, number>()
+
+// The moment of the timer that falls due first on each held clock, which `settled` moves a held clock to.
+const firstDue = new WeakMap<TestClock, () => number | undefined>()
+
+/** The moment of the timer that falls due first on a held clock, or nothing for a clock that runs on, or with none. */
+export const firstDueOf = (moves: TestClock): number | undefined => firstDue.get(moves)?.()
 
 /** When a clock of a test was last moved, by `performance.now()`, or never. */
 export const movedAtOf = (moves: TestClock): number => moved.get(moves) ?? Number.NEGATIVE_INFINITY
@@ -39,18 +53,25 @@ export function onMoved(moves: TestClock, heard: (ahead: number) => void): () =>
 
 /**
  * Answers the clock that a test app runs on, and what a test moves it with. The time goes on as the time of the
- * system does, from the moment the clock is made, and `advance` moves it forward beside that.
+ * system does, from the moment the clock is made, and `advance` and `set` move it beside that. A held clock stands
+ * at the moment it was made until the test moves it, as the fake timers of Jest, Vitest and Sinon stand: a timer of
+ * the app comes due only as the test moves the time past it.
  */
-export function testClock(): { clock: Clock; moves: TestClock } {
+export function testClock(o: { held?: boolean } = {}): { clock: Clock; moves: TestClock } {
   let ahead = 0
   let timers: { at: number; run: () => void }[] = []
   let waiting: NodeJS.Timeout | undefined
-  const now = (): number => realNow() + ahead
-  /** Has the runtime call the timer that is due first, when its moment comes by itself. */
+  const made = realNow()
+  // A held clock stands at its moment: how far it stands from the system's is the system's time going on, taken back.
+  const now = (): number => (o.held ? made : realNow()) + ahead
+  /**
+   * Has the runtime call the timer that is due first, when its moment comes by itself. On a held clock only a timer
+   * that is due already is called: the work the app sets for now runs, and nothing later comes due by itself.
+   */
   const wait = (): void => {
     clearTimeout(waiting)
     const [first] = timers.sort((a, b) => a.at - b.at)
-    if (!first) return
+    if (!first || (o.held && first.at > now())) return
     // The longest wait that a timer of the runtime takes: a later moment is waited for again when this one ends.
     waiting = setTimeout(due, Math.min(Math.max(0, first.at - now()), 2_000_000_000))
     waiting.unref()
@@ -62,7 +83,7 @@ export function testClock(): { clock: Clock; moves: TestClock } {
       if (!first || first.at > upTo) break
       timers = timers.filter((one) => one !== first)
       // A timer is called at its own moment, so that what it reads of the clock is the moment it was set for.
-      ahead = Math.max(ahead, first.at - realNow())
+      ahead = Math.max(ahead, first.at - (o.held ? made : realNow()))
       first.run()
     }
     wait()
@@ -79,6 +100,20 @@ export function testClock(): { clock: Clock; moves: TestClock } {
       }
     },
   }
+  /**
+   * Moves the time to a moment and tells who follows. `step` walks there, calling each timer due on the way at its
+   * own moment; else the time jumps there, as a set clock of the system does, and each timer due by then is called
+   * once at the new moment, so a timer that comes back is set from there.
+   */
+  const moveTo = (to: number, step: boolean): void => {
+    const from = o.held ? made : realNow()
+    if (step) due(to)
+    ahead = step ? Math.max(ahead, to - from) : to - from
+    if (!step) due()
+    wait()
+    moved.set(moves, performance.now())
+    for (const one of movers.get(moves) ?? []) one(now() - realNow())
+  }
   const moves: TestClock = {
     advance(length) {
       const ms = later(new Date(0), length).getTime()
@@ -90,14 +125,26 @@ export function testClock(): { clock: Clock; moves: TestClock } {
             fix: "Hand `advance` a length of time that is more than nothing, as `'3 days'`.",
           },
         )
-      const to = now() + ms
-      due(to)
-      ahead = Math.max(ahead, to - realNow())
-      wait()
-      moved.set(moves, performance.now())
-      for (const one of movers.get(moves) ?? []) one(ahead)
+      moveTo(now() + ms, true)
+    },
+    set(moment) {
+      const to = moment instanceof Date ? moment.getTime() : typeof moment === 'number' ? moment : Date.parse(moment)
+      if (!Number.isFinite(to))
+        throw new TentError(
+          'T0027',
+          `The clock of a test app is set to ${JSON.stringify(moment)}, which is no moment.`,
+          {
+            fix: "Hand `set` a `Date`, a number of milliseconds, or a moment as text, as `'2030-01-01T09:00:00Z'`.",
+          },
+        )
+      moveTo(to, false)
     },
   }
-  aheads.set(moves, () => ahead)
+  // A page of the test follows how far the clock stands from the time of the system.
+  aheads.set(moves, () => now() - realNow())
+  if (o.held)
+    firstDue.set(moves, () =>
+      timers.reduce<number | undefined>((first, one) => Math.min(first ?? one.at, one.at), undefined),
+    )
   return { clock, moves }
 }

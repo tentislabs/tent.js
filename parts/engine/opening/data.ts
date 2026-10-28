@@ -132,7 +132,7 @@ export async function openData(f: UnderWay): Promise<Data> {
   }
   // An app that keeps a data file for each tenant loads what holds its files, and no other app loads it.
   const filing = layout.some((one) => one.tenant !== undefined) ? await import('../files/opening.ts') : undefined
-  const makeStore = (): Store => store?.(input) ?? sqliteStore()
+  const makeStore = (): Store => store?.(input) ?? sqliteStore(o.ids)
   // The bytes of the files lie in the folder that ships, unless a maker of the program keeps them elsewhere.
   const { makers } = f.program
   if (makers.files) setFileStore(o, makers.files(input))
@@ -208,7 +208,7 @@ export async function openData(f: UnderWay): Promise<Data> {
       void tenantFiles.close()
     })
   else {
-    const plain = store?.(input) ?? o.store
+    const plain = makeStore()
     built =
       !reads &&
       (await builtFrom(

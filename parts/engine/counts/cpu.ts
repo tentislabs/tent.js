@@ -110,15 +110,21 @@ export async function measured<Answer>(
   try {
     return await pieces.run({ app: o, name, ...(caller ? { caller } : {}), measured: true }, work)
   } finally {
-    const took = performance.now() - wall
-    // A clock of the system that moves in steps of more than a millisecond cannot tell work shorter than one
-    // step: such work is counted by the time it took, which its processor time is no more than.
-    const step = clockStep()
-    const spent = step > 1 && took < step ? took : threadMs() - began
+    const spent = spentOf({ thread: threadMs() - began, took: performance.now() - wall, step: clockStep() })
     last = threadMs()
     cpuGiven(spent)
     gather(o, name, { cpuMs: spent }, caller ? { caller } : {})
   }
+}
+
+/**
+ * The processor time that a piece of measured work is counted, in milliseconds with their fractions. Takes how far
+ * the clock of its thread moved while it ran, the time it took, and the smallest step that clock moves by. Answers
+ * what the clock moved; but a clock that moves in steps of more than a millisecond cannot tell work shorter than one
+ * step, which is counted by the time it took, as its processor time is no more than that.
+ */
+export function spentOf(read: { thread: number; took: number; step: number }): number {
+  return read.step > 1 && read.took < read.step ? read.took : read.thread
 }
 
 // The smallest step the processor clock of a thread moves by on this system, once it was measured.

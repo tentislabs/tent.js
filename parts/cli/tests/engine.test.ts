@@ -101,7 +101,7 @@ const shapes: Record<string, Type> = {
     backups: number({ optional: true }),
     archive: boolean({ optional: true }),
   }),
-  test: object({ passed: number(), failed: number(), files: list(text()) }),
+  test: object({ passed: number(), failed: number(), replayed: number(), files: list(text()), failures: list(json()) }),
   start: object({
     app: text(),
     version: text({ pattern: '^[0-9a-f]{32}$' }),
@@ -281,8 +281,9 @@ test('[15-6@4] the output of each command of the engine with --json has its stor
   })
   // The command starts the test runner of the runtime, which starts none inside a test: so it is a program of its own.
   const tested = held('test', typedApart(project, 'test', '--json'))
-  assert.deepEqual(tested, { passed: 2, failed: 0, files: ['tests/orders.test.ts'] })
-  // A test that fails is an error, and is named with what it failed by. A file of AI tests is left out.
+  assert.deepEqual(tested, { passed: 2, failed: 0, replayed: 0, files: ['tests/orders.test.ts'], failures: [] })
+  // A test that fails is an error, and is named with what it failed by. A file of AI tests is left out, and the
+  // tests that passed and whose result stands on nothing that changed are replayed.
   writeFileSync(
     join(project, 'tests', 'fails.test.ts'),
     "import test from 'node:test'\nimport assert from 'node:assert/strict'\ntest('one and one', () => assert.equal(1 + 1, 3))\n",
@@ -290,11 +291,17 @@ test('[15-6@4] the output of each command of the engine with --json has its stor
   writeFileSync(join(project, 'tests', 'helper.ai.ts'), "throw new Error('a file of AI tests was run')\n")
   const failed = typedApart(project, 'test', '--json')
   assert.deepEqual([failed.ended, failed.answer.ok], [1, false])
-  assert.deepEqual(failed.answer.value, {
-    passed: 2,
+  const { failures, ...counted } = Object(failed.answer.value)
+  assert.deepEqual(counted, {
+    passed: 0,
     failed: 1,
+    replayed: 2,
     files: ['tests/fails.test.ts', 'tests/orders.test.ts'],
   })
+  assert.deepEqual(
+    failures.map((one: { test: string; file: string }) => [one.test, one.file]),
+    [['one and one', 'tests/fails.test.ts']],
+  )
   assert.match(String(failed.answer.findings?.[0].message), /one and one/)
   rmSync(join(project, 'tests', 'fails.test.ts'))
   // A test app leaves nothing in the temporary place but what the test itself wrote there.

@@ -1,10 +1,11 @@
 // A program that runs a flow of five steps, is killed right after one of them was saved, and started again: the
 // second start takes the run up and ends it. Each step notes that it ran, and each pass notes what it was handed.
 // Run: node fiveSteps.ts <data folder> <the step after which the first start is killed>
-import { appendFileSync, existsSync, readFileSync, writeFileSync, writeSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { sqliteStore } from '../../../data/index.ts'
 import { createRunner, runsTable, scheduleTable, stepsTable } from '../../index.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [folder, killAfter] = process.argv.slice(2)
 const version = 'v1'
@@ -59,8 +60,7 @@ const runner = createRunner({
     if (what.kind !== 'step' || what.state !== 'done' || what.name !== `step ${killAfter}` || existsSync(once)) return
     // The step is saved. The first start stands still here until it is killed, so that nothing follows the step.
     writeFileSync(once, '')
-    writeSync(1, `saved step ${killAfter}\n`)
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+    killedAt(`saved step ${killAfter}`)
   },
   removed: () => undefined,
 })

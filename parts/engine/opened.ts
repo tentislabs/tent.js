@@ -1,7 +1,7 @@
 import type { Caller } from '../core/index.ts'
 import { TentError } from '../core/index.ts'
 import type { Clock, Description } from '../core/internal.ts'
-import type { FileName, Files, Mode, RuleCode, Store } from '../data/index.ts'
+import type { FileName, Files, IdMaker, Mode, RuleCode, Store } from '../data/index.ts'
 import type { App } from './app.ts'
 import type { Machine } from './copy/machine.ts'
 import type { TenantFiles } from './files/face.ts'
@@ -116,6 +116,10 @@ export interface Opened {
   // The files of tenants that closed before the runner of the app ran: it reads their runs when it starts.
   unreadFiles?: FileName[]
   clock: Clock
+  // The source of numbers of the app, where the program gave one: a test app's, from its random seed.
+  random?: () => number
+  // The maker of the ids of the app's rows, by its clock and its source.
+  ids: IdMaker
   log: Log
   // The host of the machines of heavy work, where the program gave one.
   workersHost?: Workers

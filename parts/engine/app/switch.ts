@@ -1,7 +1,7 @@
 import { TentError } from '../../core/index.ts'
 import type { App } from '../app.ts'
 import type { Gradual } from '../gradual/release.ts'
-import { backRelease, beginRelease, endRelease, releaseOf, widenRelease } from '../gradual/release.ts'
+import { backRelease, beginRelease, endRelease, releaseOf, watchOf, widenRelease } from '../gradual/release.ts'
 import { backupsOf, takeBackup } from '../backups.ts'
 import type { Opened } from '../opened.ts'
 import { heldOpen } from '../opened.ts'
@@ -13,7 +13,6 @@ import { applyReleased, servedBy, switchVersion, writersOwn } from '../versions.
 // What a release takes where neither it nor the project states another: three steps, ten minutes each.
 const steps = [0.05, 0.25, 1]
 const every = 600_000
-const watch = { failures: 0.01, slower: 0.2, calls: 200 }
 
 /**
  * Begins a gradual release of a loadable version, by what it is asked with and else by `release` of the version's
@@ -55,11 +54,14 @@ async function released(
     {
       steps: gradual.steps ?? told ?? steps,
       every: gradual.every ?? number(stated.every, every),
-      watch: {
-        failures: number(gradual.watch?.failures ?? watched.failures, watch.failures),
-        slower: number(gradual.watch?.slower ?? watched.slower, watch.slower),
-        calls: number(gradual.watch?.calls ?? watched.calls, watch.calls),
-      },
+      watch: watchOf({
+        ...Object.fromEntries(
+          ['failures', 'slower', 'slowerBy', 'calls'].flatMap((name) =>
+            typeof watched[name] === 'number' ? [[name, watched[name]]] : [],
+          ),
+        ),
+        ...gradual.watch,
+      }),
       ...(gradual.told ? { told: gradual.told } : {}),
     },
     async () => {

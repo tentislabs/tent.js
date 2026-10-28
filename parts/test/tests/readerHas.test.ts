@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { test } from 'node:test'
 import type { TestApp } from '../index.ts'
 import { testApp } from '../index.ts'
-import { current, level, moment } from './many.ts'
+import { current, level, moment, readersHeld } from './many.ts'
 import { closing, copyOf } from './projects.ts'
 
 const origin = 'http://localhost'
@@ -40,30 +40,34 @@ async function called(machine: TestApp, name: string, input: object, o: { cookie
   return { wire: Object(await answer.json()), set: answer.headers.getSetCookie() }
 }
 
-test('[29-9@7a] the writer closes the link of a near reader that has not sent `has` for the bytes of a file within `behind` of its `at`, and the write is settled without it', async (t) => {
-  const folder = copyOf(t, 'filed')
-  writeFileSync(join(folder, 'engine.ts'), keepsAndHandsNothing)
-  const app = await testApp({ folder })
-  closing(t, () => app.close())
-  const near = await app.reader()
-  await current(app, near)
-  const signed = await called(app, 'signIn', { email: 'maya@example.com' })
-  const cookie = signed.set[0].split(';')[0]
-  const maya = String((await app.rows('users')).find((one) => one.email === 'maya@example.com')?.id)
-  await level(app, near)
-  const before = app.machines().find((one) => one.role === 'reader')?.since
-  let answered = false
-  const made = called(app, 'putText', { words: 'bytes the reader never gets' }, { cookie, as: maya }).finally(() => {
-    answered = true
-  })
-  await moment(300)
-  assert.equal(answered, false, 'the write waits for the reader that lacks the bytes')
-  for (let i = 0; i < 40 && !answered; i++) {
-    app.clock.advance('1 second')
-    await moment(30)
-  }
-  assert.equal((await made).wire.ok, true)
-  // The link of the reader was closed: it has joined anew since, as a reader whose link closed dials again.
-  const joined = app.machines().find((one) => one.role === 'reader')?.since
-  assert.notEqual(joined, before, JSON.stringify(app.machines()))
-})
+test(
+  '[29-9@7a] the writer closes the link of a near reader that has not sent `has` for the bytes of a file within `behind` of its `at`, and the write is settled without it',
+  readersHeld,
+  async (t) => {
+    const folder = copyOf(t, 'filed')
+    writeFileSync(join(folder, 'engine.ts'), keepsAndHandsNothing)
+    const app = await testApp({ folder })
+    closing(t, () => app.close())
+    const near = await app.reader()
+    await current(app, near)
+    const signed = await called(app, 'signIn', { email: 'maya@example.com' })
+    const cookie = signed.set[0].split(';')[0]
+    const maya = String((await app.rows('users')).find((one) => one.email === 'maya@example.com')?.id)
+    await level(app, near)
+    const before = app.machines().find((one) => one.role === 'reader')?.since
+    let answered = false
+    const made = called(app, 'putText', { words: 'bytes the reader never gets' }, { cookie, as: maya }).finally(() => {
+      answered = true
+    })
+    await moment(300)
+    assert.equal(answered, false, 'the write waits for the reader that lacks the bytes')
+    for (let i = 0; i < 40 && !answered; i++) {
+      app.clock.advance('1 second')
+      await moment(30)
+    }
+    assert.equal((await made).wire.ok, true)
+    // The link of the reader was closed: it has joined anew since, as a reader whose link closed dials again.
+    const joined = app.machines().find((one) => one.role === 'reader')?.since
+    assert.notEqual(joined, before, JSON.stringify(app.machines()))
+  },
+)

@@ -11,6 +11,9 @@ import { loadIn, nextLoading } from '../inProgram/loader.ts'
 import type { InsideWays } from '../inside/handed.ts'
 import type { Inside, VersionTold } from '../inside/inside.ts'
 import { insideOf } from '../inside/inside.ts'
+import { noteWordsRead } from '../../envRead.ts'
+import { outsideHeld } from '../../outsideHeld.ts'
+import { noteWaysOut } from '../../waysOut.ts'
 import type { Entry } from '../room.ts'
 import { wireOf } from './wire.ts'
 
@@ -70,6 +73,18 @@ function served(what: string, body: unknown): unknown {
 const wire = wireOf(port, flags, 1, served)
 // A thread that stops by itself tells the engine so, which may be waiting for it at once and take no event.
 process.on('exit', () => wire.end())
+
+// Under `tent test` the code of a call notes each word of the environment it reads and each way out it takes, told
+// to the engine as the call crosses, which notes it under the test of the call; where the program holds what reaches
+// outside, a way out is refused here as there.
+if (process.env.TENT_TOUCHED || outsideHeld()) {
+  const under = (): boolean => calls.getStore() !== undefined
+  noteWordsRead({
+    under,
+    sink: (word, value) => void wire.ask('word', { word, value, as: calls.getStore() }, { sync: true }),
+  })
+  noteWaysOut({ under, note: (what) => void wire.ask('outside', { what, as: calls.getStore() }, { sync: true }) })
+}
 
 /** The place of a version of this heap, and the mark of its modules. */
 function placeOf(version: VersionTold): { place: string; loading: string } {

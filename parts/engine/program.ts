@@ -54,6 +54,7 @@ export function dbFor(
   return createDb(write ?? o.files ?? o.store, o.description, caller, write ? 'write' : 'read', o.rules, {
     system: caller.kind === 'system',
     now: () => o.clock.now(),
+    ids: o.ids,
     ...sealed(o),
     ...more,
   })

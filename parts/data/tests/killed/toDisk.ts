@@ -1,9 +1,10 @@
 // A program that is killed right after two writes with `toDisk` were answered, and started again: the start after
 // the kill says what the data holds, and ends by itself.
 // Run: node toDisk.ts <data folder>
-import { existsSync, readFileSync, writeFileSync, writeSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { here, hereTable, setHere, sqliteStore } from '../../index.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const folder = process.argv[2]
 const system = { kind: 'system' }
@@ -36,6 +37,5 @@ if (existsSync(turn) && readFileSync(turn, 'utf8') === 'read') {
   open.commit()
   writeFileSync(turn, 'read')
   // Both writes were answered: the kill is to arrive now.
-  writeSync(1, 'answered\n')
-  await new Promise((resolve) => setTimeout(resolve, 60_000))
+  killedAt('answered')
 }

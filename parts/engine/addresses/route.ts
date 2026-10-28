@@ -17,6 +17,7 @@ import { routeAt, routeCode, routeSites, routeSize, routeTime } from '../routes.
 import { visit } from '../visit.ts'
 import { errorAnswer } from '../wire.ts'
 import { countAnswered, countAnswering } from '../counts/screens.ts'
+import { noteTouched } from '../touched.ts'
 
 /** A request whose bytes are read and kept for `verified`, handed on with the same bytes as its body. */
 async function keptRequest(request: Request): Promise<Request> {
@@ -52,6 +53,7 @@ export const address: Address = {
   async handle({ app: o, request, matched, caller, about, began }) {
     if (!isFound(matched)) return errorAnswer(o, 'route', new TentError('T0001', 'No route answers this address.'))
     const { name, record, params } = matched
+    noteTouched('routes', name)
     countAnswering(name, caller)
     const work: Work = {
       name,

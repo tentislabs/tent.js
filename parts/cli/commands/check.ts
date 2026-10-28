@@ -7,6 +7,7 @@ import { readFacts } from '../../engine/index.ts'
 import { markChecked } from '../checkMarked.ts'
 import type { Command } from '../command.ts'
 import { askedOfRunning, dataFolderOf } from '../reach.ts'
+import { recordedTouched } from '../testsKept.ts'
 
 /** Whether what an engine answered are the facts of the check. */
 const isFacts = (value: unknown): value is Facts =>
@@ -15,12 +16,14 @@ const isFacts = (value: unknown): value is Facts =>
 /**
  * Takes where a check was typed, and the description of the project as its files now stand. Answers what only the
  * data of the project knows: from the engine that runs on the data folder, through the admin channel, and where
- * none runs by reading the data itself, with no engine started.
+ * none runs by reading the data itself, with no engine started. Beside it, what each test touched in its last run.
  */
 async function factsFor(o: { folder: string; data?: unknown }, description: Description): Promise<Facts> {
+  const touched = recordedTouched(o.folder)
+  const tested = touched ? { touched } : {}
   const running = await askedOfRunning(o, 'facts', { description })
-  if (!running) return readFacts(dataFolderOf(o), description)
-  if (isFacts(running.value)) return running.value
+  if (!running) return { ...(await readFacts(dataFolderOf(o), description)), ...tested }
+  if (isFacts(running.value)) return { ...running.value, ...tested }
   // The engine refused the command, or answered something else: the check cannot stand in for what it knows.
   const [refused] = running.findings ?? []
   throw new Error(

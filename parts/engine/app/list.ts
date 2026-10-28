@@ -2,6 +2,7 @@ export const list = [
   { name: 'add', load: () => import('./add.ts') },
   { name: 'at', load: () => import('./at.ts') },
   { name: 'call', load: () => import('./call.ts') },
+  { name: 'called', load: () => import('./called.ts') },
   { name: 'caller', load: () => import('./caller.ts') },
   { name: 'close', load: () => import('./close.ts') },
   { name: 'drop', load: () => import('./drop.ts') },

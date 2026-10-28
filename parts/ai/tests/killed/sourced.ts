@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { buildProject } from '../../../build/index.ts'
 import { createEngine } from '../../../engine/index.ts'
 import { testSecrets } from '../../../test/secrets.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [project, out, dataFolder, told] = process.argv.slice(2)
 mkdirSync(told, { recursive: true })
@@ -39,9 +40,8 @@ engine.offer('desk', {
 engine.on('step.done', (o) => {
   if (o.step !== 'model 1' || existsSync(once)) return
   writeFileSync(once, '')
-  writeSync(1, 'saved model 1\n')
   // The first start stands still here until it is killed, so that nothing follows the step.
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+  killedAt('saved model 1')
 })
 if (!existsSync(join(dataFolder, 'secret.key')))
   testSecrets(dataFolder, JSON.parse(readFileSync(join(bundle, 'description.json'), 'utf8')), {})

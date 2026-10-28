@@ -1,9 +1,10 @@
 // A program that opens the app of the desk, writes to the files of its teams, says `written`, and waits for its
 // end. Started again after the kill, it opens the app once more and says what it finds, as one line of JSON.
 // Run: node desk.ts <bundle> <data folder> <open | ids | pass> [<the bundle of the pass> <the bundle after it>]
-import { existsSync, mkdirSync, readFileSync, writeFileSync, writeSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [bundle, dataFolder, what, passed, after] = process.argv.slice(2)
 const notes = join(dataFolder, '..', `${what}.json`)
@@ -108,8 +109,7 @@ if (!before && what === 'open') {
   mkdirSync(join(dataFolder, 'tenants', '.tmp'), { recursive: true })
   writeFileSync(join(dataFolder, 'tenants', '.tmp', 'half.db'), 'half a copy')
   writeFileSync(notes, JSON.stringify({ teams }))
-  writeSync(1, 'written\n')
-  setInterval(() => undefined, 1000)
+  killedAt('written')
 } else if (!before && what === 'pass') {
   const teams = []
   for (let i = 0; i < 30; i++) {
@@ -131,9 +131,8 @@ if (!before && what === 'open') {
     await new Promise((done) => setImmediate(done))
   }
   writeFileSync(notes, JSON.stringify({ teams }))
-  writeSync(1, 'written\n')
   // The pass stands still from here on: the thread that hands its files over waits, until the program is killed.
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+  killedAt('written')
 } else if (!before) {
   // The newest id of this start stands in a file that is closed, and that no start opens by itself.
   const team = await addTeam('team')
@@ -146,8 +145,7 @@ if (!before && what === 'open') {
     process.exit(3)
   }
   writeFileSync(notes, JSON.stringify({ teams: [team], newest }))
-  writeSync(1, 'written\n')
-  setInterval(() => undefined, 1000)
+  killedAt('written')
 } else if (what === 'open') {
   const files = await listed(app)
   const titles = {}

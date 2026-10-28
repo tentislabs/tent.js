@@ -5,6 +5,7 @@ import { intoOf, outOf } from '../callables.ts'
 import { askerOf, boundsOf, callsOf, keeperOf } from '../calls.ts'
 import { placeOfVersion } from '../inProgram/loader.ts'
 import { startedProgram } from '../inProgram/program.ts'
+import { noteOutside, noteWord } from '../../touched.ts'
 import type { Called, Entry, Room, RoomInput } from '../room.ts'
 import type { Wire } from './wire.ts'
 import { otherEnded, timedOut, wireOf } from './wire.ts'
@@ -73,6 +74,9 @@ export function apartRoom(o: RoomInput): Room {
       if (what === 'db') return o.ways.db(call, Number(b.db), memberOf(b.member), args)
       if (what === 'back') return o.ways.back(call, Number(b.fn), args)
       if (what === 'fetch') return o.ways.fetch(call, b.request)
+      // What the code of a call read and reached, which a test of `tent test` stands on.
+      if (what === 'word') return noteWord(String(b.word), typeof b.value === 'string' ? b.value : null)
+      if (what === 'outside') return noteOutside(String(b.what))
       throw new TentError('T0009', `The thread of the test room asked for what the engine does not give: ${what}.`)
     }
     // Asked by the code of the call the engine waits on now, the way is carried out where the engine is now.

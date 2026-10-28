@@ -2,87 +2,108 @@ import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
-import { beat, codeOf, current, folderOf, level, machinesOf, moment, send, titles, until, writerOf } from './many.ts'
+import {
+  beat,
+  codeOf,
+  current,
+  folderOf,
+  level,
+  machinesOf,
+  moment,
+  readersHeld,
+  send,
+  titles,
+  until,
+  writerOf,
+} from './many.ts'
 
 const lostIn = (folder: string): string[] => readdirSync(folder).filter((name) => name.startsWith('lost.'))
 
-test('[29-7] with the writer killed the near reader takes over with every settled write, the far reader follows it by its own address, and the old writer comes back as a reader', async (t) => {
-  const { app, near, far } = await machinesOf(t)
-  for (const title of ['one', 'two', 'three']) await send(app, 'addOrder', { title })
-  await level(app, near, far)
-  const before = app.at()
-  // A reader that is current does not take over: its writer runs.
-  assert.equal(await codeOf(near.takeOver()), 'T0032')
-  assert.equal(await codeOf(app.takeOver()), 'T0030')
-  await app.kill()
-  await beat(near, 6)
-  assert.equal(near.at().current, false)
-  // What the writer counted as it was killed may have reached the reader: it holds that too, past the last call.
-  const held = near.at().n
-  assert.ok(held >= before.n)
-  const took = await near.takeOver()
-  // It is the writer of everything that was settled, under a new epoch of its own.
-  assert.deepEqual([near.role, took.n, took.epoch.split('.')[0]], ['writer', held + 1, '2'])
-  assert.equal(took.epoch, near.at().epoch)
-  assert.deepEqual(await titles(near), ['one', 'two', 'three'])
-  assert.equal((await send(near, 'addOrder', { title: 'by the new writer' })).status, 200)
-  // The far reader finds the new writer by the address the near reader stated, and follows it.
-  await until(
-    'the far reader follows the new writer',
-    async () => {
-      await beat(far)
-      return far.at().epoch === took.epoch && far.at().n === near.at().n
-    },
-    40,
-  )
-  await current(near, far)
-  assert.equal(Object((await send(far, 'listOrders')).value).length, 4)
-  // The old writer, started again as a reader of the new one, held nothing that the new one lacks: it goes on
-  // with its data, and is a reader.
-  await app.restart({ reads: near })
-  await until(
-    'the old writer follows the new one',
-    async () => {
-      await beat(near)
-      return app.role === 'reader' && app.at().n === near.at().n
-    },
-    40,
-  )
-  assert.deepEqual(lostIn(folderOf(t, 'data')), [])
-  assert.equal(app.at().epoch, took.epoch)
-  await current(near, app)
-  assert.equal(Object((await send(app, 'listOrders')).value).length, 4)
-})
+test(
+  '[29-7] with the writer killed the near reader takes over with every settled write, the far reader follows it by its own address, and the old writer comes back as a reader',
+  readersHeld,
+  async (t) => {
+    const { app, near, far } = await machinesOf(t)
+    for (const title of ['one', 'two', 'three']) await send(app, 'addOrder', { title })
+    await level(app, near, far)
+    const before = app.at()
+    // A reader that is current does not take over: its writer runs.
+    assert.equal(await codeOf(near.takeOver()), 'T0032')
+    assert.equal(await codeOf(app.takeOver()), 'T0030')
+    await app.kill()
+    await beat(near, 6)
+    assert.equal(near.at().current, false)
+    // What the writer counted as it was killed may have reached the reader: it holds that too, past the last call.
+    const held = near.at().n
+    assert.ok(held >= before.n)
+    const took = await near.takeOver()
+    // It is the writer of everything that was settled, under a new epoch of its own.
+    assert.deepEqual([near.role, took.n, took.epoch.split('.')[0]], ['writer', held + 1, '2'])
+    assert.equal(took.epoch, near.at().epoch)
+    assert.deepEqual(await titles(near), ['one', 'two', 'three'])
+    assert.equal((await send(near, 'addOrder', { title: 'by the new writer' })).status, 200)
+    // The far reader finds the new writer by the address the near reader stated, and follows it.
+    await until(
+      'the far reader follows the new writer',
+      async () => {
+        await beat(far)
+        return far.at().epoch === took.epoch && far.at().n === near.at().n
+      },
+      40,
+    )
+    await current(near, far)
+    assert.equal(Object((await send(far, 'listOrders')).value).length, 4)
+    // The old writer, started again as a reader of the new one, held nothing that the new one lacks: it goes on
+    // with its data, and is a reader.
+    await app.restart({ reads: near })
+    await until(
+      'the old writer follows the new one',
+      async () => {
+        await beat(near)
+        return app.role === 'reader' && app.at().n === near.at().n
+      },
+      40,
+    )
+    assert.deepEqual(lostIn(folderOf(t, 'data')), [])
+    assert.equal(app.at().epoch, took.epoch)
+    await current(near, app)
+    assert.equal(Object((await send(app, 'listOrders')).value).length, 4)
+  },
+)
 
-test('[29-7] a near reader that was cut off takes over without the writes that were answered meanwhile, and the old writer keeps them as lost', async (t) => {
-  const { app, near } = await machinesOf(t)
-  await send(app, 'addOrder', { title: 'settled on both' })
-  await level(app, near)
-  near.cut()
-  await beat(app, 7)
-  // The writer stopped waiting for the reader, and answers on.
-  assert.equal((await send(app, 'addOrder', { title: 'answered by the old writer alone' })).status, 200)
-  const [old, n] = [app.at().n, near.at().n]
-  assert.equal(old, n + 1)
-  await app.kill()
-  const took = await near.takeOver()
-  assert.equal(took.n, n + 1)
-  assert.deepEqual(await titles(near), ['settled on both'])
-  // The old writer comes back as a reader: what it held and the new writer lacks is kept as a lost file.
-  near.join()
-  await app.restart({ reads: near })
-  await until(
-    'the old writer fetched the data of the new one',
-    async () => {
-      await beat(near)
-      return app.role === 'reader' && app.at().epoch === took.epoch && app.at().n === near.at().n
-    },
-    40,
-  )
-  assert.deepEqual(lostIn(folderOf(t, 'data')), [`lost.1.${old}.db`])
-  await current(near, app)
-  assert.deepEqual(await titles(app), ['settled on both'])
-})
+test(
+  '[29-7] a near reader that was cut off takes over without the writes that were answered meanwhile, and the old writer keeps them as lost',
+  readersHeld,
+  async (t) => {
+    const { app, near } = await machinesOf(t)
+    await send(app, 'addOrder', { title: 'settled on both' })
+    await level(app, near)
+    near.cut()
+    await beat(app, 7)
+    // The writer stopped waiting for the reader, and answers on.
+    assert.equal((await send(app, 'addOrder', { title: 'answered by the old writer alone' })).status, 200)
+    const [old, n] = [app.at().n, near.at().n]
+    assert.equal(old, n + 1)
+    await app.kill()
+    const took = await near.takeOver()
+    assert.equal(took.n, n + 1)
+    assert.deepEqual(await titles(near), ['settled on both'])
+    // The old writer comes back as a reader: what it held and the new writer lacks is kept as a lost file.
+    near.join()
+    await app.restart({ reads: near })
+    await until(
+      'the old writer fetched the data of the new one',
+      async () => {
+        await beat(near)
+        return app.role === 'reader' && app.at().epoch === took.epoch && app.at().n === near.at().n
+      },
+      40,
+    )
+    assert.deepEqual(lostIn(folderOf(t, 'data')), [`lost.1.${old}.db`])
+    await current(near, app)
+    assert.deepEqual(await titles(app), ['settled on both'])
+  },
+)
 
 test('[29-7] an old writer that is told took stops for good, and a took of a far key or of a reader stops nothing', async (t) => {
   const { app, near, far } = await machinesOf(t)
@@ -156,7 +177,7 @@ test('[29-7] tent machines answers the epoch, the machines and nothing else, the
   assert.deepEqual((await listed()).other, { epoch: second.epoch, own: nearOwn })
 })
 
-test('[29-7] two readers that take over at the same write end with one writer', async (t) => {
+test('[29-7] two readers that take over at the same write end with one writer', readersHeld, async (t) => {
   const app = await writerOf(t)
   const [first, second] = [await app.reader(), await app.reader()]
   await current(app, first, second)
@@ -240,26 +261,30 @@ test('[29-7] a writer that opens behind its near reader stands back, stands back
   }
 })
 
-test('[29-7] a far reader that is started again while its writer is gone still finds the machine that took over, by the address that its writer last named and that its data keeps', async (t) => {
-  const { app, near, far } = await machinesOf(t)
-  await send(app, 'addOrder', { title: 'one' })
-  await level(app, near, far)
-  // The far reader is stopped. Its writer is killed, and the near reader takes over.
-  await far.kill()
-  await app.kill()
-  await beat(near, 6)
-  const took = await near.takeOver()
-  await send(near, 'addOrder', { title: 'by the new writer' })
-  // Started again with the address of the writer that is gone, it was told the machines by nobody since.
-  await far.restart({ reads: app })
-  await until(
-    'the far reader follows the new writer',
-    async () => {
-      await beat(near)
-      return far.at().epoch === took.epoch && far.at().n === near.at().n
-    },
-    60,
-  )
-  await current(near, far)
-  assert.deepEqual(await titles(far), ['one', 'by the new writer'])
-})
+test(
+  '[29-7] a far reader that is started again while its writer is gone still finds the machine that took over, by the address that its writer last named and that its data keeps',
+  readersHeld,
+  async (t) => {
+    const { app, near, far } = await machinesOf(t)
+    await send(app, 'addOrder', { title: 'one' })
+    await level(app, near, far)
+    // The far reader is stopped. Its writer is killed, and the near reader takes over.
+    await far.kill()
+    await app.kill()
+    await beat(near, 6)
+    const took = await near.takeOver()
+    await send(near, 'addOrder', { title: 'by the new writer' })
+    // Started again with the address of the writer that is gone, it was told the machines by nobody since.
+    await far.restart({ reads: app })
+    await until(
+      'the far reader follows the new writer',
+      async () => {
+        await beat(near)
+        return far.at().epoch === took.epoch && far.at().n === near.at().n
+      },
+      60,
+    )
+    await current(near, far)
+    assert.deepEqual(await titles(far), ['one', 'by the new writer'])
+  },
+)

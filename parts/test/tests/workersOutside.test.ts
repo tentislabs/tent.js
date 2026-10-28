@@ -7,7 +7,7 @@ import type { TestContext } from 'node:test'
 import test from 'node:test'
 import type { TestApp, TestWorker } from '../index.ts'
 import { testApp } from '../index.ts'
-import { current, until } from './many.ts'
+import { current, readersHeld, until } from './many.ts'
 import { closing, copyOf, tempOf } from './projects.ts'
 import type { Heard, Remote } from './remotes.ts'
 import { answerJson, remoteOf } from './remotes.ts'
@@ -157,12 +157,15 @@ export const download = action('download', {
   )
 })
 
-test('[51-13] a reader that lacks a secret which a service of the version names hands a request for an action that states `changes: false` on before it runs', async (t) => {
-  const ledger = await remoteOf(t, (heard, response) => answerJson(response, 200, { booked: heard.body.toString() }))
-  const { app, temp } = await outside(t, ledger, {
-    limits: 'limits: { perSecond: 2 }',
-    book: "post('/book', { input: { tag: text() }, changes: false })",
-    functions: `
+test(
+  '[51-13] a reader that lacks a secret which a service of the version names hands a request for an action that states `changes: false` on before it runs',
+  readersHeld,
+  async (t) => {
+    const ledger = await remoteOf(t, (heard, response) => answerJson(response, 200, { booked: heard.body.toString() }))
+    const { app, temp } = await outside(t, ledger, {
+      limits: 'limits: { perSecond: 2 }',
+      book: "post('/book', { input: { tag: text() }, changes: false })",
+      functions: `
 export const peek = action('peek', {
   access: anyone('a test peeks at the ledger'),
   changes: false,
@@ -171,30 +174,31 @@ export const peek = action('peek', {
   run: async ({ input }) => ledger.book({ tag: input.tag }),
 })
 `,
-  })
-  const peeks = (): number => logRows(temp, 'calls').filter((row) => row.name === 'peek').length
-  const peek = async (machine: TestApp, tag: string): Promise<unknown> => {
-    const answer = await machine.request(
-      new Request('http://localhost/_t/call/peek', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', origin: 'http://localhost' },
-        body: JSON.stringify({ input: { tag } }),
-      }),
-    )
-    return Object(await answer.json()).value
-  }
-  // A reader that holds no secret of its own: the request is the writer's, and runs there once.
-  const near = await app.reader()
-  await current(app, near)
-  assert.deepEqual(await peek(near, 'handed'), { booked: '{"tag":"handed"}' })
-  assert.equal(ledger.heard.length, 1, 'the reader did not run it')
-  assert.equal(ledger.heard[0].headers.authorization, 'Bearer the key of the writer')
-  await until('the writer noted the call', () => peeks() === 1)
-  // A reader whose own machine holds every secret carries it out itself, with its own secret.
-  const holding = await app.reader({ secrets: { LEDGER_KEY: 'the key of the reader' } })
-  await current(app, holding)
-  assert.deepEqual(await peek(holding, 'here'), { booked: '{"tag":"here"}' })
-  assert.equal(ledger.heard.at(-1)?.headers.authorization, 'Bearer the key of the reader')
-  await sleep(300)
-  assert.equal(peeks(), 1, 'the writer answered no call of it')
-})
+    })
+    const peeks = (): number => logRows(temp, 'calls').filter((row) => row.name === 'peek').length
+    const peek = async (machine: TestApp, tag: string): Promise<unknown> => {
+      const answer = await machine.request(
+        new Request('http://localhost/_t/call/peek', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+          body: JSON.stringify({ input: { tag } }),
+        }),
+      )
+      return Object(await answer.json()).value
+    }
+    // A reader that holds no secret of its own: the request is the writer's, and runs there once.
+    const near = await app.reader()
+    await current(app, near)
+    assert.deepEqual(await peek(near, 'handed'), { booked: '{"tag":"handed"}' })
+    assert.equal(ledger.heard.length, 1, 'the reader did not run it')
+    assert.equal(ledger.heard[0].headers.authorization, 'Bearer the key of the writer')
+    await until('the writer noted the call', () => peeks() === 1)
+    // A reader whose own machine holds every secret carries it out itself, with its own secret.
+    const holding = await app.reader({ secrets: { LEDGER_KEY: 'the key of the reader' } })
+    await current(app, holding)
+    assert.deepEqual(await peek(holding, 'here'), { booked: '{"tag":"here"}' })
+    assert.equal(ledger.heard.at(-1)?.headers.authorization, 'Bearer the key of the reader')
+    await sleep(300)
+    assert.equal(peeks(), 1, 'the writer answered no call of it')
+  },
+)

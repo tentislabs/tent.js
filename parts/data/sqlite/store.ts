@@ -4,6 +4,7 @@ import type { Session, StatementSync } from 'node:sqlite'
 import { backup, constants, DatabaseSync } from 'node:sqlite'
 import { openSqlite, sqlitePath } from '../sqliteFile.ts'
 import { TentError } from '../../core/index.ts'
+import type { IdMaker } from '../ids.ts'
 import { isId, rowIds } from '../ids.ts'
 import { keptIn } from '../kept.ts'
 import { keepPlace, toDiskWrite } from '../place.ts'
@@ -231,10 +232,10 @@ function recorded(o: Recording): {
 
 /**
  * Answers a store over the runtime's own SQLite: one data file, one connection, one write at a time. It speaks
- * text ids only and keeps the inside number of a row to itself. It applies no access rule.
+ * text ids only and keeps the inside number of a row to itself. It applies no access rule. A row it adds with no id
+ * takes one of `ids`, the maker of the app, which it moves above every id the file holds when it opens.
  */
-export function sqliteStore(): Store {
-  const ids = rowIds
+export function sqliteStore(ids: IdMaker = rowIds): Store {
   let open: Open | undefined
   let writing: Writing | undefined
 

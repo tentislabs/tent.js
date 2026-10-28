@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative, sep } from 'node:path'
 import { fingerprintOf } from '../core/internal.ts'
-import { keptWhole } from './lookups.ts'
-import { namedFile, textOf } from './source.ts'
+import { keptWhole, scanned } from './lookups.ts'
+import { namedFile, sourceFile, textOf } from './source.ts'
 import type { SourceFile, Work } from './work.ts'
 
 // The one graph of the project: what each file imports of the others, by the names its text writes. What a step
@@ -81,6 +81,42 @@ export function reachPrint(work: Work, file: SourceFile): string {
   const made = print(texts.join('\0'))
   prints.set(file.path, made)
   return made
+}
+
+/** A file of the folder of a project that the build did not read, as a test file, read with what it imports. */
+function readOutside(work: Work, lies: string): SourceFile {
+  const file = sourceFile(relative(work.folder, lies).split(sep).join('/'), lies)
+  if (file.tree) file.seen = scanned(file.tree)
+  return file
+}
+
+/**
+ * Takes a path from the folder of a project, of a file that the build may not have read, as a test file or
+ * `engine.ts`. Answers the fingerprint of its text with every file it reaches by its imports, however deep, each by
+ * its path from the folder: a file that the build read stands for its whole reach, as `reachPrint` gives it. A file
+ * that is not there has a fingerprint of its own.
+ */
+export function pathPrint(work: Work, path: string): string {
+  const read = work.files.get(path)
+  if (read) return reachPrint(work, read)
+  const lies = join(work.folder, path)
+  if (!existsSync(lies)) return print(`${path}\nnone`)
+  const { byFile } = graphOf(work)
+  const texts: string[] = []
+  const seen = new Set<string>()
+  const left = [readOutside(work, lies)]
+  for (let one = left.pop(); one !== undefined; one = left.pop()) {
+    if (seen.has(one.file)) continue
+    seen.add(one.file)
+    texts.push(print(`${one.path}\n${one.text}`))
+    for (const target of namedBy(one)) {
+      const built = byFile.get(target)
+      if (built) texts.push(`${built.path}\n${reachPrint(work, built)}`)
+      else if (/\.[mc]?[jt]sx?$/.test(target)) left.push(readOutside(work, target))
+      else texts.push(`${relative(work.folder, target).split(sep).join('/')}\n${textOf(target)}`)
+    }
+  }
+  return print(texts.sort().join('\0'))
 }
 
 /** The files beside a project that say which packages are installed: its lists of packages and their locks. */

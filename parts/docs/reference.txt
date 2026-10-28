@@ -126,6 +126,8 @@ cron(schedule: string, o?: { zone?: string }) // A trigger that fires by the clo
 date(o?: PlainOptions) // A moment in time.
 day(o?: PlainOptions) // A calendar day, with no time and no zone.
 dayOf(moment: Date | string, zone?: string) // The calendar day of a moment in a time zone.
+declared(o?: { update?: boolean }) // Runs the cases that are made from what the app declares.
+  update?: boolean // Whether the table of access is kept anew.
 del(path: string, o?: CallOptions) // A call of a service with the method DELETE.
   about?: string // One sentence on what the call is for.
   body?: 'json' | 'form' | 'files' | { text: string; type?: string } | { bytes: string; type?: string } // How the fields that are left are sent as the body.
@@ -310,7 +312,7 @@ project(name: string, o: ProjectOptions) // The project.
   publish?: { health?: string | Marker; within?: string } // What a new version must pass before it goes live.
   python?: Python // The Python of the project, and what its lock is made with.
   redirects?: readonly { from: string; to: string; permanent?: boolean }[] // Addresses that send a visitor on to another.
-  release?: { gradual?: boolean; steps?: readonly number[]; every?: string; watch?: { failures?: number; slower?: number; calls?: number } } // How a new version reaches the visitors.
+  release?: { gradual?: boolean; steps?: readonly number[]; every?: string; watch?: { failures?: number; slower?: number; slowerBy?: string; calls?: number } } // How a new version reaches the visitors.
   removed?: readonly string[] // The tables that were removed on purpose.
   roots?: readonly string[] // Folders outside the project that its files may be named from.
   settings?: Record<string, { type: Type; public?: boolean }> // Typed values that are set apart for test and for live.
@@ -415,6 +417,9 @@ s3(o: S3Options) // Names a store of files that speaks the S3 protocol.
   region?: string // The region the requests are signed for.
   url: Stated // Where the store answers, with its scheme.
 sameSecret(a: string | undefined, b: string | undefined) // Says whether two texts are the same, in constant time.
+sampleOf(type: Record<string, unknown>, name: string, o?: { n?: number; linked?: (table: string) => Promise<string> }) // A valid value of a type, the one sample that `app.make`.
+  linked?: (table: string) => Promise<string> // What makes a row for a link, and answers its id.
+  n?: number // The number of the row a sample is made for.
 screen(name: string, o: ScreenOptions) // One page of the app at an address.
   about?: string // One sentence on what the screen is for.
   access: unknown // Who may be shown the screen.
@@ -474,7 +479,9 @@ table(name: string, o: TableOptions) // A table of the app.
   unique?: readonly (readonly Extract<keyof unknown, string>[])[] // Sets of columns whose values together may stand once.
   was?: string | readonly string[] // The old name of the table, where it was renamed.
 testApp(options?: TestOptions) // A fresh copy of the app for a test, in the program of the test itself.
+  clock?: 'held' // A clock of the app that stands still until the test moves it.
   folder?: string // The folder of the project the test app is built from.
+  randomSeed?: string // The seed of every number the app draws in the test.
   real?: string[] // The services that are let through to where they are.
   room?: TestRoom // Where the code of the app runs in the test.
   secrets?: Record<string, string> // The values of secrets, by their names.
@@ -610,7 +617,7 @@ tent settings set --name <text> --value <text> [--live] [--to <text>] [--insecur
 tent shot --address <text> [--size <text>] [--full] [--dark] [--out <text>] [--wait <number>] // Makes a picture of a screen of the app that runs, as nobody sees it.
 tent start [--bundle <text>] [--port <number>] [--host <text>] [--mode <development|test|live>] [--seed] [--proxy <text> ...] [--web <text> ...] [--reads <text>] [--far] [--own <text>] [--key-from <text>] [--works <text>] [--kinds <text>] [--at-once <number>] [--load <text>] [--fetched <text>] [--insecure] [--parts <text>] [--sleep-after <text>] [--versions-from <text>] [--every <text>] [--stop-runs] [--move] [--mail] [--count-by <limits|app|caller>] [--count-every <text>] [--level-every <text>] [--caller-counts-kept <text>] [--counts-kept <text>] [--domain <text>] [--secure <text> ...] [--secret-key-from <text>] [--as-root] [--update <fixes|all|none>] // Runs a bundle as a server, until the program is told to end.
 tent take-over [--yes] // Makes a reader the writer of what it holds.
-tent test [--only <text>] [--ai] [--budget <text> ...] [--compare] [--from-runs <text>] [--below <number>] [--plan <text>] [--watch] [--shard <text>] [--join <text> ...] [--looks <update>] [--room <program|apart>] // Runs the tests of the app.
+tent test [--only <text>] [--ai] [--all] [--budget <text> ...] [--compare] [--from-runs <text>] [--below <number>] [--plan <text>] [--watch] [--declared] [--update] [--shard <text>] [--join <text> ...] [--looks <update>] [--room <program|apart>] // Runs the tests of the app.
 tent uninstall // Removes Tent.js from this computer.
 tent update [--version <text>] [--back] [--build-tools] [--keep] [--time <text>] // Updates Tent.js on this computer to the newest release.
 tent upgrade // Rewrites a project for the breaking changes of a newer major version.
@@ -792,12 +799,14 @@ T7120 nobody-to-ask // A function that states `danger: 'ask'` was called by a pr
 T7121 sequence-refused // A sequence that a model handed was refused before anything of it ran.
 T7130 no-typed-answer // An agent that states `output` ended its run with no call of `answer`.
 T7131 guard-refused // A guard of an agent did not pass a text.
+T7132 stood-in // In a case that `tent test --declared` made.
 T8000 type-error // The type checker found something in the project.
 T8001 date-by-javascript // In a plain definition, `==`, `!=`, `===`.
 T8002 list-by-javascript // In a plain definition, `==`, `!=`.
 T9001 missing-message // A language file lacks a key that another language has.
 T9002 missing-asset // A definition names an asset by a written name.
 T9003 unknown-message // A message whose key no language of the project has.
+T9004 untested // A warning.
 T9101 point-not-usable // A point was to be merged from, merged into, pushed or published.
 T9102 clash-left // `tent history merge --settle` was typed while the clashes of the merge are still there.
 T9103 publish-refused // A server refused a push or a publish, and said why.

@@ -512,7 +512,12 @@ const project = some({
   publish: some({ health: T, within: TIME }),
   cache: some({ keysHeader: T }),
   vitals: some({ share: N }),
-  release: some({ gradual: B, steps: list(N), every: TIME, watch: some({ failures: N, slower: N, calls: N }) }),
+  release: some({
+    gradual: B,
+    steps: list(N),
+    every: TIME,
+    watch: some({ failures: N, slower: N, slowerBy: TIME, calls: N }),
+  }),
   trace: some({
     share: N,
     otlp: rec({ url: oneOf([T, rec({ setting: T })]) }, { headers: map(oneOf([T, secret, rec({ setting: T })])) }),

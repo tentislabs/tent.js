@@ -28,6 +28,7 @@ import { countedAnswer, countedName, countedRequest } from '../counts/door.ts'
 import { asPiece } from '../counts/cpu.ts'
 import { doorEnded, doorSpan, nameDoor } from '../trace/door.ts'
 import { insideSpan } from '../trace/span.ts'
+import { noteTouched } from '../touched.ts'
 
 // The addresses of the door, each with its name, in the order in which they are tried: loaded when the first
 // request arrives.
@@ -181,6 +182,8 @@ async function passedDoor(o: Opened, asked: Request, taken: Taken, began: number
   /** Finds the address of a request and carries out the steps of the web that it passes, 2 to 4. */
   const passes = async (clean: Request): Promise<Found | Response> => {
     const { pathname } = new URL(clean.url)
+    // Under `tent test`, an address of the app that the test asked, also one that nothing answers.
+    if (!pathname.startsWith('/_t/')) noteTouched('asked', pathname)
     let found: { address: Address; matched: object; kind: string } | undefined
     for (const { address, named: kind } of await inOrder()) {
       const matched = address.match(clean)

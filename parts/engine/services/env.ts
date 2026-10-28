@@ -22,6 +22,7 @@ import { programChannel } from '../mcp/outside/programs.ts'
 import { foundFor } from '../mcp/outside/discover.ts'
 import { visit } from '../visit.ts'
 import { standInOf } from './standIns.ts'
+import { noteOutside, noteTouched } from '../touched.ts'
 import { countedServiceFetch } from '../counts/services.ts'
 import { headed } from '../web/headed.ts'
 
@@ -82,7 +83,13 @@ export function connectEnvOf(o: Opened): ConnectEnv {
     },
     signers,
     verifiers,
-    standIn: (service) => standInOf(o, service),
+    standIn(service) {
+      // Under `tent test`, each service a test called, and one let through to where it is reached outside.
+      noteTouched('services', service)
+      const stand = standInOf(o, service)
+      if (!stand) noteOutside(`service ${service}`)
+      return stand
+    },
     once: () => onceKeys.getStore(),
     setting: (name) => Reflect.get(valuesOf(o).settings.values, name),
     files: {

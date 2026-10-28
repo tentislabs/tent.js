@@ -8,6 +8,8 @@ import { betweenSteps, outsideStep, readingOnly } from './flows/outside.ts'
 import { handleGiven } from './given.ts'
 import { givenHandle } from './givenHandle.ts'
 import { limitOf } from './limits.ts'
+import './chance.ts'
+import { bytesFrom } from './seeded.ts'
 import { drawRandom, notPure } from './rooms/pure.ts'
 import { callService, serviceCallOf } from './services/call.ts'
 import { callModel, modelCallOf } from './ai/call.ts'
@@ -27,11 +29,15 @@ function calling(used: string): CallContext {
 const notThere = (what: string): TentError =>
   new TentError('T0013', `${what} cannot be used here: this engine has nothing behind it.`)
 
-/** A new secret text from the random source of the runtime, or that many digits, each drawn evenly. */
-function newToken(o: unknown): string {
+/**
+ * A new secret text from the random source of the runtime, or that many digits, each drawn evenly; from the source
+ * of the app where it has one of its own, as a test app has from its random seed.
+ */
+function newToken(o: unknown, random?: () => number): string {
   const digits: unknown = Reflect.get(Object(o), 'digits')
-  if (typeof digits !== 'number') return randomBytes(32).toString('base64url')
-  return Array.from({ length: digits }, () => randomInt(10)).join('')
+  if (typeof digits !== 'number')
+    return Buffer.from(random ? bytesFrom(random, 32) : randomBytes(32)).toString('base64url')
+  return Array.from({ length: digits }, () => (random ? Math.floor(random() * 10) : randomInt(10))).join('')
 }
 
 /** Whether the work of a call must answer the same for the same data: a query, and the arrow of a rule. */
@@ -111,10 +117,10 @@ export const slot: Runtime = {
         return { value: cx.work.kind === 'action' ? new Date(cx.app.clock.now()) : cx.work.now }
       case 'random':
         if (mustBePure(cx)) throw notPure('drew a random number')
-        return { value: drawRandom() }
+        return { value: cx.app.random ? cx.app.random() : drawRandom() }
       case 'token':
         if (mustBePure(cx)) throw notPure('drew a token')
-        return { value: newToken(args[0]) }
+        return { value: newToken(args[0], cx.app.random) }
       case 'zone':
         return { value: projectZone(cx.app.description.project) }
       case 'mayWait':

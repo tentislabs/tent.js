@@ -9,7 +9,6 @@
   <p>Data, flows, AI agents and screens in one TypeScript framework.</p>
   <a href="https://www.npmjs.com/package/tentjs"><img alt="npm version" src="https://img.shields.io/npm/v/tentjs.svg"></a>
   <a href="https://github.com/tentislabs/tent.js/blob/main/LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue.svg"></a>
-  <a href="https://github.com/tentislabs/tent.js/actions/workflows/runs.yml"><img alt="runs" src="https://github.com/tentislabs/tent.js/actions/workflows/runs.yml/badge.svg?branch=main"></a>
   <br>
   <br>
 </div>

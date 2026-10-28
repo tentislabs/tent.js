@@ -131,7 +131,7 @@ interface ProjectOptions {
     gradual?: boolean
     steps?: readonly number[]
     every?: string
-    watch?: { failures?: number; slower?: number; calls?: number }
+    watch?: { failures?: number; slower?: number; slowerBy?: string; calls?: number }
   }
   // The share of the page views whose speed is measured in the browsers of real visitors.
   vitals?: { share?: number }

@@ -71,6 +71,7 @@ export function sleepingMembers(s: Sleeping, name: string): App {
     shot: (...args) => woken(true, (app) => app.shot(...args)),
     export: (...args) => woken(false, (app) => app.export(...args)),
     standIn: (...args) => now().standIn(...args),
+    called: (work) => woken(false, (app) => app.called(work)),
     seed: () => woken(false, (app) => app.seed()),
     snapshot: (...args) => woken(false, (app) => app.snapshot(...args)),
     restore: (...args) => woken(false, (app) => app.restore(...args)),

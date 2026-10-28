@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { buildProject } from '../../../build/index.ts'
 import { createEngine } from '../../../engine/index.ts'
 import { testSecrets } from '../../../test/secrets.ts'
+import { killedAt } from '../../../../rig/kill.ts'
 
 const [project, out, dataFolder, told] = process.argv.slice(2)
 mkdirSync(told, { recursive: true })
@@ -30,9 +31,8 @@ const writer = {
     }
     if (!again) {
       writeFileSync(waited, '')
-      writeSync(1, 'waiting\n')
       // The first start stands still here until it is killed.
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0)
+      killedAt('waiting')
     }
     yield { end: { text: 'inside', calls: [] } }
   },

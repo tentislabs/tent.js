@@ -260,7 +260,18 @@ export function projectOf(told: Told, o: Stored): Stored {
   )
   setField(stored, 'cache', leanOf(plainOf(part(told, o, 'cache'))))
   const release = part(told, o, 'release')
-  setField(stored, 'release', leanOf({ ...Object(plainOf(release)), every: ms(told, 'release.every', release.every) }))
+  const watch: Record<string, unknown> = Object(release.watch)
+  setField(
+    stored,
+    'release',
+    leanOf({
+      ...Object(plainOf(release)),
+      every: ms(told, 'release.every', release.every),
+      ...(release.watch === undefined
+        ? {}
+        : { watch: leanOf({ ...watch, slowerBy: ms(told, 'release.watch.slowerBy', watch.slowerBy) }) }),
+    }),
+  )
   setField(stored, 'trace', traceOf(told, o.trace))
   const vitals = part(told, o, 'vitals')
   if (vitals.share !== undefined && (typeof vitals.share !== 'number' || vitals.share < 0 || vitals.share > 1))

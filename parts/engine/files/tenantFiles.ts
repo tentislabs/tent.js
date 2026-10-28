@@ -9,7 +9,6 @@ import {
   layoutFingerprint,
   NotReady,
   openFiles,
-  rowIds,
   sweep,
 } from '../../data/index.ts'
 import { metaOf } from '../held.ts'
@@ -252,7 +251,7 @@ export function tenantFilesOf(
   // The files that are marked open are read before the first write: what the directory says of them is not trusted.
   const rows = listed ? rowsIn(plain.shared) : []
   // An id is made above every id that a file of the directory holds, whatever the clock says.
-  for (const row of rows) if (row.lastId !== undefined) rowIds.above(row.lastId)
+  for (const row of rows) if (row.lastId !== undefined) o.ids.above(row.lastId)
   const above = Math.max(0, ...rows.filter((row) => !row.open).map((row) => row.writes))
   // A file that a stop left marked open may hold writes past what its row says: its own number is read, so the
   // sinks are told where the data stands, and an archive that missed those writes finds them as a gap.

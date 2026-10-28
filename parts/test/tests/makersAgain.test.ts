@@ -7,7 +7,7 @@ import { buildProject } from '../../build/index.ts'
 import { createEngine } from '../../engine/index.ts'
 import { testApp } from '../index.ts'
 import { testSecrets } from '../secrets.ts'
-import { current, level, until } from './many.ts'
+import { current, level, readersHeld, until } from './many.ts'
 import { closing, copyOf, tempOf } from './projects.ts'
 
 const system = { as: { kind: 'system' } } as const
@@ -59,48 +59,52 @@ test('[22-23@7a] a switch to a version whose engine.ts makes other things opens 
   assert.equal((await app.switch(second.versionId)).opens, false)
 })
 
-test('[22-23@7a] a reader that follows its writer to a version whose engine.ts makes other things is opened again too, and reads with what the new makers made', async (t) => {
-  const temp = tempOf(t)
-  const project = copyOf(t, 'reading')
-  const app = await testApp({ folder: project, secrets: { SCAN_KEY: 'key-of-the-scanner' } })
-  closing(t, () => app.close())
-  const near = await app.reader()
-  await current(app, near)
-  /** Reads the words of a file with an action that changes nothing, which the reader answers itself. */
-  const here = async (id: string): Promise<unknown> => {
-    const answer = await near.request(
-      new Request('http://localhost/_t/call/wordsHere', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', origin: 'http://localhost' },
-        body: JSON.stringify({ input: { id } }),
-      }),
+test(
+  '[22-23@7a] a reader that follows its writer to a version whose engine.ts makes other things is opened again too, and reads with what the new makers made',
+  readersHeld,
+  async (t) => {
+    const temp = tempOf(t)
+    const project = copyOf(t, 'reading')
+    const app = await testApp({ folder: project, secrets: { SCAN_KEY: 'key-of-the-scanner' } })
+    closing(t, () => app.close())
+    const near = await app.reader()
+    await current(app, near)
+    /** Reads the words of a file with an action that changes nothing, which the reader answers itself. */
+    const here = async (id: string): Promise<unknown> => {
+      const answer = await near.request(
+        new Request('http://localhost/_t/call/wordsHere', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+          body: JSON.stringify({ input: { id } }),
+        }),
+      )
+      return Object(await answer.json()).value
+    }
+    const first = String(
+      await app.call('keep', { base64: scan([1, 2, 3]), name: 'page.scan', kind: 'application/x-scan' }, system),
     )
-    return Object(await answer.json()).value
-  }
-  const first = String(
-    await app.call('keep', { base64: scan([1, 2, 3]), name: 'page.scan', kind: 'application/x-scan' }, system),
-  )
-  await level(app, near)
-  assert.match(String(await here(first)), /^scanned page\.scan/)
-  // The second version, built from the same project with its reader changed.
-  const file = join(project, 'engine.ts')
-  const read = 'read: async (bytes, info) => scanned(bytes, info, secrets.SCAN_KEY.reveal()),'
-  writeFileSync(
-    file,
-    readFileSync(file, 'utf8').replace(read, "read: async () => 'read by the makers of the second version',"),
-  )
-  const second = await buildProject(project, { for: 'dev', out: join(project, 'second') })
-  await app.add(second.bundleFolder)
-  assert.equal((await app.switch(second.versionId)).opens, true)
-  const id = String(
-    await app.call('keep', { base64: scan([7, 8, 9]), name: 'page.scan', kind: 'application/x-scan' }, system),
-  )
-  const makers = second.description.server?.makers
-  await until('the reader runs the second version', () => near.description.server?.makers === makers)
-  await current(app, near)
-  await level(app, near)
-  // The reader reads with what the makers of the second version made, and hands nothing on for it.
-  const before = handed(temp)
-  assert.equal(await here(id), 'read by the makers of the second version')
-  assert.equal(handed(temp), before)
-})
+    await level(app, near)
+    assert.match(String(await here(first)), /^scanned page\.scan/)
+    // The second version, built from the same project with its reader changed.
+    const file = join(project, 'engine.ts')
+    const read = 'read: async (bytes, info) => scanned(bytes, info, secrets.SCAN_KEY.reveal()),'
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8').replace(read, "read: async () => 'read by the makers of the second version',"),
+    )
+    const second = await buildProject(project, { for: 'dev', out: join(project, 'second') })
+    await app.add(second.bundleFolder)
+    assert.equal((await app.switch(second.versionId)).opens, true)
+    const id = String(
+      await app.call('keep', { base64: scan([7, 8, 9]), name: 'page.scan', kind: 'application/x-scan' }, system),
+    )
+    const makers = second.description.server?.makers
+    await until('the reader runs the second version', () => near.description.server?.makers === makers)
+    await current(app, near)
+    await level(app, near)
+    // The reader reads with what the makers of the second version made, and hands nothing on for it.
+    const before = handed(temp)
+    assert.equal(await here(id), 'read by the makers of the second version')
+    assert.equal(handed(temp), before)
+  },
+)

@@ -31,6 +31,8 @@ export interface Job {
   left?: number
   // The live hub watches the read: the thread tells what it read with its answer.
   reads?: true
+  // Under `tent test`, the test whose work the call is: what the thread touches for it lands under that test.
+  test?: string
 }
 
 /** What a query thread tells the main thread. */

@@ -16,7 +16,7 @@ const code = token({ digits: 6 })
 
 ## Returns
 
-43 characters that are safe in an address, or with `{ digits }` that many digits, each drawn evenly. It asks the engine: where a definition is being made it answers its record.
+43 characters that are safe in an address, or with `{ digits }` that many digits, each drawn evenly. It asks the engine: where a definition is being made it answers its record. In a test app it is drawn from the source of the test's random seed, so a test draws the same token on every computer (`option.testApp.randomSeed`).
 
 ## Errors
 
@@ -24,4 +24,4 @@ const code = token({ digits: 6 })
 
 ## See also
 
-`topic.values`, `word.sameSecret`
+`topic.values`, `word.sameSecret`, `option.testApp.randomSeed`

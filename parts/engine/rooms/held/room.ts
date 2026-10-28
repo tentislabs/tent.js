@@ -111,6 +111,8 @@ export function heldRoom(o: RoomInput): Room {
         now: cx?.app.clock.now() ?? Date.now(),
         zone: projectZone(project),
         valueSize: bounds.size,
+        // An app with a source of its own hands each call a seed of it, from which the call draws in the program.
+        ...(cx?.app.random ? { seed: String(cx.app.random()) } : {}),
       }
       programs.set(c.call, program)
       try {

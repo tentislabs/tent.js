@@ -51,7 +51,8 @@ export async function shotOf(
   const at = drawnAt(o)
   const address = `${at.origin}${path}`
   const routes = await routesOf(o, at)
-  const page = await driven(await browserFound())
+  // A picture of a test is drawn by the pinned build, as a page of a test is: the same on every computer.
+  const page = await driven(await browserFound({ test: o.mode === 'test' }))
   // The session of the user that the browser is, which ends with the picture.
   let cookie: string | undefined
   try {
